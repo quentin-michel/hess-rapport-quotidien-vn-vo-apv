@@ -66,6 +66,28 @@ l'IA) : voir le fichier `Spec_Mail_IA_ChefVentesVO_v3.docx` original (pas
 reproduit ici in extenso pour éviter la duplication/désynchronisation — s'y
 référer directement).
 
+## 2bis. Méthode d'extraction retenue (2026-09-08)
+
+Problème rencontré : le Sheet source `Rapport quotidien VO` est devenu trop
+volumineux (nombreux onglets bruts "SF") pour que l'outil d'extraction de
+Claude le lise sans coupure — les données Renault (fin d'ordre alphabétique)
+n'étaient pas toujours atteintes, indépendamment de l'ordre des onglets.
+
+**Solution retenue : un second Google Sheet, léger et séparé**, dédié
+uniquement aux tableaux "prêts à publier" par bloc — **Claude ne touche jamais
+à ce fichier, il ne fait que le lire** (même règle que pour le Sheet source) :
+
+- **Fichier** : `Rapport quotidien VO - Données finales`
+  (`1XRK6r-MBtQWxXhdsthv1nZx1_m-mnCluwLr8iQgLY7g`)
+- **Un onglet par bloc**, nommé `BLOC 1`, `BLOC 2`, `BLOC 3`, etc. (le nom
+  exact de l'onglet n'est pas récupérable par l'outil d'extraction de Claude —
+  seul le contenu du tableau compte, mais garder cette convention aide
+  Quentin/Corentin à s'organiser).
+- Alimenté depuis le Sheet source via `IMPORTRANGE` + `FILTER` (filtré au
+  périmètre pilote et/ou au seuil d'anomalie pertinent), construit par
+  Quentin/Corentin.
+- Validé sur le Bloc 3 (voir §3) : lecture complète et fiable, aucune coupure.
+
 ## 3. Décisions prises (2026-09-08)
 
 - **Blocs 1 (Leads) et 2 (Offres/Reprises)** : construits par **Quentin/Corentin
@@ -85,10 +107,18 @@ référer directement).
      BY Vehicule_selectionne__c) devrait être appliqué dès le prototype**, pas
      seulement documenté comme limite. *(Point soulevé par Claude, à confirmer
      par Quentin/Corentin.)*
-- **Règle explicite pour cette phase : Claude ne touche à aucun Google Sheet.**
-  Quentin/Corentin construisent la couche "prêt à publier" + anomalies dans
-  Rapport quotidien VO. Claude n'édite ni ne crée rien côté Sheets tant que ce
-  n'est pas explicitement redemandé.
+- **Règle explicite pour cette phase : Claude ne touche à aucun Google Sheet,
+  ni ne requête jamais BigQuery directement.** Toutes les données passent par
+  les Sheets, construits par Quentin/Corentin. Claude n'édite ni ne crée rien
+  côté Sheets tant que ce n'est pas explicitement redemandé.
+- **Bloc 3 (Anomalies Achat/Reprise) : validé (2026-09-08).** Onglet `BLOC 3`
+  du Sheet "Données finales" — déjà filtré (note_criticite ≥ 4, fenêtre 7j
+  glissants), avec le détail texte de l'anomalie déjà composé (colonne
+  `type_anomalie`). Pour Renault Mulhouse (`RENNIS_MULHOUSE`), 3 dossiers :
+  FN-627-YH (note 7/10), GK-311-KP (note 6/10), GR-492-LK (note 5/10) — cohérent
+  avec l'exemple du spec. **Chiffre de contexte "dossiers réalisés (7j)" non
+  fourni** (les données utilisées lors de la rédaction du spec ont maintenant
+  plus de 7 jours) — accepté comme absent pour l'instant, non bloquant.
 
 ## 4. Questions ouvertes VO
 
