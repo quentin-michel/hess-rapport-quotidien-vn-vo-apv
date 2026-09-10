@@ -68,6 +68,23 @@ traîne dans le même dossier Drive, sans contenu.~~ **Supprimé (2026-09-08).**
   seulement le lire, ou créer un fichier Drive entièrement nouveau. **Toute
   construction dans un Sheet est donc faite par Quentin/Corentin, jamais par
   Claude**, pour tout le projet.
+- **Outil de lecture des Sheets : `gws` (Google Workspace CLI) obligatoire,
+  toujours** (2026-09-10). Remplace l'ancien outil Drive (conversion du fichier
+  entier en texte), qui tronquait silencieusement les gros fichiers multi-
+  onglets sans erreur explicite. `gws` lit une plage précise d'un onglet via
+  l'API Sheets (`gws sheets +read --spreadsheet ID --range "Onglet!A1:Z100"`,
+  ou `gws sheets spreadsheets get --params '{"spreadsheetId":"ID"}'` pour
+  lister les onglets) — fiable, pas de troncature silencieuse. Limite réelle :
+  un résultat de plusieurs Mo (au-delà d'un ou deux milliers de lignes) reste
+  trop volumineux pour être chargé dans le contexte de Claude d'un coup — d'où
+  le principe des onglets/fichiers "prêts à publier" déjà réduits (agrégats +
+  top N) plutôt que des extraits bruts. Setup : authentification OAuth2 scope
+  `spreadsheets.readonly` uniquement (`gws auth login --readonly --services
+  sheets`), client OAuth du projet GCP `controlegestion`
+  (`C:\Users\quentinmichel\.config\gws\client_secret.json`), compte
+  `quentinmichel@hessautomobile.com`. L'API Google Sheets doit être activée sur
+  le projet GCP utilisé, et le compte doit avoir le rôle IAM "Service Usage
+  Consumer" dessus.
 - **Orchestrateur : tâche planifiée Claude Code**, pas GitHub Actions. Choix
   assumé malgré la recommandation inverse (GitHub Actions aurait tourné
   indépendamment de tout compte Claude Code, avec code versionné/review-able à
