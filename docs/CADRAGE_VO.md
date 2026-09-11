@@ -143,11 +143,15 @@ Formules `COUNTIFS` sur `Extrait_Stock_VO` (source : `v_sf_vehicule_stock`,
 `TypeVNVO__c='VO' AND NOT is_vd__c`).
 
 **Volet 2 — Détail plafonné** (`BLOC 4 Stock_P2`) : top 5 véhicules les plus
-anciens par catégorie (Sans prix / Sans destination / Sans photo / Jamais
-publié) et par concession — **fait en formules Sheet natives** (`COUNTIFS` en
-astuce de classement : rang = nombre de véhicules de même concession/catégorie
-avec `jours_stock` strictement supérieur, +1), **pas de requête BigQuery
-supplémentaire**. 4 tableaux séparés côte à côte, un par catégorie.
+anciens par catégorie et par concession — **fait en formules Sheet natives**
+(`COUNTIFS` en astuce de classement : rang = nombre de véhicules de même
+concession/catégorie avec la valeur de tri strictement supérieure, +1),
+**pas de requête BigQuery supplémentaire**. **5 catégories** (une 5ᵉ ajoutée le
+2026-09-11), 5 tableaux côte à côte : Sans prix (colonnes A-E), Sans
+destination (G-K), Sans photo (M-Q), Jamais publié (S-W), **CL en retard
+(Y-AC, ajoutée sur demande — triée par jours de retard décroissant, i.e.
+`date_livraison_souhaitee` croissante = la plus ancienne échéance dépassée en
+premier)**.
 
 **Pourquoi ce découpage en 2 volets** : le listing brut (`Extrait_Stock_VO`)
 fait ~6230-20000 lignes selon le fichier — bien trop pour être lu par Claude
@@ -161,6 +165,10 @@ listes pour une concession) — comme anticipé par le spec original.
 **Validé (2026-09-10)** — Renault Mulhouse : Stock ST 204/CL 78/IM 15,
 Portefeuille livraison 78, Sans prix 3 (dont `FN-627-YH` et `GK-964-EX`), Sans
 destination 10, Sans photo 24 / Jamais publié 26 (listes quasi-identiques).
+
+**Validé (2026-09-11)** — CL en retard, Renault Mulhouse, 5 véhicules
+(4 à 37 jours de retard), dont `GS-767-VC` (Master FG) déjà cité dans
+l'exemple du spec original.
 
 ## 7. Bloc 5 — Rotation-Couverture
 
@@ -191,6 +199,23 @@ pas un bug.
 **Validé (2026-09-10, après correctif canal)** — Renault Mulhouse : Stock ST
 206, ventes moy. mensuelle 91, couverture 2,3 mois, tendance -21% (30j vs 30j
 précédents), délai médian 16j.
+
+**Extension Plaque (2026-09-11)** : colonnes ajoutées pour comparer chaque
+concession à la moyenne de sa Plaque — `Code_Plaque, Stock_ST_Plaque,
+Ventes_VOP_moy_mensuelle_Plaque, Couverture_mois_Plaque,
+Delai_median_livraison_j_Plaque, Ventes_30j_Plaque, Ventes_31_60j_Plaque,
+Tendance_ventes_pct_Plaque` — mêmes formules que la version concession,
+reclées sur `Code_Plaque` au lieu de `Code_concession`. ⚠️ **Bug rencontré puis
+corrigé** : la première version utilisait un `VLOOKUP($A2, Extrait_Stock_VO!$X:$Y, 2, FALSE)`
+pour récupérer `Code_Plaque` depuis la concession, qui renvoyait des résultats
+décalés/faux (ex. `BMW_BESANCON` associé à `PLQ_BMW_MOTO` au lieu de
+`PLQ_BMW`) — corrigé par Quentin avec `RECHERCHEX` (XLOOKUP) à la place.
+**Toujours vérifier une jointure Plaque avant utilisation**, ce type d'erreur
+ne saute pas aux yeux sans comparer au Référentiel.
+
+**Validé (2026-09-11)** — Renault Mulhouse vs Plaque Renault : ventes moy.
+91 vs 492, couverture 2,3 vs 2,1 mois, **tendance -21% vs +2%** (Mulhouse
+sous-performe nettement le réseau), délai 16j vs 15j.
 
 ## 8. Bloc 6 — Excès de stock
 
@@ -235,6 +260,12 @@ Excès 45, Âge moyen 57j, **Analyse santé = "SAIN + ⚠ PURGER ANCIENNES"**,
 Action = MAINTENIR — confirme que l'excès de Mulhouse est un problème
 **réseau**, pas isolé à une concession.
 
+**Décision (2026-09-11)** : Bloc 7 est construit et validé, mais **volontairement
+exclu du mail niveau Service** (V1). Cette analyse réseau/plaque n'a de sens
+qu'au niveau plaque — elle est réservée à un futur **mail directeur de plaque**
+(3ᵉ niveau de diffusion, cf. `CADRAGE.md` §1). Le Bloc reste lu et exploité côté
+Sheet, simplement pas restitué dans le mail Service actuel.
+
 ## 10. Bloc 8 — Anomalies Ventes
 
 **Champs finaux** (`BLOC 8 Ano_Vente`) : `Code_concession, Immatriculation,
@@ -262,10 +293,13 @@ détention (Quentin a tranché de ne pas resserrer), ajustés seulement pour
 Écart FRE (600€→500€ + garde-fou) et suppression de Vente rapide.
 
 **Affichage si plus de 5 anomalies pour une concession/jour** : **pas de score
-de gravité** (option envisagée puis écartée) — **ordre de priorité fixe**
-(Marge négative → Détention longue → Marge élevée → Écart FRE), trié par
-ampleur en cas d'égalité de catégorie, top 5 + note "+N autres anomalies".
-Géré par Claude à la composition du mail, pas par une colonne Sheet.
+de gravité** (option envisagée puis écartée) — tri par **date décroissante en
+premier, puis note/montant décroissant** en cas d'égalité de date (décidé
+2026-09-11, remplace l'idée initiale d'ordre de priorité par catégorie),
+top 5 + note "+N autres anomalies". Géré par Claude à la composition du mail,
+pas par une colonne Sheet. **Même règle de tri appliquée au Bloc 3** (Anomalies
+Achat/Reprise). Pour trier le Bloc 8 par date, `date_vente` doit être ajoutée
+à la requête `QUERY` de `BLOC 8 Ano_Vente` (pas encore fait à ce jour).
 
 **Piège de jointure** : `frais_estimes`/`frais_reels` proviennent du **même
 join `quote_dedup`** déjà utilisé pour `date_confirmation_commande` (offre
@@ -304,11 +338,107 @@ ET encore sans prix/destination 7j plus tard) et transformer les tendances en
 risques prospectifs actionnables plutôt que de répéter les chiffres. Principe
 documenté dans `CADRAGE.md` §3 (s'applique à tous les services, pas que VO).
 
-## 13. Prochaines étapes
+## 13. Format du mail — décisions (2026-09-11)
+
+Retours de Quentin sur le mockup (`docs/mockup_email_vo.html`), traités point
+par point :
+
+1. **Titre** : suppression de la baseline "Groupe Familial depuis 1946" —
+   header réduit au logo seul.
+2. **Nom de la concession** : lu depuis le Référentiel Concession, onglet
+   `Concessions_Plaques`, colonne B (`Nom_Concession`, libellé d'affichage —
+   ex. "Renault/Nissan Mulhouse"), plutôt qu'un `Code_Concession` brut.
+   Adresse(s) mail lues dans l'onglet `Destinataires` du même fichier.
+3. **KPI (les 4 premiers)** : confirmé qu'ils sont recalculés chaque jour (pas
+   des valeurs figées) — pas de changement de structure nécessaire.
+4. **Synthèse** : OK tel quel.
+5. **Sources** : ne pas afficher les références de fichiers/onglets sources
+   dans le mail (info technique sans valeur pour le destinataire).
+6. **Anomalies achat/reprise (Bloc 3)** : ne pas afficher la colonne note ;
+   trier par **date décroissante en premier, puis note décroissante** en cas
+   d'égalité (même règle que Bloc 8, cf. §10).
+7. **Qualité du stock (Bloc 4)** : détailler la liste des **CL en retard**
+   (pas seulement le total) — voir §5.
+8. **Rotation & couverture (Bloc 5)** : ajouter les **moyennes Plaque** en
+   comparaison des chiffres concession, calcul fait côté Sheet (pas par
+   Claude) — voir extension Plaque au §7. Complété ensuite par une demande de
+   **tendance ventes également au niveau Plaque** (même logique que la
+   tendance concession, calculée côté Sheet).
+9. **Contexte réseau/plaque (Bloc 7)** : ne pas l'inclure dans le mail
+   Service — réservé au futur mail directeur de plaque (voir note ajoutée
+   au §9).
+10. **Anomalies ventes (Bloc 8)** : même règle de tri que le point 6 — date
+    décroissante en premier, puis note/montant décroissant.
+
+## 14. Icône météo — score de vigilance (2026-09-11)
+
+Indicateur visuel en haut du mail (à côté du titre), pour donner un état
+d'esprit global de la concession en un coup d'œil, sans lire le détail des
+blocs. Test initial en 5 icônes (soleil/nuage/pluie/orage/neige) — décision
+finale : **4 icônes seulement**, pas de "neige" (remplacée par "pas d'icône"
+quand le volume n'est pas significatif, cf. ci-dessous).
+
+**Score par points, cumulé sur 3 critères.** Barème initial validé le
+2026-09-10 ("Ça me va, on garde ces seuils"), puis **affiné le 2026-09-11**
+sur les critères Anomalies ouvertes et Tendance ventes :
+
+**1. Anomalies ouvertes** (+2 points si le total ci-dessous ≥ 6 — seuil
+provisoire, gardé tel quel malgré le changement de mode de comptage,
+**à réajuster lors des tests réels** si besoin) — la façon de
+compter diffère selon le bloc, car les deux types d'anomalie n'ont pas la même
+nature :
+- **Achat/reprise (Bloc 3)** : anomalies **encore ouvertes, en cumul, sans
+  limite de temps** — ce sont des dossiers correctibles (prix, photo,
+  destination manquants...), donc un cumul de dossiers non résolus reflète une
+  vraie charge de travail en cours.
+- **Vente (Bloc 8)** : anomalies détectées **uniquement sur les ventes de
+  J-1** — une marge négative ou une détention longue est un **fait constaté
+  sur une vente déjà faite** ("si on perd 10K€ sur un VO, il est possible que
+  ce soit vrai" — pas un état à corriger), donc pas de sens à le cumuler
+  indéfiniment ; seul le fait nouveau du jour compte pour la météo du jour.
+
+**2. Tendance ventes 30j** — gradué (et non plus tout-ou-rien) :
+
+| Tendance vs période précédente | Points |
+|---|---|
+| ≥ 0% (stable ou en hausse) | 0 |
+| entre 0% et -5% | +1 |
+| entre -5% et -10% | +2 |
+| < -10% | +3 |
+
+**3. Couverture** : inchangé, +2 si hors zone normale (trop basse ou trop
+haute vs seuils Bloc 5).
+
+Le score max passe donc de 6 à 7 (2 + 3 + 2). **Mapping score → icône
+inchangé malgré ce nouveau max** (décidé 2026-09-11, "reste sur un orage à
+partir de 6") :
+
+| Score | Icône |
+|---|---|
+| 0-1 | ☀️ Soleil |
+| 2-3 | ☁️ Nuage |
+| 4-5 | 🌧️ Pluie |
+| 6+ | ⛈️ Orage |
+
+**Cas particulier — volume non significatif** (décidé 2026-09-11, "si non
+significatif on met rien") : si le volume de ventes mensuel moyen de la
+concession est trop faible pour que les tendances/pourcentages soient
+fiables (ex. `ventes_moy_mensuelle < 3`), **aucune icône n'est affichée** —
+un score basé sur un dénominateur trop petit serait trompeur plutôt
+qu'informatif.
+
+Le calcul du score (agrégation des 3 critères + seuil de significativité)
+reste à implémenter côté Sheet, comme le reste de la logique métier — pas
+par Claude à la volée.
+
+## 15. Prochaines étapes
 
 1. Recette du pilote sur les 9 concessions Renault (pas seulement Mulhouse).
-2. Décider du format final exact du mail (mise en page, sujet, signature).
-3. Provisionner la boîte Gmail dédiée (cf. `CADRAGE.md` §6) pour un premier
+2. Ajouter `date_vente` à la requête `QUERY` de `BLOC 8 Ano_Vente` pour
+   permettre le tri date-décroissante (cf. §10).
+3. Construire côté Sheet : moyennes/tendance Plaque pour le Bloc 5 (§13 pt.8,
+   déjà partiellement fait — voir §7) et le score de vigilance météo (§14).
+4. Provisionner la boîte Gmail dédiée (cf. `CADRAGE.md` §6) pour un premier
    envoi de test réel aux 2 adresses pilote.
-4. Une fois VO validé : reprendre APV (déjà prêt côté données) et VN (sheet à
+5. Une fois VO validé : reprendre APV (déjà prêt côté données) et VN (sheet à
    créer) sur le même modèle.

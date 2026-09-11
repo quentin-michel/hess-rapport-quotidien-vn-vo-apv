@@ -1,0 +1,235 @@
+<title>Rapport VO Mulhouse</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --page-bg:#FFFFFF; --surface:#FFFFFF;
+  --navy:#2D3250; --navy-soft:#4A5278;
+  --gold:#C8AA73; --gold-soft:#F1E7D3; --gold-deep:#A88A56;
+  --text:#3B3A36; --text-muted:#8A8474;
+  --border:#E7E1D3; --row-alt:#F8F6F0;
+  --green:#2E7D5F; --green-soft:#E4F1EB;
+  --red:#B0413E; --red-soft:#F8E9E8;
+  --orange:#C1793A; --orange-soft:#F6EADA;
+  --on-navy:#FFFFFF;
+  --shadow: 0 1px 2px rgba(45,50,80,0.06), 0 8px 24px -12px rgba(45,50,80,0.18);
+}
+/* Design volontairement figé en clair (comme un vrai email — Gmail/Outlook
+   n'appliquent pas prefers-color-scheme à un mail en HTML inline de toute
+   façon) : pas d'adaptation au thème sombre du visiteur. */
+*{box-sizing:border-box}
+body{background:var(--page-bg);color:var(--text);font-family:'Montserrat',Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;}
+.page{max-width:660px;margin:0 auto;padding:32px 16px 56px;}
+.card{background:var(--surface);border-radius:6px;overflow:hidden;box-shadow:var(--shadow);}
+.header{background:var(--navy);padding:22px 32px;display:flex;align-items:center;justify-content:space-between;}
+.logo{color:var(--on-navy);font-weight:800;font-size:17px;letter-spacing:0.04em;}
+.logo span{color:var(--gold);}
+.logo small{display:block;font-weight:500;font-size:9px;letter-spacing:0.18em;color:rgba(255,255,255,0.6);margin-top:2px;}
+.hairline{height:3px;background:var(--gold);}
+.titleblock{padding:30px 32px 22px;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
+.weather{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:2px;}
+.weather svg{width:40px;height:40px;}
+.weather .w-label{font-size:9.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);white-space:nowrap;}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold-deep);margin:0 0 8px;}
+h1{margin:0;font-size:24px;font-weight:700;color:var(--navy);line-height:1.25;text-wrap:balance;}
+.meta{margin:8px 0 0;font-size:13px;color:var(--text-muted);}
+.meta b{color:var(--text);font-weight:600;}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border);}
+.kpi{padding:18px 12px;text-align:center;border-left:1px solid var(--border);}
+.kpi:first-child{border-left:none;}
+.kpi .v{font-size:22px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;line-height:1;}
+.kpi .l{margin-top:6px;font-size:9.5px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);}
+.kpi .v.down{color:var(--red);} .kpi .v.up{color:var(--green);}
+
+.synthese{margin:24px 32px;padding:20px 22px;background:var(--gold-soft);border-radius:6px;border-left:3px solid var(--gold);}
+.synthese .eyebrow{color:var(--gold-deep);}
+.synthese p{margin:0 0 10px;font-size:13.5px;line-height:1.65;color:var(--text);}
+.synthese p:last-child{margin-bottom:0;}
+.synthese b{color:var(--navy);}
+
+.section{padding:22px 32px;border-top:1px solid var(--border);}
+.section h2{margin:0 0 3px;font-size:14px;font-weight:700;color:var(--navy);letter-spacing:0.01em;}
+.section .sub{margin:0 0 14px;font-size:11.5px;color:var(--text-muted);}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th{background:var(--navy);color:var(--on-navy);text-align:left;font-weight:600;font-size:10.5px;
+   letter-spacing:0.04em;text-transform:uppercase;padding:8px 10px;}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums;}
+td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text);}
+tr:nth-child(even) td{background:var(--row-alt);}
+.plate{font-family:'Montserrat',monospace;font-weight:600;color:var(--navy);white-space:nowrap;}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;white-space:nowrap;}
+.pill.red{background:var(--red-soft);color:var(--red);}
+.pill.green{background:var(--green-soft);color:var(--green);}
+.pill.orange{background:var(--orange-soft);color:var(--orange);}
+.stat-row{display:flex;flex-wrap:wrap;gap:8px 18px;margin-bottom:14px;font-size:12.5px;}
+.stat-row .item b{color:var(--navy);font-variant-numeric:tabular-nums;}
+.mini-list{margin:10px 0 0;padding:0;list-style:none;font-size:12px;color:var(--text-muted);}
+.mini-list li{padding:5px 0;border-top:1px solid var(--border);}
+.mini-list li:first-child{border-top:none;}
+.mini-list .plate{margin-right:6px;}
+.mini-list .age{float:right;color:var(--text-muted);font-variant-numeric:tabular-nums;}
+.more{margin-top:10px;font-size:11.5px;color:var(--text-muted);font-style:italic;}
+.podium{display:flex;flex-direction:column;gap:8px;}
+.podium .row{display:flex;align-items:center;gap:10px;}
+.podium .rank{width:20px;height:20px;border-radius:50%;background:var(--navy);color:var(--on-navy);
+  font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;}
+.podium .name{flex:1;font-size:12.5px;color:var(--text);}
+.podium .name b{color:var(--navy);}
+.podium .exces{font-size:14px;font-weight:700;color:var(--orange);font-variant-numeric:tabular-nums;}
+.health-card{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
+  background:var(--row-alt);border-radius:5px;}
+.health-card .l{font-size:12px;color:var(--text-muted);}
+.health-card .v{font-size:13px;font-weight:700;color:var(--navy);}
+.footer{background:var(--navy);padding:22px 32px;text-align:center;}
+.footer p{margin:0;font-size:11px;color:rgba(255,255,255,0.55);line-height:1.6;}
+.footer strong{color:var(--gold);}
+@media (max-width:480px){.kpis{grid-template-columns:repeat(2,1fr);}
+  .kpi:nth-child(3){border-left:none;}
+  .titleblock,.section,.header{padding-left:20px;padding-right:20px;}
+  .synthese{margin-left:20px;margin-right:20px;}}
+</style>
+
+<div class="page">
+  <div class="card">
+
+    <div class="header">
+      <div class="logo">HESS<span>·</span>AUTOMOBILE</div>
+    </div>
+    <div class="hairline"></div>
+
+    <div class="titleblock">
+      <div>
+        <p class="eyebrow">Rapport quotidien &middot; Véhicules d'Occasion</p>
+        <h1>Renault/Nissan Mulhouse</h1>
+        <p class="meta">Chiffres de la veille &mdash; <b>vendredi 11 septembre 2026</b></p>
+      </div>
+      <div class="weather" title="Score de vigilance 4/6+ — anomalies ouvertes (13, +2 pts), tendance ventes -21% (+2 pts), couverture normale (0 pt)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--navy-soft)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.5 16.5H8a4.5 4.5 0 0 1-1-8.9A5 5 0 0 1 16.5 5.5a4.5 4.5 0 0 1 1 11z"/>
+          <line x1="9" y1="19.5" x2="8" y2="21.5"/>
+          <line x1="13" y1="19.5" x2="12" y2="21.5"/>
+          <line x1="17" y1="19.5" x2="16" y2="21.5"/>
+        </svg>
+        <span class="w-label">Pluie</span>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="v">29</div><div class="l">Leads reçus J-1</div></div>
+      <div class="kpi"><div class="v">2,3<span style="font-size:12px;">&nbsp;mois</span></div><div class="l">Couverture stock</div></div>
+      <div class="kpi"><div class="v down">-21%</div><div class="l">Tendance ventes 30j</div></div>
+      <div class="kpi"><div class="v">13</div><div class="l">Anomalies ouvertes</div></div>
+    </div>
+
+    <div class="synthese">
+      <p class="eyebrow">Synthèse</p>
+      <p>Deux véhicules demandent une action <b>aujourd'hui</b>, pas seulement un suivi : <b>FN-627-YH</b> (308) a été noté 7/10 dès l'achat pour écarts de prix/km/date &mdash; et se retrouve depuis 7 jours à la fois sans prix de vente <i>et</i> sans destination en stock. Le problème identifié à l'achat n'a pas été traité en aval. <b>GK-964-EX</b> (Mégane E-Tech), la pire note d'achat de la semaine (10/10) acheté hier, n'a lui non plus pas encore de prix.</p>
+      <p>Par ailleurs, l'excès de <b>Clio Hybride essence</b> (18 unités) ne va pas se résorber seul : les ventes du modèle reculent de 21% sur 30 jours &mdash; sans action commerciale ciblée, l'écart va se creuser plutôt que se corriger.</p>
+    </div>
+
+    <div class="section">
+      <h2>Leads VO</h2>
+      <div class="stat-row">
+        <div class="item">Reçus J-1 : <b>29</b></div>
+        <div class="item">Reçus 7j : <b>163</b></div>
+        <div class="item">Non traités J-1 : <b>0</b></div>
+        <div class="item">Non traités 7j : <b>9</b></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Offres VO &amp; reprises</h2>
+      <div class="stat-row">
+        <div class="item">Commandes VOP acceptées : <b>3</b> (27)</div>
+        <div class="item">Offres refusées : <b>1</b> (19)</div>
+        <div class="item">Reprises acceptées : <b>1</b> (10)</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Anomalies achat &amp; reprise</h2>
+      <p class="sub">5 dossiers sur 7 jours glissants, du plus récent au plus ancien</p>
+      <table>
+        <tr><th>Véhicule</th><th>Date</th><th>Écarts constatés à l'achat</th></tr>
+        <tr><td><span class="plate">GK-964-EX</span></td><td>09/09</td><td>Prix +2 616€ &middot; aide/transfert +2 180€</td></tr>
+        <tr><td><span class="plate">BB-403-QG</span></td><td>08/09</td><td>Prix +999€ &middot; aide +999€</td></tr>
+        <tr><td><span class="plate">GK-311-KP</span></td><td>04/09</td><td>Prix +660€ &middot; 38j retard &middot; aide +840€</td></tr>
+        <tr><td><span class="plate">GR-492-LK</span></td><td>04/09</td><td>Prix +500€ &middot; aide +500€</td></tr>
+        <tr><td><span class="plate">FN-627-YH</span></td><td>03/09</td><td>Prix +711€ &middot; 2 768 km &middot; 43j retard &middot; aide +711€</td></tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Qualité du stock</h2>
+      <p class="sub">Photo du jour &middot; véhicules ST/CL/IM</p>
+      <div class="stat-row">
+        <div class="item">Stock ST : <b>204</b></div>
+        <div class="item">Stock CL : <b>78</b></div>
+        <div class="item">Stock IM : <b>15</b></div>
+        <div class="item">Portefeuille livraison : <b>78</b></div>
+        <div class="item">CL en retard : <b>5</b></div>
+      </div>
+      <ul class="mini-list">
+        <li><span class="plate">FZ-089-NK</span> Captur &mdash; sans prix<span class="age">69j</span></li>
+        <li><span class="plate">FN-627-YH</span> 308 &mdash; sans prix, sans destination<span class="age">7j</span></li>
+        <li><span class="plate">AS-016-AE</span> Audi A3 &mdash; sans photo, jamais publié<span class="age">301j</span></li>
+        <li><span class="plate">DT-375-JG</span> 206 &mdash; sans photo, jamais publié<span class="age">29j</span></li>
+      </ul>
+      <p class="more">Sans prix (3) &middot; sans destination (10, 5 plus anciens affichés dans le détail complet) &middot; sans photo / jamais publié (24 / 26, listes quasi identiques)</p>
+
+      <h3 style="margin:18px 0 4px;font-size:12px;font-weight:700;color:var(--navy);">Clients en attente de livraison (CL en retard)</h3>
+      <ul class="mini-list">
+        <li><span class="plate">GS-767-VC</span> Master FG<span class="age">37j</span></li>
+        <li><span class="plate">FS-967-NG</span> Qashqai<span class="age">18j</span></li>
+        <li><span class="plate">FC-988-JC</span> Qashqai<span class="age">11j</span></li>
+        <li><span class="plate">FD-721-MH</span> Twingo<span class="age">8j</span></li>
+        <li><span class="plate">GP-446-XZ</span> Sandero<span class="age">4j</span></li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Rotation &amp; couverture</h2>
+      <p class="sub">Moyenne lissée sur 90 jours &middot; comparaison 30j vs 30j précédents</p>
+      <table>
+        <tr><th></th><th class="num">Concession</th><th class="num">Plaque Renault</th></tr>
+        <tr><td>Ventes moy. mensuelle</td><td class="num">91</td><td class="num">492</td></tr>
+        <tr><td>Couverture</td><td class="num">2,3 mois</td><td class="num">2,1 mois</td></tr>
+        <tr><td>Tendance 30j</td><td class="num" style="color:var(--red);font-weight:700;">-21%</td><td class="num" style="color:var(--green);font-weight:700;">+2%</td></tr>
+        <tr><td>Délai médian livraison</td><td class="num">16j</td><td class="num">15j</td></tr>
+      </table>
+      <p class="more">Mulhouse recule plus vite que la moyenne de la Plaque &mdash; à surveiller.</p>
+    </div>
+
+    <div class="section">
+      <h2>Excès de stock &mdash; top 3 modèles</h2>
+      <p class="sub">Stock vs ventes moyennes lissées &middot; seuil d'excès &ge; 3</p>
+      <div class="podium">
+        <div class="row"><div class="rank">1</div><div class="name"><b>Clio</b> Hybride essence &mdash; stock 23, ventes 5</div><div class="exces">18</div></div>
+        <div class="row"><div class="rank">2</div><div class="name"><b>Master FG</b> Diesel &mdash; stock 15, ventes 4</div><div class="exces">11</div></div>
+        <div class="row"><div class="rank">3</div><div class="name"><b>Mégane</b> Électrique / <b>Sandero</b> GPL (ex æquo)</div><div class="exces">7</div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Anomalies ventes</h2>
+      <p class="sub">7 jours glissants &middot; 8 dossiers &middot; 5 plus significatifs affichés</p>
+      <table>
+        <tr><th>Véhicule</th><th class="num">Marge</th><th>Anomalie</th></tr>
+        <tr><td><span class="plate">GR-375-VL</span> Master FG</td><td class="num" style="color:var(--red);font-weight:700;">-6 737€</td><td>Marge négative + détention 275j</td></tr>
+        <tr><td><span class="plate">GN-200-CK</span> Captur</td><td class="num" style="color:var(--red);font-weight:700;">-4 658€</td><td>Marge négative + écart FRE +914€</td></tr>
+        <tr><td><span class="plate">GV687NL</span> Austral</td><td class="num" style="color:var(--red);font-weight:700;">-3 574€</td><td>Marge négative</td></tr>
+        <tr><td><span class="plate">GQ-262-TD</span> Trafic FG</td><td class="num" style="color:var(--red);font-weight:700;">-3 218€</td><td>Marge négative + détention 340j</td></tr>
+        <tr><td><span class="plate">GS-237-BD</span> Austral</td><td class="num" style="color:var(--red);font-weight:700;">-1 386€</td><td>Marge négative</td></tr>
+      </table>
+      <p class="more">+ 3 autres anomalies (2 marges élevées, 1 marge négative mineure)</p>
+    </div>
+
+    <div class="footer">
+      <p><strong>HESS Automobile</strong> &middot; Rapport généré automatiquement, données BigQuery &amp; Google Sheets<br>
+      Destinataire test &middot; périmètre pilote Plaque Renault</p>
+    </div>
+
+  </div>
+</div>
