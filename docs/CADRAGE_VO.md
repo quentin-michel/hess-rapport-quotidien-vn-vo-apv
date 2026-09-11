@@ -431,14 +431,39 @@ Le calcul du score (agrégation des 3 critères + seuil de significativité)
 reste à implémenter côté Sheet, comme le reste de la logique métier — pas
 par Claude à la volée.
 
-## 15. Prochaines étapes
+## 15. Fraîcheur des données — synchronisation des rafraîchissements (2026-09-11)
+
+Constat lors d'une extraction de test (Renault Saverne, pour un pointage manuel
+de Quentin) : les 6 fichiers Google Sheets qui portent les 8 blocs **ne sont
+pas rafraîchis au même rythme** — chaque fichier a son propre connecteur
+BigQuery (Connected Sheets), actualisé manuellement, sans synchronisation ni
+planification automatique à ce jour. Exemple observé le 2026-09-11 au matin :
+Bloc 1/2 actualisés le 09/09, Bloc 3/4/8 le 10/09, Bloc 5/6/7 le 11/09 — un
+mail composé à cet instant aurait mélangé des données de jours différents
+selon le bloc, sans que rien ne le signale.
+
+**Décision (2026-09-11)** : Quentin met en place une **actualisation
+automatique chaque matin entre 6h et 7h**, sur les 6 fichiers Sheets du
+service VO. Conséquences :
+- L'**heure d'envoi du mail quotidien par l'orchestrateur doit être planifiée
+  après 7h**, pour laisser la marge d'actualisation.
+- Reste à faire : une **vérification de fraîcheur** avant génération du mail
+  (comparer que tous les blocs référencent bien le même jour, pas seulement
+  compter sur l'heure de planification) — cf. Prochaines étapes ci-dessous.
+
+## 16. Prochaines étapes
 
 1. Recette du pilote sur les 9 concessions Renault (pas seulement Mulhouse).
-2. Ajouter `date_vente` à la requête `QUERY` de `BLOC 8 Ano_Vente` pour
-   permettre le tri date-décroissante (cf. §10).
+2. ~~Ajouter `date_vente` à la requête `QUERY` de `BLOC 8 Ano_Vente`~~ **fait**
+   (colonne `Date_vente` présente, vérifié le 2026-09-11 lors d'un extrait
+   Renault Saverne) — le tri date-décroissante du §10 est donc applicable.
 3. Construire côté Sheet : moyennes/tendance Plaque pour le Bloc 5 (§13 pt.8,
-   déjà partiellement fait — voir §7) et le score de vigilance météo (§14).
-4. Provisionner la boîte Gmail dédiée (cf. `CADRAGE.md` §6) pour un premier
+   déjà partiellement fait — voir §7) et le score de vigilance météo (§14),
+   y compris le seuil "zone normale" de couverture qui reste à définir
+   (cf. §14 pt.3, non tranché à ce jour).
+4. Vérifier que l'actualisation automatique 6h-7h (§15) fonctionne bien sur
+   les 6 fichiers, puis construire la vérification de fraîcheur avant envoi.
+5. Provisionner la boîte Gmail dédiée (cf. `CADRAGE.md` §6) pour un premier
    envoi de test réel aux 2 adresses pilote.
-5. Une fois VO validé : reprendre APV (déjà prêt côté données) et VN (sheet à
+6. Une fois VO validé : reprendre APV (déjà prêt côté données) et VN (sheet à
    créer) sur le même modèle.

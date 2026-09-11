@@ -110,10 +110,15 @@ traîne dans le même dossier Drive, sans contenu.~~ **Supprimé (2026-09-08).**
        des constats généraux ("il y a un excès de stock").
     3. **Transformer une tendance en risque prospectif actionnable** ("sans
        action, l'écart va se creuser") plutôt qu'un simple constat statistique.
-    Exemple qui a fonctionné : identifier que `FN-627-YH` était noté 7/10 à
-    l'achat ET toujours sans prix/destination 7j après, plutôt que de relister
-    séparément l'anomalie achat et le chiffre "sans prix" déjà visibles ailleurs
-    dans le mail.
+    4. **Ne jamais citer la note brute d'anomalie** (ex. "noté 4/10", "10/10")
+       (décidé 2026-09-11) — c'est un score interne au calcul, pas une
+       information utile au lecteur ; décrire le problème concret (l'écart,
+       le délai, le manque) à la place.
+    Exemple qui a fonctionné : identifier que `FN-627-YH` était toujours sans
+    prix/destination en stock alors qu'il avait déjà été signalé à l'achat
+    pour des écarts de prix/km/date, plutôt que de relister séparément
+    l'anomalie achat et le chiffre "sans prix" déjà visibles ailleurs dans le
+    mail.
 - **Historisation : oui**, dans un Google Sheet dédié (`Historique_Envois` —
   date, concession, service, destinataire, anomalie détectée, statut d'envoi).
 - **Cas `Service = VN_VO`** (une personne gère VN et VO pour sa concession) :
