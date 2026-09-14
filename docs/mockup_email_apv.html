@@ -1,0 +1,182 @@
+<title>Rapport APV Mulhouse</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --page-bg:#FFFFFF; --surface:#FFFFFF;
+  --navy:#2D3250; --navy-soft:#4A5278;
+  --gold:#C8AA73; --gold-soft:#F1E7D3; --gold-deep:#A88A56;
+  --text:#3B3A36; --text-muted:#8A8474;
+  --border:#E7E1D3; --row-alt:#F8F6F0;
+  --green:#2E7D5F; --green-soft:#E4F1EB;
+  --red:#B0413E; --red-soft:#F8E9E8;
+  --orange:#C1793A; --orange-soft:#F6EADA;
+  --on-navy:#FFFFFF;
+  --shadow: 0 1px 2px rgba(45,50,80,0.06), 0 8px 24px -12px rgba(45,50,80,0.18);
+}
+/* Design volontairement figé en clair (comme un vrai email) — repris à l'identique
+   du mockup VO pour la cohérence visuelle entre les 3 services. */
+*{box-sizing:border-box}
+body{background:var(--page-bg);color:var(--text);font-family:'Montserrat',Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;}
+.page{max-width:660px;margin:0 auto;padding:32px 16px 56px;}
+.card{background:var(--surface);border-radius:6px;overflow:hidden;box-shadow:var(--shadow);}
+.header{background:var(--navy);padding:22px 32px;display:flex;align-items:center;justify-content:space-between;}
+.logo{color:var(--on-navy);font-weight:800;font-size:17px;letter-spacing:0.04em;}
+.logo span{color:var(--gold);}
+.logo small{display:block;font-weight:500;font-size:9px;letter-spacing:0.18em;color:rgba(255,255,255,0.6);margin-top:2px;}
+.hairline{height:3px;background:var(--gold);}
+.titleblock{padding:30px 32px 22px;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold-deep);margin:0 0 8px;}
+h1{margin:0;font-size:24px;font-weight:700;color:var(--navy);line-height:1.25;text-wrap:balance;}
+.meta{margin:8px 0 0;font-size:13px;color:var(--text-muted);}
+.meta b{color:var(--text);font-weight:600;}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border);}
+.kpi{padding:18px 12px;text-align:center;border-left:1px solid var(--border);}
+.kpi:first-child{border-left:none;}
+.kpi .v{font-size:22px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;line-height:1;}
+.kpi .l{margin-top:6px;font-size:9.5px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);}
+.kpi .v.down{color:var(--red);} .kpi .v.up{color:var(--green);}
+
+.synthese{margin:24px 32px;padding:20px 22px;background:var(--gold-soft);border-radius:6px;border-left:3px solid var(--gold);}
+.synthese .eyebrow{color:var(--gold-deep);}
+.synthese p{margin:0 0 10px;font-size:13.5px;line-height:1.65;color:var(--text);}
+.synthese p:last-child{margin-bottom:0;}
+.synthese b{color:var(--navy);}
+
+.section{padding:22px 32px;border-top:1px solid var(--border);}
+.section h2{margin:0 0 3px;font-size:14px;font-weight:700;color:var(--navy);letter-spacing:0.01em;}
+.section .sub{margin:0 0 14px;font-size:11.5px;color:var(--text-muted);}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th{background:var(--navy);color:var(--on-navy);text-align:left;font-weight:600;font-size:10.5px;
+   letter-spacing:0.04em;text-transform:uppercase;padding:8px 10px;}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums;}
+td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text);}
+tr:nth-child(even) td{background:var(--row-alt);}
+.plate{font-family:'Montserrat',monospace;font-weight:600;color:var(--navy);white-space:nowrap;}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;white-space:nowrap;}
+.pill.red{background:var(--red-soft);color:var(--red);}
+.pill.green{background:var(--green-soft);color:var(--green);}
+.pill.orange{background:var(--orange-soft);color:var(--orange);}
+.stat-row{display:flex;flex-wrap:wrap;gap:8px 18px;margin-bottom:14px;font-size:12.5px;}
+.stat-row .item b{color:var(--navy);font-variant-numeric:tabular-nums;}
+.mini-list{margin:10px 0 0;padding:0;list-style:none;font-size:12px;color:var(--text-muted);}
+.mini-list li{padding:5px 0;border-top:1px solid var(--border);}
+.mini-list li:first-child{border-top:none;}
+.mini-list .plate{margin-right:6px;}
+.mini-list .age{float:right;color:var(--text-muted);font-variant-numeric:tabular-nums;}
+.more{margin-top:10px;font-size:11.5px;color:var(--text-muted);font-style:italic;}
+.footer{background:var(--navy);padding:22px 32px;text-align:center;}
+.footer p{margin:0;font-size:11px;color:rgba(255,255,255,0.55);line-height:1.6;}
+.footer strong{color:var(--gold);}
+@media (max-width:480px){.kpis{grid-template-columns:repeat(2,1fr);}
+  .kpi:nth-child(3){border-left:none;}
+  .titleblock,.section,.header{padding-left:20px;padding-right:20px;}
+  .synthese{margin-left:20px;margin-right:20px;}}
+</style>
+
+<div class="page">
+  <div class="card">
+
+    <div class="header">
+      <div class="logo">HESS<span>·</span>AUTOMOBILE</div>
+    </div>
+    <div class="hairline"></div>
+
+    <div class="titleblock">
+      <div>
+        <p class="eyebrow">Rapport quotidien &middot; Après-Vente (Atelier)</p>
+        <h1>Renault/Nissan Mulhouse</h1>
+        <p class="meta">Dernières données disponibles &mdash; <b>mercredi 9 septembre 2026</b> (retard de 2 jours sur le pipeline BigQuery, données du 10/09 pas encore chargées)</p>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="v">9 185&nbsp;€</div><div class="l">CA MO J-1</div></div>
+      <div class="kpi"><div class="v">89%</div><div class="l">Productivité J-1</div></div>
+      <div class="kpi"><div class="v up">101%</div><div class="l">Efficience J-1</div></div>
+      <div class="kpi"><div class="v">15,8&nbsp;j</div><div class="l">Encours en jours de CA</div></div>
+    </div>
+
+    <div class="synthese">
+      <p class="eyebrow">Synthèse</p>
+      <p>La hausse de +218% du CA PR interne du jour ne reflète pas une tendance de fond : elle tient presque entièrement à un seul dossier, l'<b>OR 152098</b> (BESSE MOTORS, canal Assurances), qui facture à lui seul <b>13 099€</b> de pièces &mdash; plus de la moitié du CA PR interne de la journée.</p>
+      <p>Sur le top 5 des encours prioritaires, <b>4 dossiers sur 5</b> &mdash; dont l'OR <b>148088</b> (239j, 11 489€ MO+PR) &mdash; sont signalés en <b>dépassement de temps passé</b> côté Salesforce plutôt qu'en attente de pièce : le blocage semble organisationnel/diagnostic plus qu'un problème d'approvisionnement, à creuser avec les réceptionnaires concernés.</p>
+    </div>
+
+    <div class="section">
+      <h2>CA Atelier</h2>
+      <div class="stat-row">
+        <div class="item">CA MO J-1 : <b>9 185€</b> (méd. 4 sem. : 6 851€, +34%)</div>
+        <div class="item">CA PR interne J-1 : <b>22 442€</b> (méd. 4 sem. : 7 049€, +218%)</div>
+        <div class="item">Marge pièces : <b>5 058€</b> (23%)</div>
+        <div class="item">CA MO MTD : <b>49 551€</b></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Productivité &amp; Efficience</h2>
+      <div class="stat-row">
+        <div class="item">Productivité J-1 : <b>89%</b> (moy. 4 sem. : 88%)</div>
+        <div class="item">Efficience J-1 : <b>101%</b> (moy. 4 sem. : 98%)</div>
+        <div class="item">Efficience cessions internes MTD : <b>100%</b></div>
+      </div>
+      <p class="sub">OR en cession interne à efficience anormalement élevée (&gt;105%)</p>
+      <table>
+        <tr><th>N° OR</th><th>Mécanicien</th><th class="num">Temps facturé</th><th class="num">Temps passé rappelé</th><th class="num">Efficience</th></tr>
+        <tr><td>154477</td><td>AZZOUZI Mustapha</td><td class="num">2,50h</td><td class="num">1,78h</td><td class="num" style="color:var(--red);font-weight:700;">140%</td></tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Encours</h2>
+      <div class="stat-row">
+        <div class="item">OR en cours : <b>427</b></div>
+        <div class="item">Valeur encours MO+PR : <b>252 899€</b></div>
+        <div class="item">Encours en jours de CA : <b>15,8j</b> (seuil surveillance : 20j)</div>
+        <div class="item">90-180j : <b>58</b> (55 900€) &middot; 180-365j : <b>31</b> (31 672€) &middot; +365j : <b>8</b> (2 766€)</div>
+      </div>
+      <p class="sub">Top 3 encours prioritaires (score = valeur × ancienneté) &middot; 3 sur 5 affichés</p>
+      <ul class="mini-list">
+        <li><span class="plate">148088</span> HE-720-TS &mdash; 11 489€ MO+PR<span class="age">239j</span></li>
+        <li><span class="plate">150343</span> HH-205-LV &mdash; 11 761€ MO+PR<span class="age">162j</span></li>
+        <li><span class="plate">150434</span> HH-367-VP &mdash; 11 761€ MO+PR<span class="age">156j</span></li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Ventes à perte (Atelier &amp; Magasin)</h2>
+      <p class="sub">Prix vente net &lt; PAMP, quantité &gt; 0 &middot; 3 lignes les plus significatives</p>
+      <table>
+        <tr><th>Canal</th><th>Référence</th><th>Désignation</th><th class="num">Marge</th></tr>
+        <tr><td>Magasin</td><td>8201588853</td><td>V MATIERE MOT R9M</td><td class="num" style="color:var(--red);font-weight:700;">-215€</td></tr>
+        <tr><td>Atelier</td><td>280906RN2D (OR 204732)</td><td>TACHE ECRANS</td><td class="num" style="color:var(--red);font-weight:700;">-29€</td></tr>
+        <tr><td>Magasin</td><td>7711579592</td><td>IXTRA EVO</td><td class="num" style="color:var(--red);font-weight:700;">-26€</td></tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Taux de remise élevé (client particulier)</h2>
+      <p class="sub">MO &gt; 15% ou PR interne &gt; 20% &middot; canal CLIENT, Particuliers uniquement</p>
+      <table>
+        <tr><th>N° OR</th><th>Réceptionnaire</th><th class="num">Taux remise MO</th><th class="num">Taux remise PR</th></tr>
+        <tr><td>154533</td><td>STELLA POLO</td><td class="num">&mdash;</td><td class="num" style="color:var(--red);font-weight:700;">34%</td></tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Magasin (PR externe)</h2>
+      <div class="stat-row">
+        <div class="item">CA PR externe J-1 : <b>59 514€</b> (méd. 4 sem. : 50 722€, +17%)</div>
+        <div class="item">Marge : <b>7 937€</b> (13%)</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p><strong>HESS Automobile</strong> &middot; Rapport généré automatiquement, données BigQuery &amp; Google Sheets<br>
+      Destinataire test &middot; brouillon de structure &mdash; données réelles au 09/09/2026 (dernière date disponible)</p>
+    </div>
+
+  </div>
+</div>

@@ -3,11 +3,12 @@
 Voir [`CADRAGE.md`](CADRAGE.md) pour le cadrage transverse (objectif général,
 architecture, destinataires, décisions communes aux 3 services).
 
-**Statut : architecture reconstruite et étendue au groupe entier (2026-09-10/11)
-— en avance sur le séquencement initial** (le cadrage global priorisait VO,
-mais Corentin a repris et largement dépassé l'état "prêt côté données" du
-2026-09-08 ci-dessous, qui est **obsolète**). Reste : rebrancher un dernier
-seuil, nettoyer les onglets obsolètes, construire la lecture orchestrateur.
+**Statut : architecture reconstruite et étendue au groupe entier (2026-09-10/11),
+objectifs MO/PR/PR externe branchés et seuils recalibrés (2026-09-14) — en
+avance sur le séquencement initial** (le cadrage global priorisait VO, mais
+Corentin a repris et largement dépassé l'état "prêt côté données" du
+2026-09-08 ci-dessous, qui est **obsolète**). Reste : construire la lecture
+orchestrateur et le format de mail (seul point encore ouvert, voir §8).
 
 ## 1. Source
 
@@ -39,6 +40,19 @@ qu'un jour (léger aussi) — c'est le croisement des deux qui aurait été lour
 | Temps (Efficience/Productivité) | `Historique Efficience + Productivité` → **`Historique efficience/prod`** (Concession, Date, Temps_facture_total, Rappel_temps_passe_total, Temps_facture_cession_interne, Rappel_temps_passe_cession_interne, Temps_passe_total) | `Temps facturés journaliers` → **`Temps facturés par jour`** ; `Temps passés journaliers` → **`Temps passés par jour`** |
 | Encours | *(pas de fenêtre glissante nécessaire — voir §1.3)* | `Encours` → **`Encours à date`** |
 | CA mensuel (nouveau, 2026-09-11) | `Historique CA mensuel par atelier` → **`Historique CA mensuel ateliers`** (Concession, Mois, CA_MO_Net_HT, CA_PR_interne_Net_HT) — 7 mois glissants, sert un ratio "jours de CA" (§2.6) | — |
+
+**Les onglets de gauche (`Historique CA Atelier`, `Facturation détaillée
+Atelier`, `Historique Efficience + Productivité`, `Temps facturés/passés
+journaliers`, `Encours`, `Historique CA Magasin`, `Magasin`, `Historique CA
+mensuel par atelier`, `Obj APV`) sont conservés intentionnellement** — ce sont
+des onglets **DATA_SOURCE** (connecteurs BigQuery live d'origine, ère pilote),
+gardés parce qu'ils portent le **rafraîchissement programmé** des données
+(scheduled refresh Connected Sheets) : les supprimer casserait l'automatisation
+des extractions quotidiennes. Ce ne sont donc pas des onglets morts à nettoyer
+— seuls leurs successeurs GRID (colonne de droite) sont lus par les formules
+et par `gws` (les onglets DATA_SOURCE renvoient une erreur `"Unable to parse
+range"` à la lecture par l'API Sheets `values.get`, ce qui est normal pour ce
+type d'onglet, pas un bug).
 
 Chaque table (agrégé ou détail) source ses jointures sur `entete_or`
 (`Est_ferme=1 AND Est_annule=0`), sauf le Magasin qui joint
@@ -85,6 +99,27 @@ nouvelles lignes** pour les sources Magasin (`entete_pieces.Regroupement_Concess
 et Encours (`v_sf_account.nom_compte`), absentes à l'origine), et
 `Analyse Globale` groupe désormais sur ce code, pas sur le nom brut.
 
+### 2.1 Cas où un même texte doit résoudre vers 2 codes différents (2026-09-14)
+
+`Mapping concession` est une table à plat (texte → code), donc **un même
+texte brut ne peut pointer que vers un seul code** — problème rencontré avec
+`Isuzu Châlons` (site partagé avec Hyundai Châlons côté APV, mais compte
+Salesforce/stock distinct côté commerce VN/VO) : décision métier = rattacher
+à `HYU_CHALONS` uniquement pour l'APV (encours + objectifs), en gardant
+`ISUZU_CHALONS` pour le stock/commerce, hors de ce périmètre.
+
+Solution : une colonne `E` (`Cle_recherche` = `A2&"||"&C2`, soit
+`Source_BigQuery||Valeur_Source`) ajoutée à `Mapping concession`, utilisée
+seulement par les 2 formules concernées (`Encours à date`, `Objectif APV`)
+via `INDEX/MATCH` avec repli sur le `VLOOKUP` simple existant :
+```
+=IFERROR(INDEX('Mapping concession'!$D:$D; MATCH("entete_or||"&$A2; 'Mapping concession'!$E:$E; 0)); IFERROR(VLOOKUP($A2; 'Mapping concession'!$C:$D; 2; FALSE); $A2))
+```
+Les autres onglets gardent leur `VLOOKUP` simple intact (pas concernés par la
+collision). Attention : le `MATCH`/`VLOOKUP` Sheets ignore la casse mais
+**pas les accents** — la ligne de override doit reprendre l'orthographe exacte
+(accents compris) telle qu'elle apparaît dans la source réelle.
+
 ## 3. Onglets construits (2026-09-11)
 
 - **`Analyse Globale`** — 1 ligne par code concession canonique (liste
@@ -119,6 +154,27 @@ et Encours (`v_sf_account.nom_compte`), absentes à l'origine), et
   redescendus à 15%/20% après clarification que le ratio agrégé € (~9-13%,
   cohérent avec Tableau) et le percentile par OR ne mesurent pas la même
   chose — voir §4.
+- **`Objectif APV`** (nouveau, 2026-09-14) — extrait GRID simple depuis
+  `hess-data.datamart_apres_vente.objectifs_apv` (pas de souci volumétrique,
+  ~1800 lignes/an groupe entier), filtré `Annee_objectif >=
+  EXTRACT(YEAR FROM CURRENT_DATE())` (jamais d'année en dur, reste valable au
+  changement d'année). 1 ligne par concession brute × mois — **pas déjà
+  agrégé au code canonique** malgré le nom du champ source
+  (`Regroupement_concessions_APV`), il faut le passer par `Mapping concession`
+  comme les autres sources (voir §2.1 pour le cas Isuzu/Hyundai). Colonnes
+  utilisées dans `Analyse Globale` : `Objectif_MO_mensuel`,
+  `Objectif_PR_interne_mensuel`, `Objectif_PR_externe_mensuel` (le détail
+  `Objectif_PR_interne_client_mensuel` et `Objectif_magasin_mensuel` — ce
+  dernier = PR interne + PR externe — sont disponibles dans l'extrait mais
+  pas exploités pour l'instant).
+- **`Analyse Globale` — objectifs & réalisation (2026-09-14)** : 3 blocs
+  ajoutés juste après chaque CA MTD correspondant (MO, PR interne, PR externe)
+  — `Objectif [...] mensuel` (`SUMIFS` sur `Objectif APV` filtré
+  code canonique + année/mois de `$B$1`) et `% Réalisation [...]` (`CA [...]
+  MTD ÷ Objectif [...] mensuel` — comparaison au **plein mois**, pas de
+  prorata au jour, même convention que le "% Avcmt" vu dans les rapports
+  Tableau). A nécessité d'ajouter `CA PR Externe Net HT MTD`, qui n'existait
+  pas encore.
 
 ## 4. Pièges Google Sheets rencontrés (à connaître avant de retoucher les formules)
 
@@ -140,6 +196,17 @@ et Encours (`v_sf_account.nom_compte`), absentes à l'origine), et
 6. **`INDEX(plage; 0; {1,2,3})` pour sélectionner des colonnes n'est pas
    fiable** dans Google Sheets (contrairement à Excel) — préférer garder
    toutes les colonnes et masquer celles à ne pas afficher.
+7. **Réorganiser des colonnes est sûr par glisser-déposer natif** (sélectionner
+   les colonnes par leur lettre, glisser jusqu'à la ligne bleue d'insertion) —
+   Sheets réajuste alors automatiquement toutes les références de formules.
+   Attention : ce n'est vrai que pour les formules natives à la feuille (ex.
+   `Analyse Globale`) — ce n'est **pas** comparable au risque de décalage vu
+   sur les onglets d'extraction BigQuery (§ historique), où c'est la *requête*
+   qui change de forme, pas une action Sheets qui sait réajuster les refs.
+8. **Un même texte peut avoir besoin de résoudre vers 2 codes canoniques
+   différents selon le domaine source** (ex. Isuzu Châlons : APV vs
+   commerce/stock) — voir §2.1 pour la solution (clé composée
+   `Source||Valeur` + `INDEX/MATCH`, pas un `VLOOKUP` à plat).
 
 ## 5. Limites de lecture côté outillage Claude
 
@@ -147,8 +214,17 @@ et Encours (`v_sf_account.nom_compte`), absentes à l'origine), et
   sans message d'erreur explicite (renvoie du contenu non lié, ex. un artefact
   d'interface `"Toutes les colonnes"`) sur des onglets volumineux/filtrés —
   observé sur `Détail facturation atelier journalière` et `Historique CA par
-  atelier`. Dans ce cas, se fier à une capture d'écran de l'utilisateur plutôt
-  qu'insister avec l'outil.
+  atelier`. **Cause identifiée (2026-09-11)** : les onglets GRID alimentés par
+  formules dépendant d'un onglet source DATA_SOURCE ne se recalculent
+  côté serveur Google que lorsqu'un humain a le fichier ouvert (ou déclenche
+  un rafraîchissement) — `gws`/l'API lit l'état calculé en mémoire, qui peut
+  être resté "vide" si personne n'a rouvert le fichier récemment. Se fier à
+  une capture d'écran de l'utilisateur, ou lui demander de rouvrir/rafraîchir
+  l'onglet puis relire.
+- **Lire un onglet DATA_SOURCE directement (pas son extrait GRID) échoue**
+  avec `"Unable to parse range"` — normal, l'API `values.get` ne sait pas
+  adresser ce type d'onglet par nom simple. Ne pas insister, lire l'extrait
+  GRID correspondant à la place.
 - **BigQuery : décalage de fraîcheur constaté sur `facturation_detaillee_or`**
   (2026-09-11) — la table peut avoir 1-2 jours de retard par rapport à
   `CURRENT_DATE()`. Toujours tester une nouvelle requête avec une date fixe
@@ -166,10 +242,17 @@ et Encours (`v_sf_account.nom_compte`), absentes à l'origine), et
 | Encours jours CA — surveillance/alerte/critique | 20j / 30j / 40j | médiane ~10j, P90 ~29j, groupe entier |
 | Taux remise MO client (Particuliers) | 15% | P90 réel = 32% côté par-OR, redescendu (voir §3) |
 | Taux remise PR interne client (Particuliers) | 20% | P90 réel = 33% côté par-OR, redescendu |
+| Écart % CA MO vs moyenne mobile | -30% (conservé) | distribution réelle (67 concessions) : P10 = -33%, P25 = -14,9%, médiane = +19,2% — le seuil actuel colle déjà quasi exactement au P10, le -50% proposé aurait été trop permissif |
 
-**Non tranché** : `Ratio remises/CA` générique (5%, provisoire — probablement
-obsolète, remplacé par les 2 lignes ci-dessus, à confirmer/supprimer) et
-`Écart CA vs moyenne mobile` (-30% actuel vs -50%+méthode médiane proposée).
+**Abandonné (2026-09-14)** : alerte "Écart % CA PR Externe" — jamais
+implémentée en réalité (en-tête sans formule), et la distribution réelle
+(P10 = **-99,2%**, médiane +42%) montre que ce CA est bien trop volatil au
+jour le jour (mi-journées, samedis) pour qu'un seuil en % soit pertinent.
+Colonnes `Écart % CA PR Externe` et `Alerte écart CA PR Externe` supprimées
+d'`Analyse Globale` ; `CA PR Externe moyenne mobile 4 sem.` conservée comme
+simple repère, sans alerte associée. `Ratio remises/CA` générique (5%,
+provisoire) reste non tranché — probablement obsolète, remplacé par les 2
+lignes taux de remise ci-dessus, à confirmer/supprimer.
 
 ## 7. Historique — état du 2026-09-08 (obsolète, gardé pour mémoire)
 
@@ -182,22 +265,24 @@ cette section a été reconstruite et étendue depuis (§1-3).
 
 ## 8. Questions ouvertes
 
-1. **Nettoyage des onglets obsolètes** (`entete_or`, `Extrait entete_or`, et
-   les anciens `Extrait facturation_detaillee`/`Extrait Temps facturé`/
-   `Extrait temps passé`/`Extrait Magasin`/`Extrait encours` sur 35j, remplacés
-   par l'architecture §1.2) — pas encore fait.
-2. **Objectifs MO/PR interne/PR externe** (type "Obj MO M" / "% Avcmt MO M"
-   vus dans les rapports Tableau) — dataset BigQuery `hess-data.budget` repéré
-   mais pas encore exploré pour brancher ça dans `Analyse Globale`.
-3. **`Écart CA vs moyenne mobile`** — seuil à recalibrer (voir §6).
-4. Pas encore de lecture orchestrateur ni de format de mail défini pour APV
-   (contrairement à VO qui a une spec dédiée, `CADRAGE_VO.md`) — à faire une
-   fois `Analyse Globale` jugé stable.
+1. Pas encore de lecture orchestrateur ni de format de mail défini pour APV
+   (contrairement à VO qui a une spec dédiée, `CADRAGE_VO.md`) — `Analyse
+   Globale` est désormais jugé stable (objectifs branchés, seuils recalibrés),
+   donc ce point peut être attaqué. Un mockup HTML illustratif a été construit
+   et testé avec de vraies données (`Renault/Nissan Mulhouse`, 2026-09-09,
+   voir `docs/mockup_email_apv.html`) pour discuter de la structure, mais la
+   maquette/config finale du mail reste à trancher (icône de vigilance façon
+   VO ? mail unique Atelier+Magasin ou séparé par destinataire ? sections à
+   garder/retirer ?).
+2. `Ratio remises/CA` générique (5%, provisoire, `Référentiel métier`) —
+   probablement obsolète depuis les 2 seuils de taux de remise dédiés (§6), à
+   confirmer/supprimer.
+3. `Objectif_PR_interne_client_mensuel` et `Objectif_magasin_mensuel`
+   (disponibles dans `Objectif APV` mais pas encore exploités) — voir si un
+   usage se présente.
 
 ## 9. Prochaines étapes
 
-1. Reconcilier le seuil "Écart CA vs moyenne mobile".
-2. Nettoyer les onglets obsolètes.
-3. Explorer `hess-data.budget` pour les objectifs.
-4. Définir le format du mail APV (contenu, ton, destinataires) — sur le
-   modèle de la spec VO une fois ce point ouvert par les deux porteurs.
+1. Définir le format du mail APV (contenu, ton, destinataires) — sur le
+   modèle de la spec VO, en s'appuyant sur le mockup déjà testé.
+2. Trancher le sort du seuil `Ratio remises/CA` générique.
