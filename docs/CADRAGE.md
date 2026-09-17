@@ -98,14 +98,28 @@ traîne dans le même dossier Drive, sans contenu.~~ **Supprimé (2026-09-08).**
     faite à ce jour, voir §6).
   - **Commentaire IA natif** (pas de clé API Anthropic séparée à gérer), format
     **court et factuel (2-3 phrases)**.
-  - **Principe du commentaire IA (validé 2026-09-10, test Renault Mulhouse VO)** :
-    le commentaire ne doit **pas répéter des chiffres déjà visibles** dans les
-    blocs structurés du mail — sa valeur ajoutée est la **synthèse croisée entre
-    blocs**, pas un résumé. Concrètement :
+  - **Principe de lisibilité et pertinence du mail (validé 2026-09-10, affiné
+    2026-09-15 suite au retour du patron sur la V1 : "il faut encore bien
+    améliorer le prompt pour que l'email soit facile à lire, pertinent")** —
+    ce principe ne se limite pas au commentaire IA : c'est le critère de
+    jugement pour **tout le contenu du mail** (quoi inclure, à quel niveau de
+    détail). C'est le commentaire qui en dépend le plus directement, parce
+    qu'il est généré et non contraint par une formule figée comme le reste du
+    mail — d'où les règles ci-dessous, formulées pour lui mais applicables à
+    toute décision de contenu. Le commentaire ne doit **pas répéter des
+    chiffres déjà visibles** dans les blocs structurés du mail — sa valeur
+    ajoutée est la **synthèse croisée entre blocs**, pas un résumé.
+    Concrètement :
     1. **Chercher les recoupements** entre blocs (un même véhicule/dossier qui
        apparaît dans plusieurs blocs — ex. noté en anomalie achat ET encore sans
        prix en stock 7 jours plus tard) — c'est le signal le plus utile, souvent
-       invisible en lisant les tableaux séparément.
+       invisible en lisant les tableaux séparément. **Pas cantonné à l'axe
+       achat↔stock** (décidé 2026-09-15) : les Leads (ex. leads non traités
+       depuis J-1 — affaire potentiellement perdue) et les Anomalies ventes
+       doivent être couverts par le commentaire si c'est le signal le plus
+       pertinent du jour pour la concession, pas seulement en cas
+       d'illustration achat/stock. Le commentaire suit le signal le plus
+       fort du jour, quel que soit le bloc d'où il vient.
     2. **Nommer des priorités concrètes** (immatriculation, dossier) plutôt que
        des constats généraux ("il y a un excès de stock").
     3. **Transformer une tendance en risque prospectif actionnable** ("sans
@@ -114,11 +128,48 @@ traîne dans le même dossier Drive, sans contenu.~~ **Supprimé (2026-09-08).**
        (décidé 2026-09-11) — c'est un score interne au calcul, pas une
        information utile au lecteur ; décrire le problème concret (l'écart,
        le délai, le manque) à la place.
-    Exemple qui a fonctionné : identifier que `FN-627-YH` était toujours sans
-    prix/destination en stock alors qu'il avait déjà été signalé à l'achat
-    pour des écarts de prix/km/date, plutôt que de relister séparément
-    l'anomalie achat et le chiffre "sans prix" déjà visibles ailleurs dans le
-    mail.
+    5. **Limite stricte de longueur** (décidé 2026-09-15) : **2 phrases
+       maximum, ~350 caractères au total** — pas juste "court" comme objectif
+       vague. Le format visé "2-3 phrases" avait dérivé en pratique vers 2
+       paragraphes denses (test Saverne du 11/09) faute de limite chiffrée.
+    6. **Une phrase = un signal** (décidé 2026-09-15) : ne pas chaîner
+       plusieurs recoupements différents dans une même phrase au fil de
+       virgules/points-virgules. Grouper dans une même phrase plusieurs
+       véhicules touchés par le **même** signal reste acceptable (ex. deux
+       Clio toutes deux sans prix après signalement achat) ; mélanger deux
+       sujets différents (ex. anomalie achat + tendance ventes) ne l'est pas.
+    7. **Mener par l'action, pas par le constat** (décidé 2026-09-15) :
+       commencer par ce qu'il faut faire ("à publier en priorité : ...")
+       plutôt que par une observation neutre ("le problème n'a pas été
+       traité en aval").
+    8. **Caler la densité sur le volume réel, ne pas remplir** (décidé
+       2026-09-15) : si une seule anomalie est vraiment solide (concession à
+       faible volume, par exemple), ne pas ajouter un deuxième point plus
+       faible juste pour occuper les phrases disponibles — une phrase nette
+       vaut mieux que deux dont une bancale. **Ceci ne s'applique pas quand
+       deux signaux sont réellement forts** (précisé 2026-09-15) : dans ce
+       cas, deux phrases pour deux signaux distincts (un par bloc, cf. règle
+       6), dans la limite des 2 phrases de la règle 5 — la règle 8 interdit
+       de *forcer* un deuxième point faible, pas d'en garder un deuxième qui
+       est légitimement fort.
+    Exemple qui a fonctionné (Mulhouse, 2026-09-10) : identifier que
+    `FN-627-YH` était toujours sans prix/destination en stock alors qu'il
+    avait déjà été signalé à l'achat pour des écarts de prix/km/date, plutôt
+    que de relister séparément l'anomalie achat et le chiffre "sans prix"
+    déjà visibles ailleurs dans le mail.
+    Avant/après sur Renault Saverne (2026-09-15, règles 5-8 appliquées) :
+    - *Avant* (2 paragraphes, note citée, 2 signaux dont un faible) : "Deux
+      dossiers montrent que le problème identifié à l'achat n'est pas traité
+      en aval : `GH-907-MT`... noté 4/10... ; `GL-384-ER`... même note...
+      Par ailleurs, l'excès de Sandero essence... s'ajoute à une tendance
+      ventes en repli de -24%..."
+    - *Après* (1 signal solide, action en tête, ~235 caractères) : "À publier
+      en priorité : les Clio `GH-907-MT` et `GL-384-ER`, signalées à l'achat
+      pour des écarts de prix/km/délai, sont toujours sans prix de vente 5 à
+      7 jours après. Sans correction, ces deux dossiers immobilisent du stock
+      déjà vendable." — la tendance ventes du jour (-8% vs -4% Plaque) a été
+      volontairement écartée, jugée trop faible pour être un vrai deuxième
+      signal (règle 8).
 - **Historisation : oui**, dans un Google Sheet dédié (`Historique_Envois` —
   date, concession, service, destinataire, anomalie détectée, statut d'envoi).
 - **Cas `Service = VN_VO`** (une personne gère VN et VO pour sa concession) :

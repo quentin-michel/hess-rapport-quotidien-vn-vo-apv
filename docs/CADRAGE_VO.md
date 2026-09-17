@@ -268,8 +268,9 @@ Sheet, simplement pas restitué dans le mail Service actuel.
 
 ## 10. Bloc 8 — Anomalies Ventes
 
-**Champs finaux** (`BLOC 8 Ano_Vente`) : `Code_concession, Immatriculation,
-Marque, Modele, Marge_vehicule, Duree_detention_j, Type_anomalie`.
+**Champs finaux** (onglet `Bloc 8 Ano_Vente`, renommé le 2026-09-15 — voir
+fenêtre ci-dessous) : `Code_concession, Immatriculation, Marque, Modele,
+Marge_vehicule, Duree_detention_j, Date_vente, Type_anomalie`.
 
 **Règles retenues (2026-09-10, après calibrage sur 90 jours)** — différent du
 spec initial sur plusieurs points :
@@ -283,8 +284,24 @@ spec initial sur plusieurs points :
 | Écart FRE significatif | > 500€ | **ET `frais_estimes` non vide et ≠ 0** (sinon pas d'anomalie — un écart n'a pas de sens sans estimation de référence) |
 | Facturation Marchand non autorisée *(nouveau)* | `canal_vente = "Marchand"` ET concession hors `PRIMO_*` | seules les concessions Primocar ont le droit de facturer à un marchand |
 
-**Fenêtre** : 7 jours glissants (élargie temporairement à 90j pour calibrer les
-seuils sur un échantillon robuste — cf. §11 — puis rebasculée à 7j).
+**Fenêtre** : resserrée le 2026-09-15 de **7 jours glissants à ~J-1**, pour que
+le mail (déjà "chiffres de la veille" partout ailleurs) ne remonte plus une
+semaine d'anomalies de vente d'un coup. Onglets renommés en conséquence pour
+rester cohérent : `Ventes_1j_SF` (source connectée BigQuery) →
+`Extrait_Ventes_1j_SF` (extraction réduite) → `Bloc 8 Ano_Vente` (final).
+
+⚠️ Le filtre réel est `date_vente >= J-1` (pas une égalité stricte) — au
+moment de l'inspection (15/09 en fin de matinée), l'extrait contenait un
+mélange `14/09` (97 lignes) et `15/09` (50 lignes, ventes déjà passées dans la
+journée). **Jugé sans conséquence pratique par Quentin** : l'orchestrateur
+tourne entre 6h et 7h du matin, heure à laquelle la journée en cours n'a
+quasiment aucune vente enregistrée — le filtre revient donc en pratique à ne
+remonter que la veille au moment de l'envoi réel.
+
+**Bloc 3 (Anomalies Achat) reste sur 7 jours glissants, inchangé** — décision
+prise le 2026-09-15 après réflexion (le volume J-1 seul par concession est
+jugé trop faible, cf. §5). Les deux blocs anomalies n'ont donc **pas la même
+fenêtre** : Bloc 3 = 7 jours, Bloc 8 = ~J-1.
 
 **Calibrage des seuils** : basé sur la distribution réelle des 90 derniers
 jours (percentiles), pas un ajustement à l'estime — voir §11 pour la méthode.
@@ -298,8 +315,10 @@ premier, puis note/montant décroissant** en cas d'égalité de date (décidé
 2026-09-11, remplace l'idée initiale d'ordre de priorité par catégorie),
 top 5 + note "+N autres anomalies". Géré par Claude à la composition du mail,
 pas par une colonne Sheet. **Même règle de tri appliquée au Bloc 3** (Anomalies
-Achat/Reprise). Pour trier le Bloc 8 par date, `date_vente` doit être ajoutée
-à la requête `QUERY` de `BLOC 8 Ano_Vente` (pas encore fait à ce jour).
+Achat/Reprise). `Date_vente` est bien présente dans `Bloc 8 Ano_Vente`
+(vérifié le 2026-09-11) — le tri par date est donc applicable ; avec la
+fenêtre resserrée à ~J-1 (voir ci-dessus), le cas "plus de 5 anomalies/jour"
+devrait de toute façon devenir rare.
 
 **Piège de jointure** : `frais_estimes`/`frais_reels` proviennent du **même
 join `quote_dedup`** déjà utilisé pour `date_confirmation_commande` (offre
@@ -308,7 +327,8 @@ garantie.
 
 **Validé (2026-09-10)** — Renault Mulhouse : 8 anomalies (fenêtre 7j), dont
 `GR-375-VL` (Master FG, marge -6737€, détention 275j) — **valeurs identiques à
-l'exemple du spec original**, excellente cohérence.
+l'exemple du spec original**, excellente cohérence. *(Fenêtre 7j historique —
+voir ci-dessus pour le changement à ~J-1 du 2026-09-15.)*
 
 ## 11. Calibrage des seuils Bloc 8 — méthode
 
@@ -383,19 +403,21 @@ quand le volume n'est pas significatif, cf. ci-dessous).
 sur les critères Anomalies ouvertes et Tendance ventes :
 
 **1. Anomalies ouvertes** (+2 points si le total ci-dessous ≥ 6 — seuil
-provisoire, gardé tel quel malgré le changement de mode de comptage,
-**à réajuster lors des tests réels** si besoin) — la façon de
-compter diffère selon le bloc, car les deux types d'anomalie n'ont pas la même
-nature :
-- **Achat/reprise (Bloc 3)** : anomalies **encore ouvertes, en cumul, sans
-  limite de temps** — ce sont des dossiers correctibles (prix, photo,
-  destination manquants...), donc un cumul de dossiers non résolus reflète une
-  vraie charge de travail en cours.
-- **Vente (Bloc 8)** : anomalies détectées **uniquement sur les ventes de
-  J-1** — une marge négative ou une détention longue est un **fait constaté
-  sur une vente déjà faite** ("si on perd 10K€ sur un VO, il est possible que
-  ce soit vrai" — pas un état à corriger), donc pas de sens à le cumuler
-  indéfiniment ; seul le fait nouveau du jour compte pour la météo du jour.
+provisoire, **à réajuster lors des tests réels** si besoin) — les deux blocs
+n'ont **pas la même fenêtre**, corrigé/mis à jour le 2026-09-15 (la
+description précédente, "achat en cumul sans limite de temps", était inexacte
+— le Bloc 3 a toujours été fenêtré à la source, voir §5) :
+- **Achat/reprise (Bloc 3)** : anomalies détectées sur les **7 derniers jours
+  glissants** (fenêtre du bloc lui-même, cf. §5) — ce sont des dossiers
+  correctibles (prix, photo, destination manquants...), et le volume J-1 seul
+  par concession a été jugé trop faible pour donner un signal quotidien
+  utile (décision confirmée le 2026-09-15).
+- **Vente (Bloc 8)** : anomalies détectées sur **~J-1** (fenêtre resserrée le
+  2026-09-15, cf. §10) — une marge négative ou une détention longue est un
+  **fait constaté sur une vente déjà faite** ("si on perd 10K€ sur un VO, il
+  est possible que ce soit vrai" — pas un état à corriger), donc pas de sens à
+  le cumuler sur plusieurs jours ; seul le fait nouveau du jour compte pour la
+  météo du jour.
 
 **2. Tendance ventes 30j** — gradué (et non plus tout-ou-rien) :
 
