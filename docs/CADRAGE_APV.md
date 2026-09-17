@@ -280,6 +280,43 @@ cette section a été reconstruite et étendue depuis (§1-3).
 3. `Objectif_PR_interne_client_mensuel` et `Objectif_magasin_mensuel`
    (disponibles dans `Objectif APV` mais pas encore exploités) — voir si un
    usage se présente.
+4. **Aucun indicateur sur le stock PR** (stock de pièces détachées en
+   magasin) à ce stade — tout ce qui est construit couvre les *ventes* de
+   pièces (Analyse pièces, Magasin/PR externe), pas le *stock* lui-même.
+   Besoins exprimés (2026-09-14) :
+   - **Alertes sur les niveaux de stock** (à définir : rupture / surstock).
+   - **Stock dormant** (rotation très faible) et **stock mort** (aucun
+     mouvement depuis longtemps) — distinction à formaliser (seuils
+     d'ancienneté/rotation).
+   - **Propositions de transfert de stock entre magasins**, pertinentes au
+     regard des ventes de la référence concernée : détecter une référence
+     dormante/morte dans un magasin alors qu'elle se vend régulièrement dans
+     un autre, et suggérer un transfert plutôt qu'un rachat.
+
+   Piste à explorer : `hess-data.datamart_apres_vente.stock_pr_categories`
+   (référencé dans la description de `entete_pieces` comme table de
+   jointure stock via `Magasin`), pas encore examinée — à vérifier si elle
+   porte le niveau de stock par référence et par magasin, ou seulement des
+   catégories agrégées.
+5. **Nouveau chantier (2026-09-14, pas commencé) : anomalies sur les
+   forfaits.** Trois détections à construire :
+   - **Forfaits en marge négative** : prix du forfait facturé − somme des
+     PAMP des pièces qui le composent < 0.
+   - **Écarts de tarification d'un même type de forfait** (ex. "forfait
+     freins") entre les différents ateliers d'une même **plaque** — la
+     notion de plaque existe déjà côté `Objectif APV` (colonne `Plaque`,
+     ex. "Plaque BMW", "Plaque Renault") mais pas encore dans `Mapping
+     concession` / `Analyse Globale` (qui ne portent que le code canonique
+     par site) ; à vérifier si un référentiel plaque ↔ code canonique
+     existe déjà ailleurs avant d'en recréer un.
+   - **Pièces incohérentes avec le type de forfait** dans lequel elles sont
+     intégrées (ex. une pièce hors-sujet facturée dans un forfait donné).
+
+   Champs déjà repérés côté `facturation_detaillee_or` qui semblent
+   pertinents pour ce chantier (pas encore exploités) :
+   `Est_entete_forfait`, `Est_ligne_forfait`, `Identifiant_groupe_forfait`
+   (regroupe les lignes d'un même forfait facturé), `Code_intervention` /
+   `Libelle_detail_intervention` (pour typer le forfait et ses pièces).
 
 ## 9. Prochaines étapes
 
