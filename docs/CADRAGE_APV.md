@@ -221,6 +221,15 @@ collision). Attention : le `MATCH`/`VLOOKUP` Sheets ignore la casse mais
   être resté "vide" si personne n'a rouvert le fichier récemment. Se fier à
   une capture d'écran de l'utilisateur, ou lui demander de rouvrir/rafraîchir
   l'onglet puis relire.
+  **Résolu (2026-09-17)** : actualisation programmée configurée sur le
+  classeur (Google Sheets → onglet DATA_SOURCE → "Plus" à côté d'Actualiser
+  → "Options d'actualisation" → "Actualisation programmée") à **11h00**,
+  calée avec une marge de sécurité d'1h après la remontée des sources APV
+  dans BigQuery confirmée par le service data (entre 9h et 10h). Un seul
+  réglage pour tout le classeur (s'applique à tous les onglets DATA_SOURCE).
+  Attention : la programmation tourne sous le compte de qui l'a configurée
+  et se met en pause si quelqu'un d'autre modifie la source de données —
+  à reprendre en rééditant/sauvegardant si ça arrive.
 - **Lire un onglet DATA_SOURCE directement (pas son extrait GRID) échoue**
   avec `"Unable to parse range"` — normal, l'API `values.get` ne sait pas
   adresser ce type d'onglet par nom simple. Ne pas insister, lire l'extrait
