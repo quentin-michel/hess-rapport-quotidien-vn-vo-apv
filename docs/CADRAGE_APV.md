@@ -307,28 +307,114 @@ cette section a été reconstruite et étendue depuis (§1-3).
    jointure stock via `Magasin`), pas encore examinée — à vérifier si elle
    porte le niveau de stock par référence et par magasin, ou seulement des
    catégories agrégées.
-5. **Nouveau chantier (2026-09-14, pas commencé) : anomalies sur les
-   forfaits.** Trois détections à construire :
-   - **Forfaits en marge négative** : prix du forfait facturé − somme des
-     PAMP des pièces qui le composent < 0.
+5. **Chantier anomalies sur les forfaits (2026-09-14, détection n°1 en
+   cours de construction — voir §9).** Trois détections identifiées :
+   - **Forfaits en marge négative** — en cours, voir §9.
    - **Écarts de tarification d'un même type de forfait** (ex. "forfait
-     freins") entre les différents ateliers d'une même **plaque** — la
-     notion de plaque existe déjà côté `Objectif APV` (colonne `Plaque`,
-     ex. "Plaque BMW", "Plaque Renault") mais pas encore dans `Mapping
-     concession` / `Analyse Globale` (qui ne portent que le code canonique
-     par site) ; à vérifier si un référentiel plaque ↔ code canonique
-     existe déjà ailleurs avant d'en recréer un.
+     freins") entre les différents ateliers d'une même **plaque** — pas
+     commencé. La notion de plaque existe déjà côté `Objectif APV` (colonne
+     `Plaque`, ex. "Plaque BMW", "Plaque Renault") mais pas encore dans
+     `Mapping concession` / `Analyse Globale` (qui ne portent que le code
+     canonique par site) ; à vérifier si un référentiel plaque ↔ code
+     canonique existe déjà ailleurs avant d'en recréer un.
    - **Pièces incohérentes avec le type de forfait** dans lequel elles sont
-     intégrées (ex. une pièce hors-sujet facturée dans un forfait donné).
+     intégrées (ex. une pièce hors-sujet facturée dans un forfait donné) —
+     pas commencé.
 
-   Champs déjà repérés côté `facturation_detaillee_or` qui semblent
-   pertinents pour ce chantier (pas encore exploités) :
-   `Est_entete_forfait`, `Est_ligne_forfait`, `Identifiant_groupe_forfait`
-   (regroupe les lignes d'un même forfait facturé), `Code_intervention` /
-   `Libelle_detail_intervention` (pour typer le forfait et ses pièces).
+## 9. Anomalies forfaits — marge estimée (2026-09-18)
 
-## 9. Prochaines étapes
+**Contexte** : premier des 3 chantiers forfaits de §8 pt.5 attaqué — la
+détection de forfaits en marge négative. Accord métier avec la BU APV : un
+**coût MO estimé forfaitaire de 60€/heure** (pas le vrai coût de revient
+horaire par concession) permet de calculer une marge estimée complète
+(PR + MO), pas seulement PR comme envisagé initialement en §8 pt.5.
+
+**Structure de données validée sur `facturation_detaillee_or`** (données
+réelles, échantillons multiples) :
+- Un forfait facturé produit 1 ligne "entête" (`Est_entete_forfait=1`,
+  `Libelle_type_operation='Forfait'`) qui porte le **prix facturé réel**
+  (`Montant_HT_facturation`) + N lignes "composition"
+  (`Est_ligne_forfait=1`) qui décrivent ce qu'il contient
+  (`Libelle_type_operation` = `Pièce`, `Main d'oeuvre`, `Sous traitance`,
+  `Peinture`...), **toujours à `Montant_HT_facturation=0`** (le client ne
+  paie pas ces lignes séparément). Pour les lignes `Pièce` :
+  `PAMP_facturation` porte le coût réel. Pour les lignes `Main d'oeuvre` :
+  `Quantite_facturation` porte les heures (pas de coût direct, d'où le taux
+  60€/h estimé).
+- **Piège confirmé sur données réelles (2026-09-18)** :
+  `Identifiant_groupe_forfait` n'est **pas unique seul** — il se répète
+  entre OR différents (vérifié : plusieurs cas avec 2-3 OR distincts
+  partageant le même identifiant sur 30 jours). La clé réelle d'un forfait
+  est **`(id_ligne_entete, Identifiant_groupe_forfait)`** — jamais grouper
+  sur `Identifiant_groupe_forfait` seul.
+- **Piège classique confirmé (même famille que `Code_concession` vide en
+  VO, cf. `CADRAGE_VO.md` §3)** : `Identifiant_groupe_forfait` peut être
+  une **chaîne vide `''` plutôt que NULL** — un filtre `IS NOT NULL` seul
+  laisse passer toutes les lignes hors-forfait (MO/PR facturées seules)
+  regroupées à tort sous une fausse clé `''`. Toujours filtrer
+  `Identifiant_groupe_forfait IS NOT NULL AND Identifiant_groupe_forfait != ''`.
+
+**Formule retenue** :
+```
+Cout_PR        = Σ(PAMP_facturation × Quantite_facturation) des lignes Pièce du forfait
+Heures_MO      = Σ(Quantite_facturation) des lignes Main d'oeuvre du forfait
+Cout_MO_estime = Heures_MO × 60 (taux convenu avec la BU APV, stocké en
+                 colonne à chaque ligne, pas en dur dans la requête, pour
+                 rester correct si le taux est renégocié plus tard)
+Marge_estimee  = Prix_forfait_HT (ligne entête) − Cout_PR − Cout_MO_estime
+```
+
+**Décision (2026-09-18) : aucun forfait exclu du calcul/historique**, y
+compris ceux facturés à 0€ (gestes commerciaux/garantie) — décision
+explicite de Corentin après vérification que ces cas sont en réalité rares
+(2,3% des forfaits réels un jour donné, une fois le piège de la clé vide
+corrigé — l'hypothèse initiale de ">50% de gratuités" reposait sur ce bug
+et était fausse).
+
+**Volumétrie validée** : ~750 forfaits/jour groupe entier (hors piège clé
+vide). Calibrage 90 jours : ~17% en marge négative avec ce calcul — trop
+large pour un signal "anomalie" au sens strict, mais le périmètre retenu
+ici est l'**historisation complète**, pas une simple alerte, donc pas de
+seuil de sélectivité à caler pour l'instant.
+
+**Architecture retenue** — nouveau Sheet dédié `Anomalies forfaits` (créé
+par Corentin, `docs.google.com/spreadsheets/d/1T_BKjedX0yH7ENq4Z_88OWlGnBUu6RSez5ohLb0YscU`),
+séparé du fichier principal `Rapport quotidien APV` (déjà à 27 onglets) :
+- Onglet **`Extrait J-1`** : connecteur BigQuery natif Sheets, requête
+  [`docs/sql/marge_forfaits_j1_extract.sql`](sql/marge_forfaits_j1_extract.sql)
+  (J-1 strict, pas de fenêtre glissante) — actualisation programmée à
+  **11h00**, même calage que le reste du classeur APV (données APV dispo
+  9h-10h, cf. §5).
+- Onglet **`Historique`** : accumule les lignes de `Extrait J-1` jour après
+  jour. Un connecteur BigQuery natif **remplace** le contenu à chaque
+  actualisation (ne peut pas s'auto-accumuler) — alimenté par un **Apps
+  Script** ([`docs/apps-script/historique_forfaits_append.gs`](../apps-script/historique_forfaits_append.gs),
+  déclencheur temporel quotidien vers 11h30, après l'actualisation du
+  connecteur), avec déduplication par la clé `(Date_reference,
+  id_ligne_entete, Identifiant_groupe_forfait)` pour rester rejouable sans
+  risque.
+- **Piste envisagée puis écartée pour l'instant** : une table BigQuery
+  dédiée alimentée par une requête planifiée — écartée car Claude/`gws` n'a
+  que des **droits de lecture** sur le projet BigQuery `hess-data`
+  (`bigquery.tables.create` refusé, testé et confirmé sur tous les datasets
+  du projet), et la solution Sheet+Apps Script répond au besoin sans droits
+  supplémentaires. Scripts
+  [`docs/sql/historique_marge_forfaits_create_table.sql`](sql/historique_marge_forfaits_create_table.sql)
+  et [`_daily_refresh.sql`](sql/historique_marge_forfaits_daily_refresh.sql)
+  conservés dans le repo si le volume dépasse un jour la limite Connected
+  Sheets (~5M cellules) et qu'il faut y revenir.
+
+**Reste à faire** :
+- Construire les onglets `Extrait J-1` et `Historique` dans le nouveau
+  Sheet, et le déclencheur Apps Script (fait par Corentin, pas par Claude).
+- Détections #2 (écarts de tarification entre ateliers d'une même Plaque)
+  et #3 (pièces incohérentes avec le forfait) — pas commencées, référentiel
+  Plaque ↔ code canonique toujours à vérifier (cf. §8 pt.5).
+
+## 10. Prochaines étapes
 
 1. Définir le format du mail APV (contenu, ton, destinataires) — sur le
    modèle de la spec VO, en s'appuyant sur le mockup déjà testé.
 2. Trancher le sort du seuil `Ratio remises/CA` générique.
+3. Construire les onglets `Extrait J-1` / `Historique` et le déclencheur
+   Apps Script du chantier anomalies forfaits (voir §9).
