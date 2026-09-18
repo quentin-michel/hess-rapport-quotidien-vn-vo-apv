@@ -227,7 +227,114 @@ même approche que le Bloc 8 VO) :
 - Durée de contremarque : médiane 25j, P75 79j, **P90 290j** (sur 1 600
   véhicules contremarqués) — seuil retenu 90j (entre médiane et P90).
 
-## 4. Questions ouvertes VN
+## 4. Bloc 4 — Couverture, Excès de stock, Comparaison Plaque
+
+**Statut : terminé et validé (2026-09-18)** — regroupe en un seul bloc/onglet
+ce qui est réparti sur 3 blocs côté VO (Bloc 5 Couverture, Bloc 6 Excès, Bloc
+7 Santé Plaque), **grain concession × marque × modèle** (plus fin que le VO,
+qui était juste par concession) — décidé ainsi car l'information sert aussi
+au futur mail directeur de plaque, contrairement au VO où le niveau plaque
+avait été explicitement exclu du périmètre V1.
+
+**Dépendance identifiée avant de construire** : la couverture (`Stock ÷
+Ventes moyennes mensuelles`) a besoin d'une source de **ventes** VN, absente
+jusque-là (le seul travail ventes VN était le Bloc 2, en pause). Résolu sans
+déplafonner le Bloc 2 : nouvelle source de ventes dédiée, sans lien avec la
+partie feuille de marge/aide en pause.
+
+**Changement de source ventes en cours de route** : la première version
+utilisait `v_sf_vente` (Salesforce), mais `Modele_Vehicule__c` y est vide ou
+en code technique sur une grande partie des lignes (ex. "1", "IX 1" au lieu
+d'un libellé). Remplacé par **`hess-data.datamart_ventes.entete_du_dossier`**
+jointe à **`hess-data.datamart_ventes.vehicules`** sur `CRC_vehicule_vendu` =
+`CRC_vehicule` (même principe que le Bloc 3, mais un `vehicules` distinct de
+celui de `datamart_stock` — à confirmer si c'est en fait une table partagée).
+
+**Requête ventes validée** (agrégée directement en SQL, sur demande de
+Quentin plutôt que de ramener toutes les lignes) :
+```sql
+SELECT
+  e.Concession, v.Libelle_marque, v.Libelle_modele,
+  COUNT(*) AS nb_ventes_90j, COUNT(*) / 3 AS ventes_moy_mensuelle
+FROM `hess-data.datamart_ventes.entete_du_dossier` e
+LEFT JOIN `hess-data.datamart_ventes.vehicules` v
+  ON e.CRC_vehicule_vendu = v.CRC_vehicule
+WHERE e.Est_VN_VD_ou_VO IN ('VN', 'VD')
+  AND e.Source = 'Icar'
+  AND e.Date_de_vente >= DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)
+GROUP BY e.Concession, v.Libelle_marque, v.Libelle_modele
+ORDER BY e.Concession, v.Libelle_marque, v.Libelle_modele
+```
+Fichier/tabs : même fichier Sheet que le Bloc 3
+(`10cOmCg_e8JKKpaHY0pI6QTPWLehO_VVfVAU6bXAROWE`) — `DM_Vente_VN_VD` →
+`Extrait_Vente_VN_VD` (A=Concession, B=Libelle_marque, C=Libelle_modele,
+D=nb_ventes_90j, E=ventes_moy_mensuelle, F=Code_concession, G=Code_Plaque,
+H=Marque harmonisée, I=Modèle harmonisé).
+
+**Piège de données rencontré (majeur) : désaccord de libellés marque/modèle
+entre sources**. Comparaison réelle stock (`vehicules` datamart_stock) vs
+ventes (Salesforce, avant migration) : **163 paires marque/modèle sur 344
+sans correspondance exacte côté ventes** (47% des ventes concernées) — écarts
+du type préfixes/suffixes commerciaux ("Nouvelle", "Société", accents,
+codes techniques vs libellés). Résolu par une **table de transco construite
+par Quentin** dans l'onglet `Mapping Marque Modèle` du même fichier (colonnes
+`Marque (source), Libellé modèle (source), Marque harmonisée, Modèle
+harmonisé`) — couvre l'intégralité des paires, pas seulement les 163 en écart.
+Les deux extraits (stock et ventes) ont chacun 2 colonnes "harmonisée(s)"
+calculées par rapprochement à cette table (`RECHERCHEX` sur clé concaténée
+`Marque&"|"&Modèle`, avec repli sur la valeur d'origine via `SIERREUR` si pas
+trouvée dans le mapping).
+
+**Piège de données rencontré (mineur) : stock plaque attribué à Renault
+Mulhouse**. Renault Mulhouse héberge une partie du stock consolidé de la
+Plaque Renault, ce qui gonflait artificiellement ses propres chiffres
+d'excès. Résolu par Quentin directement dans le mapping référentiel : ce
+stock plaque est retiré du rattachement concession de Mulhouse, mais reste
+compté au niveau plaque (où il a du sens).
+
+**Onglet `BLOC 4 Couverture VN`** — une ligne par concession × marque ×
+modèle harmonisés, liste générée via :
+```
+=UNIQUE(FILTER({Extrait_Stock_VN_VD!Y2:Y8774\Extrait_Stock_VN_VD!AD2:AD8774\Extrait_Stock_VN_VD!AE2:AE8774}; Extrait_Stock_VN_VD!Y2:Y8774<>""))
+```
+(le `FILTER` sur `Code_concession<>""` exclut délibérément les lignes non
+rattachées à une concession — **39% des lignes brutes (464/1175) avant
+filtrage**, jugé non prioritaire à creuser par Quentin — "ce n'est pas
+important" ; à garder en tête si un doute de volumétrie apparaît plus tard.)
+
+Colonnes et formules (A=Code_concession, B=Marque harm., C=Modèle harm.,
+issus du `UNIQUE` ci-dessus) :
+```
+D Stock :              =COUNTIFS(Extrait_Stock_VN_VD!$Y:$Y;$A2;Extrait_Stock_VN_VD!$AD:$AD;$B2;Extrait_Stock_VN_VD!$AE:$AE;$C2)
+E Ventes moy. :         =SUMIFS(Extrait_Vente_VN_VD!$E:$E; Extrait_Vente_VN_VD!$F:$F; $A2; Extrait_Vente_VN_VD!$H:$H; $B2; Extrait_Vente_VN_VD!$I:$I; $C2)
+F Couverture :          =SI($E2=0;"Infini";$D2/$E2)
+G Excès de stock :      =SI($D2>$E2; $D2-$E2; 0)
+H Ancien_nb :           =COUNTIFS(Extrait_Stock_VN_VD!$Y:$Y;$A2;Extrait_Stock_VN_VD!$AD:$AD;$B2;Extrait_Stock_VN_VD!$AE:$AE;$C2;Extrait_Stock_VN_VD!$V:$V;">180")
+I Rang (top 3 excès) : =SI($G2>=12; COUNTIFS($A:$A;$A2;$G:$G;">"&$G2)+1; 999)
+J Code_Plaque :         =RECHERCHEX($A2; Extrait_Stock_VN_VD!$Y:$Y; Extrait_Stock_VN_VD!$Z:$Z)
+K Stock Plaque :        =COUNTIFS(Extrait_Stock_VN_VD!$Z:$Z;$J2;Extrait_Stock_VN_VD!$AD:$AD;$B2;Extrait_Stock_VN_VD!$AE:$AE;$C2)
+L Ventes moy. Plaque :  =SUMIFS(Extrait_Vente_VN_VD!$E:$E; Extrait_Vente_VN_VD!$G:$G; $J2; Extrait_Vente_VN_VD!$H:$H; $B2; Extrait_Vente_VN_VD!$I:$I; $C2)
+M Couverture Plaque :   =SI($L2=0;"Infini";$K2/$L2)
+```
+
+**Podium top 3 par concession** (mêmes conventions que le Bloc 3 : sentinelle
+`999`, argument `0` pour forcer l'absence d'en-tête) :
+```
+=QUERY(A2:I1677; "SELECT A, B, C, D, E, G WHERE I <= 3 ORDER BY A, G DESC"; 0)
+```
+
+**Seuil d'excès de stock — calibrage (méthode percentile)** : sur les 711
+lignes propres (`Code_concession` non vide), médiane 2, P75 6, **P90 12**,
+P95 17, max 51 (cas réel : REN_STRASBOURG Clio, 71 en stock, 20,3 ventes/mois,
+51 d'excès). **Seuil retenu : ≥12** (P90). Avant nettoyage des lignes non
+rattachées, le max apparent était 2550 — entièrement dû aux lignes sans
+concession, à ne pas utiliser pour calibrer quoi que ce soit.
+
+**Validé (2026-09-18)** sur données réelles, ex. BMW Belfort X1 : couverture
+concession 2 mois vs couverture Plaque 3 mois (cohérent, pas d'écart
+flagrant) ; BMW X5 : 8 mois concession vs 7 mois Plaque.
+
+## 5. Questions ouvertes VN
 
 1. **Bloc 2 bloqué** : nom du champ aide côté vente (§2.3).
 2. **Bloc 2, périmètre VD** : le VD est-il dans le périmètre de l'anomalie
@@ -237,18 +344,23 @@ même approche que le Bloc 8 VO) :
    (§2.2)
 4. **Bloc 2, jointure** : confirmer que `Feuille_de_marge__c` (vente) pointe
    bien vers `Id` de `v_sf_feuille_de_marge` (hypothèse non vérifiée).
-5. **Existe-t-il une spec équivalente à `Spec_Mail_IA_ChefVentesVN`** —
+5. **Bloc 4, table `vehicules`** : confirmer si `hess-data.datamart_ventes.vehicules`
+   est une table distincte de `hess-data.datamart_stock.vehicules` ou la même
+   partagée entre les deux datasets (hypothèse non vérifiée).
+6. **Bloc 4, lignes non rattachées** : 39% des lignes stock/ventes brutes
+   n'ont pas de `Code_concession` — mis de côté par Quentin, mais à garder en
+   tête si des écarts de volumétrie inattendus apparaissent plus tard.
+7. **Existe-t-il une spec équivalente à `Spec_Mail_IA_ChefVentesVN`** —
    toujours pas, contrairement au VO qui a une spec dédiée.
-6. Blocs restants non encore abordés : anomalies ventes VN (mis de côté
-   volontairement pour plus tard, cf. décision 2026-09-16), contexte
-   plaque/réseau (probablement hors périmètre du mail Service, comme pour le
-   Bloc 7 VO).
+8. Bloc restant non encore abordé : anomalies ventes VN (mis de côté
+   volontairement pour plus tard, cf. décision 2026-09-16).
 
-## 5. Prochaines étapes
+## 6. Prochaines étapes
 
 1. Reprendre le Bloc 2 dès que le champ aide-vente est communiqué par le
    service data.
-2. Valider le Bloc 3 (Stock) sur des lignes réelles d'une concession pilote,
-   puis définir les règles d'anomalie.
-3. Une fois Blocs 1-3 validés, revenir sur le Bloc "Anomalies ventes VN"
-   (volontairement différé) et le format du mail.
+2. Une fois Blocs 1, 3 et 4 stabilisés, revenir sur le Bloc "Anomalies
+   ventes VN" (volontairement différé) et le format du mail — y compris la
+   question de savoir si le Bloc 4 (comparaison plaque incluse) reste dans le
+   mail Service ou est réservé au futur mail directeur de plaque, comme le
+   Bloc 7 VO.
