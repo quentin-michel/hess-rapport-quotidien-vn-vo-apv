@@ -85,6 +85,18 @@ traîne dans le même dossier Drive, sans contenu.~~ **Supprimé (2026-09-08).**
   `quentinmichel@hessautomobile.com`. L'API Google Sheets doit être activée sur
   le projet GCP utilisé, et le compte doit avoir le rôle IAM "Service Usage
   Consumer" dessus.
+  **Incident (2026-09-18)** : le binaire `gws` original a été perdu suite à un
+  crash/réinstallation de l'appli Claude côté Corentin — il vivait dans un
+  espace propre à une session de l'appli, pas dans le profil Windows normal
+  (seule la config OAuth dans `~/.config/gws` a survécu, elle est hors de
+  portée de l'appli). **Recréé le jour même, versionné dans ce dépôt sous
+  [`tools/gws`](../tools/gws) cette fois** (voir son `README.md` pour
+  l'installation) — précisément pour ne plus dépendre d'un espace qu'une
+  réinstallation de l'appli peut effacer. Même syntaxe de commandes que
+  ci-dessus, aucun changement d'usage. **À installer aussi côté Quentin**
+  (`cd tools/gws && python -m pip install -e .` puis `gws auth login
+  --readonly --services sheets`) — l'ancien token de Corentin n'est pas
+  réutilisable par un autre compte/machine.
 - **Orchestrateur : tâche planifiée Claude Code**, pas GitHub Actions. Choix
   assumé malgré la recommandation inverse (GitHub Actions aurait tourné
   indépendamment de tout compte Claude Code, avec code versionné/review-able à

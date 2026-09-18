@@ -1,0 +1,5 @@
+# Artefacts Python (tools/gws)
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
