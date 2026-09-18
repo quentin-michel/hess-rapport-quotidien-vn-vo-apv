@@ -458,7 +458,15 @@ séparé du fichier principal `Rapport quotidien APV` (déjà à 27 onglets) :
   `Nom_client` vient de `clients.Nom_prenom` via `CRC_client_facture`
   (donnée nominative, table `clients` labellisée "données personnelles"
   côté BigQuery).
-- Onglet **`Historique`** : accumule les lignes de `Extrait J-1` jour après
+- Onglet **`Extrait J-1 (grid)`** (ajouté le 2026-09-18) : `Extrait J-1` est
+  un onglet DATA_SOURCE (connecteur BigQuery), pas une grille de cellules
+  classique — même limite déjà documentée en §5 pour les autres
+  connecteurs du classeur (illisible directement par l'API Sheets/`gws`,
+  et pareil pour Apps Script `getDataRange()`). Onglet intermédiaire qui
+  matérialise le résultat en vraies cellules via
+  `=QUERY('Extrait J-1'!A:S, "select *", 1)` en `A1` — c'est cet onglet-là
+  que lit le script Apps Script, pas le connecteur brut.
+- Onglet **`Historique`** : accumule les lignes de `Extrait J-1 (grid)` jour après
   jour. Un connecteur BigQuery natif **remplace** le contenu à chaque
   actualisation (ne peut pas s'auto-accumuler) — alimenté par un **Apps
   Script** ([`docs/apps-script/historique_forfaits_append.gs`](../apps-script/historique_forfaits_append.gs),
@@ -478,8 +486,9 @@ séparé du fichier principal `Rapport quotidien APV` (déjà à 27 onglets) :
   Sheets (~5M cellules) et qu'il faut y revenir.
 
 **Reste à faire** :
-- Construire les onglets `Extrait J-1` et `Historique` dans le nouveau
-  Sheet, et le déclencheur Apps Script (fait par Corentin, pas par Claude).
+- Construire les onglets `Extrait J-1`, `Extrait J-1 (grid)` et
+  `Historique` dans le nouveau Sheet, et le déclencheur Apps Script (fait
+  par Corentin, pas par Claude).
 - Détections #2 (écarts de tarification entre ateliers d'une même Plaque)
   et #3 (pièces incohérentes avec le forfait) — pas commencées, référentiel
   Plaque ↔ code canonique toujours à vérifier (cf. §8 pt.5).
