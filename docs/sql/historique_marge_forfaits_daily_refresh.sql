@@ -51,7 +51,7 @@ agg AS (
     MAX(CASE WHEN Est_entete_forfait = 1 THEN Libelle_detail_intervention END) AS Libelle_forfait,
     SUM(CASE WHEN Est_entete_forfait = 1 THEN Montant_HT_facturation ELSE 0 END) AS Prix_forfait_HT,
     SUM(CASE WHEN Est_ligne_forfait = 1 AND Libelle_type_operation = 'Pièce'
-             THEN IFNULL(PAMP_facturation, 0) * IFNULL(Quantite_facturation, 0) ELSE 0 END) AS Cout_PR,
+             THEN IFNULL(PAMP_facturation, 0) ELSE 0 END) AS Cout_PR,
     SUM(CASE WHEN Est_ligne_forfait = 1 AND Libelle_type_operation = "Main d'oeuvre"
              THEN IFNULL(Quantite_facturation, 0) ELSE 0 END) AS Heures_MO,
     MAX(Facture_avoirisee) AS Avoirise,

@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `hess-data.datamart_apres_vente.historique_marge_forf
   Code_intervention STRING,
   Libelle_forfait STRING OPTIONS(description="Libelle_detail_intervention de la ligne entete forfait"),
   Prix_forfait_HT FLOAT64 OPTIONS(description="Montant_HT_facturation de la ligne entete (Est_entete_forfait=1)"),
-  Cout_PR FLOAT64 OPTIONS(description="Somme PAMP_facturation x Quantite_facturation des lignes Piece du forfait"),
+  Cout_PR FLOAT64 OPTIONS(description="Somme PAMP_facturation des lignes Piece du forfait (PAMP_facturation est deja le cout total de la ligne, pas un cout unitaire - ne pas multiplier par Quantite_facturation)"),
   Heures_MO FLOAT64 OPTIONS(description="Somme Quantite_facturation (heures) des lignes Main d'oeuvre du forfait"),
   Taux_horaire_MO_estime FLOAT64 OPTIONS(description="Taux horaire MO estime applique ce jour-la (convenu avec la BU APV, 60 EUR au lancement, 2026-09-18)"),
   Cout_MO_estime FLOAT64 OPTIONS(description="Heures_MO x Taux_horaire_MO_estime"),

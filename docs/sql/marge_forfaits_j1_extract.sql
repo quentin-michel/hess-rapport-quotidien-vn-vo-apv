@@ -66,7 +66,7 @@ agg AS (
     ) AS Detail_pieces,
     SUM(CASE WHEN Est_entete_forfait = 1 THEN Montant_HT_facturation ELSE 0 END) AS Prix_forfait_HT,
     SUM(CASE WHEN Est_ligne_forfait = 1 AND Libelle_type_operation = 'Pièce'
-             THEN IFNULL(PAMP_facturation, 0) * IFNULL(Quantite_facturation, 0) ELSE 0 END) AS Cout_PR,
+             THEN IFNULL(PAMP_facturation, 0) ELSE 0 END) AS Cout_PR,
     SUM(CASE WHEN Est_ligne_forfait = 1 AND Libelle_type_operation = "Main d'oeuvre"
              THEN IFNULL(Quantite_facturation, 0) ELSE 0 END) AS Heures_MO,
     LOGICAL_OR(Est_entete_forfait = 1) AS a_une_ligne_entete
@@ -84,10 +84,10 @@ SELECT
   e.Categorie_client AS Canal_categorie_client,
   a.Code_intervention,
   a.Libelle_forfait,
-  a.Detail_pieces,
   -- cles techniques
   a.id_ligne_entete,
   a.Identifiant_groupe_forfait,
+  a.Detail_pieces,
   -- donnees numeriques
   a.Prix_forfait_HT,
   a.Cout_PR,

@@ -341,6 +341,15 @@ réelles, échantillons multiples) :
   `PAMP_facturation` porte le coût réel. Pour les lignes `Main d'oeuvre` :
   `Quantite_facturation` porte les heures (pas de coût direct, d'où le taux
   60€/h estimé).
+- **Bug corrigé (2026-09-18)** : `PAMP_facturation` est déjà le **coût
+  total de la ligne** (quantité incluse), **pas un coût unitaire** — la
+  première version de la requête le multipliait par `Quantite_facturation`,
+  gonflant artificiellement `Cout_PR` (vérifié sur donnée réelle : la
+  référence huile "0888083590FR" facturée à des quantités différentes
+  7,5L/5,4L donne exactement le même ratio `PAMP/quantité` = 3,39€/L dans
+  les deux cas, preuve que `PAMP_facturation` scale déjà avec la quantité).
+  `Cout_PR` = simplement `Σ(PAMP_facturation)` des lignes Pièce, **sans**
+  multiplier par `Quantite_facturation`.
 - **Piège confirmé sur données réelles (2026-09-18)** :
   `Identifiant_groupe_forfait` n'est **pas unique seul** — il se répète
   entre OR différents (vérifié : plusieurs cas avec 2-3 OR distincts
@@ -365,7 +374,7 @@ réelles, échantillons multiples) :
 
 **Formule retenue** :
 ```
-Cout_PR        = Σ(PAMP_facturation × Quantite_facturation) des lignes Pièce du forfait
+Cout_PR        = Σ(PAMP_facturation) des lignes Pièce du forfait (deja le cout total, pas unitaire)
 Heures_MO      = Σ(Quantite_facturation) des lignes Main d'oeuvre du forfait
 Cout_MO_estime = Heures_MO × 60 (taux convenu avec la BU APV, stocké en
                  colonne à chaque ligne, pas en dur dans la requête, pour
@@ -380,11 +389,19 @@ explicite de Corentin après vérification que ces cas sont en réalité rares
 corrigé — l'hypothèse initiale de ">50% de gratuités" reposait sur ce bug
 et était fausse).
 
-**Volumétrie validée** : ~750 forfaits/jour groupe entier (hors piège clé
-vide). Calibrage 90 jours : ~17% en marge négative avec ce calcul — trop
-large pour un signal "anomalie" au sens strict, mais le périmètre retenu
-ici est l'**historisation complète**, pas une simple alerte, donc pas de
-seuil de sélectivité à caler pour l'instant.
+**Volumétrie validée (recalculée après correction du bug PAMP ci-dessus)** :
+~750 forfaits/jour groupe entier (hors piège clé vide), dont ~**5%** en
+marge négative (39 sur 717 forfaits facturés à un prix non nul, échantillon
+du 2026-09-08) — cohérent avec un taux d'anomalie "rare et notable" (à
+comparer aux 3-5% ciblés pour les anomalies VO). Le périmètre retenu ici
+reste l'**historisation complète**, pas une simple alerte : pas de seuil de
+sélectivité à caler pour l'instant, mais ce taux confirme que le signal
+"marge négative" restera lisible dans l'historique (pas noyé dans du bruit).
+Exemple réel (2026-09-08) : forfait "carrosserie" (Opel Saint-Dizier) sans
+pièce (`Cout_PR=0`), 4,25h de MO facturé 200€ mais coûtant 255€ estimé
+(4,25 × 60€) → marge ≈ **-55€**, un cas typique où le forfait est sous-tarifé
+par rapport au temps de main-d'œuvre réellement nécessaire, pas un problème
+de pièces.
 
 **Architecture retenue** — nouveau Sheet dédié `Anomalies forfaits` (créé
 par Corentin, `docs.google.com/spreadsheets/d/1T_BKjedX0yH7ENq4Z_88OWlGnBUu6RSez5ohLb0YscU`),
@@ -397,8 +414,8 @@ séparé du fichier principal `Rapport quotidien APV` (déjà à 27 onglets) :
   ensuite, données numériques regroupées à la fin, demande explicite de
   Corentin) : `Date_reference, Concession, Societe, Numero_OR_DMS,
   Nom_client, Canal_imputation, Canal_categorie_client, Code_intervention,
-  Libelle_forfait, Detail_pieces, id_ligne_entete,
-  Identifiant_groupe_forfait, Prix_forfait_HT, Cout_PR, Heures_MO,
+  Libelle_forfait, id_ligne_entete, Identifiant_groupe_forfait,
+  Detail_pieces, Prix_forfait_HT, Cout_PR, Heures_MO,
   Taux_horaire_MO_estime, Cout_MO_estime, Marge_estimee`.
   `Detail_pieces` liste les pièces du forfait (nom + référence + quantité +
   PAMP, via `Libelle_detail_operation`/`Reference_ecran` sur les lignes
