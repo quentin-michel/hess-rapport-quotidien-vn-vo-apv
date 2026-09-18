@@ -353,6 +353,15 @@ réelles, échantillons multiples) :
   laisse passer toutes les lignes hors-forfait (MO/PR facturées seules)
   regroupées à tort sous une fausse clé `''`. Toujours filtrer
   `Identifiant_groupe_forfait IS NOT NULL AND Identifiant_groupe_forfait != ''`.
+- **Piège avoir confirmé sur données réelles (2026-09-18)** : `Facture_avoirisee`
+  sur la ligne "Facture" originale ne suffit **pas** à exclure les
+  corrections — l'`Avoir` associé est souvent émis à une **autre date**
+  (logique : on ne peut pas créditer une vente avant qu'elle existe), donc
+  hors de la fenêtre J-1 de la requête. Une ligne `Avoir` isolée dans la
+  fenêtre (prix/quantités négatifs) produit un faux forfait en marge très
+  négative si on ne filtre pas sur le type de document lui-même. Filtrer
+  directement `Libelle_type_document = 'Facture'` (exclut les lignes
+  `Avoir`), peu importe où se trouve leur facture d'origine.
 
 **Formule retenue** :
 ```
@@ -384,7 +393,22 @@ séparé du fichier principal `Rapport quotidien APV` (déjà à 27 onglets) :
   [`docs/sql/marge_forfaits_j1_extract.sql`](sql/marge_forfaits_j1_extract.sql)
   (J-1 strict, pas de fenêtre glissante) — actualisation programmée à
   **11h00**, même calage que le reste du classeur APV (données APV dispo
-  9h-10h, cf. §5).
+  9h-10h, cf. §5). Colonnes (texte/contexte d'abord, clés techniques
+  ensuite, données numériques regroupées à la fin, demande explicite de
+  Corentin) : `Date_reference, Concession, Societe, Numero_OR_DMS,
+  Nom_client, Canal_imputation, Canal_categorie_client, Code_intervention,
+  Libelle_forfait, Detail_pieces, id_ligne_entete,
+  Identifiant_groupe_forfait, Prix_forfait_HT, Cout_PR, Heures_MO,
+  Taux_horaire_MO_estime, Cout_MO_estime, Marge_estimee`.
+  `Detail_pieces` liste les pièces du forfait (nom + référence + quantité +
+  PAMP, via `Libelle_detail_operation`/`Reference_ecran` sur les lignes
+  `Pièce`). `Canal_imputation` = `Libelle_type_imputation` (niveau ligne,
+  ex. CLIENT/GARANTIE/ASSURANCES/CESSION), `Canal_categorie_client` =
+  `Categorie_client` (niveau OR, ex. Particuliers/Flottes/Loueurs/MRA/
+  Primocar) — les deux gardés, ce sont deux dimensions différentes.
+  `Nom_client` vient de `clients.Nom_prenom` via `CRC_client_facture`
+  (donnée nominative, table `clients` labellisée "données personnelles"
+  côté BigQuery).
 - Onglet **`Historique`** : accumule les lignes de `Extrait J-1` jour après
   jour. Un connecteur BigQuery natif **remplace** le contenu à chaque
   actualisation (ne peut pas s'auto-accumuler) — alimenté par un **Apps
