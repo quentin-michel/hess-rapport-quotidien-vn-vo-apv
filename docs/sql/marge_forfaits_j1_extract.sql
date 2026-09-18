@@ -7,8 +7,13 @@
 -- via le script Apps Script docs/apps-script/historique_forfaits_append.gs,
 -- pas ici.
 --
--- Aucun forfait exclu (decision du 2026-09-18, y compris ceux factures a
--- 0 EUR). Garde-fous techniques uniquement :
+-- Seuls les forfaits en taux de marge estime < 5% sont conserves (decision
+-- du 2026-09-18, calibree sur donnees reelles - voir CADRAGE_APV.md §9),
+-- + garde-fou pour les forfaits a prix nul mais a cout reel (taux non
+-- defini). Les forfaits sains, y compris ceux factures a 0 EUR, ne sont
+-- pas exclus du CALCUL (toujours pris en compte pour construire
+-- Marge_estimee), seulement du RESULTAT final. Garde-fous techniques par
+-- ailleurs :
 --   - Identifiant_groupe_forfait n'est PAS unique seul (verifie sur
 --     donnees reelles, se repete entre OR differents) -> toujours grouper
 --     par (id_ligne_entete, Identifiant_groupe_forfait).
@@ -94,11 +99,20 @@ SELECT
   a.Heures_MO,
   60.0 AS Taux_horaire_MO_estime,
   ROUND(a.Heures_MO * 60.0, 2) AS Cout_MO_estime,
-  ROUND(a.Prix_forfait_HT - a.Cout_PR - (a.Heures_MO * 60.0), 2) AS Marge_estimee
+  ROUND(a.Prix_forfait_HT - a.Cout_PR - (a.Heures_MO * 60.0), 2) AS Marge_estimee,
+  ROUND(SAFE_DIVIDE(a.Prix_forfait_HT - a.Cout_PR - (a.Heures_MO * 60.0), a.Prix_forfait_HT) * 100, 1) AS Taux_marge_estime_pct
 FROM agg a
 JOIN `hess-data.datamart_apres_vente.entete_or` e USING (id_ligne_entete)
 LEFT JOIN `hess-data.datamart_apres_vente.clients` c ON c.CRC_client = e.CRC_client_facture
 WHERE a.a_une_ligne_entete
   AND e.Est_ferme = 1
   AND e.Est_annule = 0
+  AND (
+    -- taux de marge < 5% (seuil retenu le 2026-09-18, calibre sur donnees
+    -- reelles - voir CADRAGE_APV.md §9)
+    (a.Prix_forfait_HT > 0 AND SAFE_DIVIDE(a.Prix_forfait_HT - a.Cout_PR - (a.Heures_MO * 60.0), a.Prix_forfait_HT) < 0.05)
+    -- garde-fou : forfait a prix nul mais avec un vrai cout (PR ou MO) -
+    -- taux de marge non defini (division par 0), a remonter quand meme
+    OR (a.Prix_forfait_HT <= 0 AND (a.Cout_PR + a.Heures_MO * 60.0) > 0)
+  )
 ORDER BY Marge_estimee ASC

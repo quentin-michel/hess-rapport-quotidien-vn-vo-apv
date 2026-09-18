@@ -382,12 +382,43 @@ Cout_MO_estime = Heures_MO × 60 (taux convenu avec la BU APV, stocké en
 Marge_estimee  = Prix_forfait_HT (ligne entête) − Cout_PR − Cout_MO_estime
 ```
 
-**Décision (2026-09-18) : aucun forfait exclu du calcul/historique**, y
-compris ceux facturés à 0€ (gestes commerciaux/garantie) — décision
-explicite de Corentin après vérification que ces cas sont en réalité rares
-(2,3% des forfaits réels un jour donné, une fois le piège de la clé vide
-corrigé — l'hypothèse initiale de ">50% de gratuités" reposait sur ce bug
-et était fausse).
+**Décision (2026-09-18, affinée deux fois le même jour) : aucun forfait
+exclu du *calcul*** de la marge (y compris ceux facturés à 0€, gestes
+commerciaux/garantie — décision initiale après vérification que ces cas
+sont en réalité rares, 2,3% des forfaits réels un jour donné une fois le
+piège de la clé vide corrigé ; l'hypothèse initiale de ">50% de gratuités"
+reposait sur ce bug et était fausse).
+
+**Seuil final retenu pour le *résultat*/l'historique : taux de marge
+estimé < 5%** (`Marge_estimee / Prix_forfait_HT`), pas une marge brute en
+euros. Choix motivé par calibrage sur données réelles (méthode déjà
+utilisée pour les seuils VO Bloc 8, cf. `CADRAGE_VO.md` §11) — distribution
+du taux de marge sur 30 jours (15 701 forfaits facturés) :
+
+| Seuil taux de marge | % des forfaits en dessous |
+|---|---|
+| < 0% (négatif strict) | 4,5% |
+| < 5% | ~7-9% (retenu) |
+| < 10% | 8,9% |
+| < 20% | 17,9% |
+| < 30% | 30,8% |
+
+Médiane à 41,8% — un seuil à 5% isole bien les cas "flagrants" (Corentin,
+2026-09-18) sans noyer le signal, contrairement à un seuil plus large
+(20-30%) qui aurait remonté près d'un tiers du volume. **Garde-fou** :
+un forfait à prix nul (0€) mais avec un coût réel (PR ou MO) n'a pas de
+taux de marge défini (division par 0) — remonté quand même explicitement
+(`Prix_forfait_HT <= 0 AND coût > 0`), sinon il échapperait au filtre.
+Colonne `Taux_marge_estime_pct` ajoutée à l'extrait pour visibilité (vide
+pour ce cas particulier, cohérent avec le taux non défini).
+
+**Remises : déjà prises en compte, vérifié (2026-09-18)** — `Montant_HT_facturation`
+de la ligne entête forfait est **net de remise**, pas le prix de liste brut.
+Preuve sur données réelles : `Prix_unitaire_HT_facturation −
+Remise_appliquee_montant_facturation = Montant_HT_facturation` exactement
+(ex. 162,50 − 5,00 = 157,50), sur plusieurs échantillons. `Prix_forfait_HT`
+(donc `Marge_estimee`) reflète donc bien le prix réellement facturé au
+client, pas un prix théorique avant négociation commerciale.
 
 **Volumétrie validée (recalculée après correction du bug PAMP ci-dessus)** :
 ~750 forfaits/jour groupe entier (hors piège clé vide), dont ~**5%** en
@@ -416,7 +447,8 @@ séparé du fichier principal `Rapport quotidien APV` (déjà à 27 onglets) :
   Nom_client, Canal_imputation, Canal_categorie_client, Code_intervention,
   Libelle_forfait, id_ligne_entete, Identifiant_groupe_forfait,
   Detail_pieces, Prix_forfait_HT, Cout_PR, Heures_MO,
-  Taux_horaire_MO_estime, Cout_MO_estime, Marge_estimee`.
+  Taux_horaire_MO_estime, Cout_MO_estime, Marge_estimee,
+  Taux_marge_estime_pct`.
   `Detail_pieces` liste les pièces du forfait (nom + référence + quantité +
   PAMP, via `Libelle_detail_operation`/`Reference_ecran` sur les lignes
   `Pièce`). `Canal_imputation` = `Libelle_type_imputation` (niveau ligne,
