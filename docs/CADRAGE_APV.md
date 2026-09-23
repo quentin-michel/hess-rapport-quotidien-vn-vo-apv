@@ -138,11 +138,15 @@ collision). Attention : le `MATCH`/`VLOOKUP` Sheets ignore la casse mais
   Colonnes : Code concession, N° OR, Immatriculation, Ancienneté, Montant MO
   encours, Montant PR encours, Valeur totale OR, Dépréciation (colonne Score
   masquée, sert uniquement au tri).
-- **`Analyse pièces`** — Atelier + Magasin combinés (`Canal` en 1ʳᵉ colonne),
-  ventes à perte (`Prix vente net < PAMP`), filtré `Quantité > 0` (exclut les
-  lignes de retour/correction — décision : les garder visibles individuellement
-  plutôt que de tenter une détection de paires facturé/avoirisé, jugée plus
-  fragile) et `Facture_avoirisee/Avoir <> 1`.
+- **`Analyse pièces J-1`** — Atelier + Magasin combinés (`Canal` en 1ʳᵉ
+  colonne), ventes à perte (`Prix vente net < PAMP`), filtré `Quantité > 0`
+  (exclut les lignes de retour/correction — décision : les garder visibles
+  individuellement plutôt que de tenter une détection de paires
+  facturé/avoirisé, jugée plus fragile) et `Facture_avoirisee/Avoir <> 1`.
+  **Étendu le 2026-09-23** (réceptionnaire, nom client, canal de vente,
+  catégorie client, prix brut, remises, marge % — voir §11 pour le détail
+  complet, la formule tenue à jour a évolué par rapport à cette
+  description d'origine).
 - **`Efficience OR trop élevé`** — OR en cession interne (`Est_interne=1`)
   dont l'efficience dépasse 105% (seuil recalibré depuis 110%, `Référentiel
   métier`). Construit en `QUERY` + `FILTER` séparés (pas de `HAVING` — voir
@@ -565,7 +569,68 @@ fonctionne à ce jour (pas d'erreur remontée), mais si des erreurs de
 lecture apparaissent un jour dans *Exécutions* (Apps Script), appliquer le
 même correctif que pour `Extrait J-1` (extrait natif ou `QUERY`).
 
-## 11. Prochaines étapes
+## 11. Analyse pièces J-1 — refonte (2026-09-23)
+
+**Contexte** : le bloc `Analyse pièces` d'origine (§3) remontait les pièces
+vendues à perte tous canaux confondus, sans distinction client/garantie/
+cession ni infos contextuelles. Étendu par Corentin pour ne garder que les
+vraies ventes externes et ajouter le contexte nécessaire à l'investigation
+(qui a vendu, à qui, à quel prix par rapport au brut).
+
+**Requête/formule complètes** :
+[`docs/sql/magasin_detail_journalier.sql`](sql/magasin_detail_journalier.sql)
+(connecteur `Magasin`, modifié) et
+[`docs/sheets-formulas/analyse_pieces_j1.txt`](../sheets-formulas/analyse_pieces_j1.txt)
+(formule `Analyse pièces J-1`, avec le détail des colonnes sources).
+
+**Changements côté connecteur `Magasin`** : ajout de `Nom_client` (jointure
+`entete_pieces.CRC_client` → `clients.Nom_prenom`, même table que côté
+Atelier pour un format cohérent) ; retrait de `Famille_technique`
+(inutilisée) — nombre de colonnes inchangé, donc la colonne `Code
+concession` (formule Sheet à droite du connecteur) ne se décale pas.
+
+**Changements de filtre** (décision Corentin, 2026-09-23) — objectif :
+ventes externes uniquement, hors intragroupe :
+- Atelier : `Affectation = "CLIENT"` **et** `Libelle_type_imputation <>
+  "FACTURE INTRA GROUPE ATELIER"` **et** `Categorie_client` pas dans
+  `("Intra-groupe sauf Primocar", "Inter sites")`. **Piège découvert en
+  vérifiant sur données réelles** : `Affectation="CLIENT"` seul ne suffit
+  pas à exclure l'intragroupe — `FACTURE INTRA GROUPE ATELIER` (133 lignes
+  sur l'échantillon testé) et `Categorie_client="Intra-groupe sauf
+  Primocar"` (109 lignes) s'y cachent tous les deux.
+- Magasin : pas de notion "CLIENT uniquement" séparée (pas de champ
+  `Affectation` côté Magasin) — exclusion directe de `Categorie_client`
+  dans `("Cessions internes - interservices", "Intra-Groupe Renault",
+  "Inter sites", "Intra-groupe sauf Primocar")`. `Administration` et
+  `Personnel Groupe` gardés comme clients externes (décision explicite,
+  pas des catégories intragroupe au sens strict).
+
+**Nouvelles colonnes** (contexte : `Réceptionnaire`/`Nom_Magasinier`,
+`Canal de vente` = `Affectation` — vide côté Magasin, `Catégorie client`,
+`Nom client` ; numérique, en fin de liste par convention du projet :
+`Quantité, Prix brut, Remise montant, Remise %, Prix net, PAMP, Marge €,
+Marge %, Remise forcée, Prix forcé`).
+
+**Pièges de champs corrigés en cours de route** :
+- `PAMP_facturation` (Atelier) et `Prix_brut_ligne`/`Remise_ligne`
+  (Magasin) sont déjà des **totaux de ligne**, pas des valeurs unitaires
+  (même piège que documenté pour le chantier forfaits, §9) — contrairement
+  à `Prix_unitaire_HT_facturation` (Atelier), qui lui est **bien unitaire**
+  (vérifié sur données réelles : `unitaire × quantité − remise = montant
+  facturé`, exact).
+- **Format de pourcentage non homogène (bug corrigé)** : `Remise_appliquee_
+  pourcentage_facturation` (Atelier) est nativement en **points de %**
+  (ex. `10.0` = 10%). Les pourcentages calculés côté Magasin (`Remise_ligne
+  / Prix_brut_ligne`) et la Marge % (les deux côtés) donnaient au contraire
+  une fraction décimale (`0.10`) — corrigé en multipliant ces calculs par
+  100, pour que toute la feuille reste sur la même échelle.
+
+**Vérifié avant la refonte** : aucun autre onglet du classeur ne référence
+`Analyse pièces` dans ses formules (scan complet des 14 autres onglets
+GRID en mode formule, pas juste en valeurs) — le changement de structure
+ne casse rien ailleurs.
+
+## 12. Prochaines étapes
 
 1. Définir le format du mail APV (contenu, ton, destinataires) — sur le
    modèle de la spec VO, en s'appuyant sur le mockup déjà testé.

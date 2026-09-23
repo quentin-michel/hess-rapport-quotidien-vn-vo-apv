@@ -1,0 +1,118 @@
+Formule de l'onglet "Analyse pièces J-1" (Sheet "Rapport quotidien APV"),
+cellule A2 (avec l'en-tête ci-dessous en A1). Reprise/etendue le
+2026-09-23 - voir CADRAGE_APV.md pour le contexte complet.
+
+Objectif : remonter chaque jour toutes les pièces vendues à perte
+(Atelier + Magasin), ventes CLIENT uniquement (hors garantie/cession),
+hors intragroupe, triées de la pire perte à la moins pire.
+
+Sources (colonnes reperees le 2026-09-23, a revalider si les connecteurs
+sources sont retouches) :
+- 'Détail facturation atelier journalière' : reflet direct de
+  facturation_detaillee_or (colonnes BigQuery inchangees) - E=Receptionnaire,
+  W=Prix_unitaire_HT_facturation (unitaire, verifie sur donnees reelles),
+  X=Quantite_facturation, Y=PAMP_facturation (deja un TOTAL de ligne, pas
+  unitaire - piege deja documente pour le chantier forfaits), AA=Prix_vente_net,
+  AB=Remise_appliquee_montant_facturation, AC=Remise_appliquee_pourcentage_facturation
+  (deja en points de %, ex. 10.0 = 10%), AF=Remise_forcee, AG=Tarif_force,
+  AH=Affectation (CLIENT/GARANTIE/CESSION), AI=Categorie_client,
+  AJ=Nom_client, AK=Code concession (canonique), N=Libelle_type_imputation,
+  O=Libelle_type_operation, AD=Facture_avoirisee.
+- 'Détail facturation magasin journaliere' : alimentee par
+  docs/sql/magasin_detail_journalier.sql (modifiee le 2026-09-23, ajout
+  Nom_client) - D=Date_document, G=Categorie_client, H=Nom_Magasinier,
+  I=Nom_client (NOUVEAU), J=Reference, K=Libelle_piece, L=Qte_servie,
+  N=Prix_brut_ligne (deja un TOTAL de ligne, pas unitaire),
+  O=Remise_ligne (montant), P=Prix_net_ligne, Q=PAMP, R=Prix_force,
+  S=Remise_forcee, T=Code concession (formule Sheet, pas dans la requete
+  BigQuery - reste stable tant que le nombre de colonnes de la requete ne
+  change pas). Pas d'equivalent Affectation/canal de vente cote Magasin.
+
+Filtres :
+- Atelier : Libelle_type_operation="Pièce" ; Facture_avoirisee<>1 ;
+  Quantite_facturation>0 ; marge<0 ; Affectation="CLIENT" (vente client
+  uniquement) ; Libelle_type_imputation<>"FACTURE INTRA GROUPE ATELIER" ET
+  Categorie_client pas dans ("Intra-groupe sauf Primocar", "Inter sites")
+  (exclut l'intragroupe cache sous Affectation=CLIENT, verifie sur donnees
+  reelles le 2026-09-23 - Affectation seul ne suffit pas).
+- Magasin : Avoir<>1 ; Qte_servie>0 ; marge<0 ; Categorie_client pas dans
+  ("Cessions internes - interservices", "Intra-Groupe Renault",
+  "Inter sites", "Intra-groupe sauf Primocar") - Magasin n'a pas de notion
+  "CLIENT uniquement" separee, il suffit d'exclure l'intragroupe (decide
+  par Corentin le 2026-09-23 ; "Administration" et "Personnel Groupe"
+  gardes comme clients externes, decision explicite).
+
+Formats a surveiller : Remise % (Atelier, deja en points) et Remise %/Marge %
+(Magasin/calcules ici) doivent tous etre sur la meme echelle (points de %,
+PAS des fractions decimales) - d'ou le *100 applique aux valeurs calculees
+cote Magasin et sur Marge % des deux cotes (bug corrige le 2026-09-23 :
+la premiere version melangeait fractions et points).
+
+En-tête (ligne 1, à coller depuis A1) :
+Canal	Code concession	N° OR	Date	Référence	Désignation	Réceptionnaire	Canal de vente	Catégorie client	Nom client	Quantité	Prix brut	Remise montant	Remise %	Prix net	PAMP	Marge €	Marge %	Remise forcée	Prix forcé
+
+Formule (cellule A2) :
+=SORT(
+  {
+    FILTER(
+      {SI('Détail facturation atelier journalière'!$B$2:$B="";"";"Atelier") \
+       'Détail facturation atelier journalière'!$AK$2:$AK \
+       'Détail facturation atelier journalière'!$L$2:$L \
+       'Détail facturation atelier journalière'!$M$2:$M \
+       'Détail facturation atelier journalière'!$Q$2:$Q \
+       'Détail facturation atelier journalière'!$P$2:$P \
+       'Détail facturation atelier journalière'!$E$2:$E \
+       'Détail facturation atelier journalière'!$AH$2:$AH \
+       'Détail facturation atelier journalière'!$AI$2:$AI \
+       'Détail facturation atelier journalière'!$AJ$2:$AJ \
+       'Détail facturation atelier journalière'!$X$2:$X \
+       'Détail facturation atelier journalière'!$W$2:$W*'Détail facturation atelier journalière'!$X$2:$X \
+       'Détail facturation atelier journalière'!$AB$2:$AB \
+       'Détail facturation atelier journalière'!$AC$2:$AC \
+       'Détail facturation atelier journalière'!$AA$2:$AA \
+       'Détail facturation atelier journalière'!$Y$2:$Y \
+       'Détail facturation atelier journalière'!$AA$2:$AA-'Détail facturation atelier journalière'!$Y$2:$Y \
+       IFERROR((('Détail facturation atelier journalière'!$AA$2:$AA-'Détail facturation atelier journalière'!$Y$2:$Y)/('Détail facturation atelier journalière'!$W$2:$W*'Détail facturation atelier journalière'!$X$2:$X))*100;"") \
+       'Détail facturation atelier journalière'!$AF$2:$AF \
+       'Détail facturation atelier journalière'!$AG$2:$AG};
+      'Détail facturation atelier journalière'!$O$2:$O="Pièce";
+      'Détail facturation atelier journalière'!$AD$2:$AD<>1;
+      'Détail facturation atelier journalière'!$X$2:$X>0;
+      ('Détail facturation atelier journalière'!$AA$2:$AA-'Détail facturation atelier journalière'!$Y$2:$Y)<0;
+      'Détail facturation atelier journalière'!$AH$2:$AH="CLIENT";
+      'Détail facturation atelier journalière'!$N$2:$N<>"FACTURE INTRA GROUPE ATELIER";
+      'Détail facturation atelier journalière'!$AI$2:$AI<>"Intra-groupe sauf Primocar";
+      'Détail facturation atelier journalière'!$AI$2:$AI<>"Inter sites"
+    );
+    FILTER(
+      {SI('Détail facturation magasin journaliere'!$B$2:$B="";"";"Magasin") \
+       'Détail facturation magasin journaliere'!$T$2:$T \
+       SI('Détail facturation magasin journaliere'!$B$2:$B="";"";"") \
+       'Détail facturation magasin journaliere'!$D$2:$D \
+       'Détail facturation magasin journaliere'!$J$2:$J \
+       'Détail facturation magasin journaliere'!$K$2:$K \
+       'Détail facturation magasin journaliere'!$H$2:$H \
+       SI('Détail facturation magasin journaliere'!$B$2:$B="";"";"") \
+       'Détail facturation magasin journaliere'!$G$2:$G \
+       'Détail facturation magasin journaliere'!$I$2:$I \
+       'Détail facturation magasin journaliere'!$L$2:$L \
+       'Détail facturation magasin journaliere'!$N$2:$N \
+       'Détail facturation magasin journaliere'!$O$2:$O \
+       IFERROR('Détail facturation magasin journaliere'!$O$2:$O/'Détail facturation magasin journaliere'!$N$2:$N*100;"") \
+       'Détail facturation magasin journaliere'!$P$2:$P \
+       'Détail facturation magasin journaliere'!$Q$2:$Q \
+       'Détail facturation magasin journaliere'!$P$2:$P-'Détail facturation magasin journaliere'!$Q$2:$Q \
+       IFERROR((('Détail facturation magasin journaliere'!$P$2:$P-'Détail facturation magasin journaliere'!$Q$2:$Q)/'Détail facturation magasin journaliere'!$N$2:$N)*100;"") \
+       'Détail facturation magasin journaliere'!$S$2:$S \
+       'Détail facturation magasin journaliere'!$R$2:$R};
+      'Détail facturation magasin journaliere'!$F$2:$F<>1;
+      'Détail facturation magasin journaliere'!$L$2:$L>0;
+      ('Détail facturation magasin journaliere'!$P$2:$P-'Détail facturation magasin journaliere'!$Q$2:$Q)<0;
+      'Détail facturation magasin journaliere'!$G$2:$G<>"Cessions internes - interservices";
+      'Détail facturation magasin journaliere'!$G$2:$G<>"Intra-Groupe Renault";
+      'Détail facturation magasin journaliere'!$G$2:$G<>"Inter sites";
+      'Détail facturation magasin journaliere'!$G$2:$G<>"Intra-groupe sauf Primocar"
+    )
+  };
+  17; VRAI
+)
