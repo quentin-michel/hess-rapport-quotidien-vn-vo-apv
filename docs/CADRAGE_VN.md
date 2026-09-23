@@ -334,7 +334,164 @@ concession, à ne pas utiliser pour calibrer quoi que ce soit.
 concession 2 mois vs couverture Plaque 3 mois (cohérent, pas d'écart
 flagrant) ; BMW X5 : 8 mois concession vs 7 mois Plaque.
 
-## 5. Questions ouvertes VN
+## 5. Bloc 6 — Anomalies Ventes VN/VD
+
+**Statut : terminé et validé (2026-09-23)**. Reprend le sujet volontairement
+différé le 2026-09-16 — pas de vérification "aide non respectée" (toujours
+en pause, cf. Bloc 2), mais couvre marge négative, marge positive suspecte et
+détention longue sur VD.
+
+**Sources** (`hess-data.datamart_ventes`) :
+- `entete_du_dossier` — un dossier de vente par ligne (déjà utilisé au Bloc 4).
+- `lignes_du_dossier` — le détail ligne à ligne de chaque dossier (véhicule,
+  options, remises, transfert de marge...), jointe sur `id_ligne_entete`.
+- `configuration_champ_calcule` — table de config qui indique, pour chaque
+  `Code_ligne_du_dossier`, à quel agrégat (`Marge_HT`, `Montant_surestimation`,
+  `Cout_acquisition`, `Remises`, `Montant_des_aides`...) la ligne contribue.
+  **Piège rencontré** : cette table a des doublons sur certains codes
+  (`COMMISSIONS` ×5, `TVA` ×2, mêmes flags mais libellés différents) —
+  `SELECT DISTINCT` sur les seules colonnes de flags utilisées résout le
+  problème sans perte d'information (vérifié : les flags sont identiques
+  entre doublons).
+- `hess-data.datamart_stock.vehicules` (même table que le Bloc 3, **pas**
+  `datamart_ventes.vehicules` cette fois — répond à la question ouverte du
+  Bloc 4 sur la table à utiliser, au moins pour ce bloc).
+
+**Fenêtre** : théoriquement J-1, mais actuellement élargie à **7 jours
+glissants** (`BETWEEN J-7 AND J-1`) à cause d'un décalage de fraîcheur du
+datamart ventes (formule de repli vers J-1 strict laissée en commentaire dans
+la requête, à réactiver quand le datamart sera à jour).
+
+**Calcul de la marge** : reproduit la logique déjà validée dans l'outil
+Tableau existant plutôt que d'inventer un calcul — notamment le **transfert
+de marge**, qui reprend telle quelle la formule Tableau "fixed:Montant
+surestimation Icar" (ligne `SURESTIMATION AP`, ou le montant vente/achat non
+nul selon le cas). Deux marges calculées en parallèle pour se recouper :
+- `marge_brute_vehicule_ht` — reconstruite composant par composant (CA − coût
+  d'acquisition + remise + transfert de marge + aides au châssis), **le
+  véhicule seul**.
+- `marge_dossier_icar_ht` — la marge complète du dossier calculée par Icar,
+  **véhicule + périphériques/transformation** (accessoires, financement...).
+
+**Requête BigQuery validée** — fichier
+`16xQnrbCZpPP2sDy4WxJvglRdIVYkwx31wiWC_n0lKcg`, tabs `entete_du_dossier`,
+`vehicules`, `lignes_du_dossier` (Connected Sheets) → `DM Vente` →
+`Extrait Vente VN/VD` :
+```sql
+WITH dossiers AS (
+  SELECT id_ligne_entete, Numero_dossier_DMS, Concession, Vendeur,
+    Est_VN_VD_ou_VO AS type_vehicule, Date_de_vente, Date_achat,
+    CRC_vehicule_vendu, Destination_du_vehicule_canal_vente AS destination
+  FROM `hess-data.datamart_ventes.entete_du_dossier`
+  WHERE Date_de_vente BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
+                          AND DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+    -- Repasser à "WHERE Date_de_vente = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)"
+    -- quand le datamart sera à jour.
+    AND Est_VN_VD_ou_VO IN ('VN', 'VD')
+),
+config_dedup AS (
+  SELECT DISTINCT Code_ligne_du_dossier, Marge_HT, Montant_surestimation,
+    Prix_de_vente_du_vehicule_seul, Options_constructeur, Remises,
+    Cout_acquisition, Montant_des_aides
+  FROM `hess-data.datamart_ventes.configuration_champ_calcule`
+),
+marges AS (
+  SELECT
+    l.id_ligne_entete,
+    ROUND(SUM(CASE WHEN c.Marge_HT = 1 THEN l.Prix_vente - l.Prix_achat ELSE 0 END), 2) AS marge_dossier_icar_ht,
+    ROUND(SUM(CASE WHEN c.Prix_de_vente_du_vehicule_seul = 1 OR c.Options_constructeur = 1 THEN l.Prix_vente ELSE 0 END), 2) AS ca_brut_vehicule_ht,
+    ROUND(SUM(CASE WHEN c.Cout_acquisition = 1 THEN l.Prix_achat ELSE 0 END), 2) AS cout_acquisition_ht,
+    ROUND(SUM(CASE WHEN c.Remises = 1 THEN l.Prix_vente ELSE 0 END), 2) AS remise_ht,
+    ROUND(SUM(CASE WHEN c.Montant_surestimation = 1 THEN
+      CASE WHEN l.Code_ligne_du_dossier = 'SURESTIMATION AP' THEN l.Prix_vente
+           WHEN l.Prix_vente = 0 THEN l.Prix_achat
+           WHEN l.Prix_achat = 0 THEN l.Prix_vente END
+      ELSE 0 END), 2) AS transfert_de_marge_ht,
+    ROUND(-SUM(CASE WHEN c.Montant_des_aides = 1 THEN l.Prix_achat ELSE 0 END), 2) AS aides_au_chassis_ht
+  FROM `hess-data.datamart_ventes.lignes_du_dossier` l
+  JOIN config_dedup c ON c.Code_ligne_du_dossier = l.Code_ligne_du_dossier
+  WHERE l.id_ligne_entete IN (SELECT id_ligne_entete FROM dossiers)
+  GROUP BY 1
+)
+SELECT
+  d.Numero_dossier_DMS AS numero_dossier, veh.Serie_VIN AS vin, veh.Immat AS immatriculation,
+  d.Concession, veh.Libelle_marque AS marque, veh.Libelle_modele AS modele,
+  d.type_vehicule AS vn_vd, d.Vendeur, veh.Libelle_categorie_vehicule AS categorie,
+  d.destination, veh.Energie AS energie, d.Date_de_vente, d.Date_achat AS date_achat_vehicule,
+  m.ca_brut_vehicule_ht, m.cout_acquisition_ht, m.remise_ht, m.transfert_de_marge_ht,
+  m.aides_au_chassis_ht,
+  ROUND(m.ca_brut_vehicule_ht - m.cout_acquisition_ht + m.remise_ht + m.transfert_de_marge_ht + m.aides_au_chassis_ht, 2) AS marge_brute_vehicule_ht,
+  m.marge_dossier_icar_ht
+FROM dossiers d
+LEFT JOIN marges m ON m.id_ligne_entete = d.id_ligne_entete
+LEFT JOIN `hess-data.datamart_stock.vehicules` veh ON veh.CRC_vehicule = d.CRC_vehicule_vendu
+ORDER BY d.Date_de_vente DESC, d.Concession, d.Numero_dossier_DMS
+```
+
+**Piège de donnée** : la jointure `vehicules` échoue sur certains dossiers
+(marque/modèle vides, ex. dossiers Lexus LBX et TOY_METZ observés) — le
+calcul de marge et la détection d'anomalie fonctionnent quand même puisqu'ils
+ne dépendent pas de cette jointure, seul l'affichage marque/modèle est vide.
+
+**Colonnes calculées côté Sheet** (`Extrait Vente VN/VD`, après la requête) :
+`Code_concession`/`Code_Plaque` (`RECHERCHEX` sur le nom de concession, via
+un onglet `Mapping` local alimenté par `IMPORTRANGE` depuis le Référentiel
+Concession — **piège rencontré** : la formule `IMPORTRANGE` doit être saisie
+puis autorisée manuellement une première fois dans l'UI Sheets, sinon les
+`RECHERCHEX` en aval échouent silencieusement sans qu'aucune erreur ne soit
+visible côté requête elle-même), `Durée de détention` (VD uniquement, calculée
+côté Sheet : `Date_de_vente − date_achat_vehicule`, pas besoin de la
+redemander à BigQuery), `% Marge brute Véhicule`
+(`marge_brute_vehicule_ht ÷ ca_brut_vehicule_ht`).
+
+**Règles de classification retenues** (2026-09-23, formules construites une
+par une puis vérifiées sur données réelles) :
+
+1. **Rien à signaler** : marge véhicule négative mais entièrement expliquée
+   par le transfert de marge (`marge_brute_vehicule_ht − transfert_de_marge_ht ≥ 0`)
+   — le transfert de marge résout tout, pas la peine de remonter.
+2. **Pas à signaler (OK)** : marge véhicule négative mais marge dossier
+   complète positive (les périphériques/transformation compensent) — sauf
+   l'exception ci-dessous.
+3. **Anomalie VD** : marge (hors transfert) négative sur un VD, avec la
+   durée de détention affichée en contexte — laissée à l'appréciation du
+   lecteur (dépréciation), pas classée automatiquement bon/mauvais.
+4. **À corriger** :
+   - Marge (hors transfert) négative sur un **VN**.
+   - Véhicule non identifié (jointure `vehicules` en échec).
+   - **Exception à la règle 2** : marge véhicule fortement négative, aucune
+     aide au châssis, **et** marge dossier également négative — dans ce cas
+     précis, les périphériques ne compensent pas non plus, donc à corriger.
+     Seuil générique en cellule `AA1` (valeur absolue, à calibrer) sauf pour
+     **BMW**, qui a son propre seuil en **pourcentage de marge (-1,5%)**
+     plutôt qu'en valeur absolue — première marque traitée spécifiquement,
+     "on regardera marque par marque" pour la suite (décision 2026-09-23).
+   - **MINI est totalement exclu** de toute anomalie (aucune remontée, quel
+     que soit le montant) — décision explicite de Quentin, raison métier non
+     documentée plus précisément.
+5. **À vérifier** :
+   - Marge faible négative (≤ -500€), sans aide au châssis, **Particuliers
+     uniquement**, hors BMW et MINI.
+   - Marge positive faible (entre 0 et 500€), sans aide au châssis
+     (suspicion d'aide manquante), **Particuliers uniquement** — piège
+     rencontré : le filtre "Particuliers" avait été oublié sur cette
+     deuxième règle lors d'une fusion de formules, corrigé après coup.
+
+**Bloc 6 — listing final** (onglet `BLOC 6 - Anomalie Vente VN-VD`) :
+```
+=QUERY('Extrait Vente VN/VD'!A2:AB; "SELECT A, U, V, E, F, G, J, S, T, X, Z, AB WHERE X != '' OR Z != '' OR AB != '' ORDER BY U"; 0)
+```
+(A=numero_dossier, U/V=Code_concession/Code_Plaque, E/F=marque/modèle,
+G=vn_vd, J=destination, S/T=les deux marges, X/Z/AB=les 3 colonnes
+d'anomalie). **Piège rencontré** : omettre le 3ᵉ argument `; 0` (indique à
+`QUERY` qu'il n'y a pas d'en-tête à interpréter) provoque une ligne d'en-tête
+parasite qui réapparaît au milieu des résultats.
+
+**Validé (2026-09-23)** sur données réelles — 14 dossiers remontés sur 7
+jours glissants, réparties sur les 3 catégories, plusieurs marques
+(BMW, Renault, Nissan, Hyundai, Toyota, Lexus).
+
+## 6. Questions ouvertes VN
 
 1. **Bloc 2 bloqué** : nom du champ aide côté vente (§2.3).
 2. **Bloc 2, périmètre VD** : le VD est-il dans le périmètre de l'anomalie
@@ -346,21 +503,29 @@ flagrant) ; BMW X5 : 8 mois concession vs 7 mois Plaque.
    bien vers `Id` de `v_sf_feuille_de_marge` (hypothèse non vérifiée).
 5. **Bloc 4, table `vehicules`** : confirmer si `hess-data.datamart_ventes.vehicules`
    est une table distincte de `hess-data.datamart_stock.vehicules` ou la même
-   partagée entre les deux datasets (hypothèse non vérifiée).
+   partagée entre les deux datasets — le Bloc 6 utilise `datamart_stock.vehicules`
+   avec succès, penche pour "table partagée", à confirmer.
 6. **Bloc 4, lignes non rattachées** : 39% des lignes stock/ventes brutes
    n'ont pas de `Code_concession` — mis de côté par Quentin, mais à garder en
    tête si des écarts de volumétrie inattendus apparaissent plus tard.
-7. **Existe-t-il une spec équivalente à `Spec_Mail_IA_ChefVentesVN`** —
+7. **Bloc 6, seuil générique `AA1`** : "marge fortement négative" pour les
+   marques autres que BMW — valeur provisoire, à calibrer marque par marque
+   (seule BMW a un seuil dédié à ce jour, MINI est exclu).
+8. **Bloc 6, fenêtre 7j au lieu de J-1** : à resserrer quand le décalage de
+   fraîcheur du datamart ventes sera résolu (formule de repli déjà présente
+   en commentaire dans la requête).
+9. **Existe-t-il une spec équivalente à `Spec_Mail_IA_ChefVentesVN`** —
    toujours pas, contrairement au VO qui a une spec dédiée.
-8. Bloc restant non encore abordé : anomalies ventes VN (mis de côté
-   volontairement pour plus tard, cf. décision 2026-09-16).
 
-## 6. Prochaines étapes
+## 7. Prochaines étapes
 
 1. Reprendre le Bloc 2 dès que le champ aide-vente est communiqué par le
    service data.
-2. Une fois Blocs 1, 3 et 4 stabilisés, revenir sur le Bloc "Anomalies
-   ventes VN" (volontairement différé) et le format du mail — y compris la
-   question de savoir si le Bloc 4 (comparaison plaque incluse) reste dans le
-   mail Service ou est réservé au futur mail directeur de plaque, comme le
-   Bloc 7 VO.
+2. Calibrer le seuil générique de marge négative (`AA1`) marque par marque,
+   sur le modèle de ce qui a été fait pour BMW.
+3. Repasser le Bloc 6 en fenêtre J-1 stricte une fois le datamart ventes à
+   jour.
+4. Une fois Blocs 1, 3, 4 et 6 stabilisés, revenir sur le format du mail —
+   y compris la question de savoir si le Bloc 4 (comparaison plaque incluse)
+   reste dans le mail Service ou est réservé au futur mail directeur de
+   plaque, comme le Bloc 7 VO.
