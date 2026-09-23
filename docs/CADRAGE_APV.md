@@ -393,23 +393,23 @@ sont en réalité rares, 2,3% des forfaits réels un jour donné une fois le
 piège de la clé vide corrigé ; l'hypothèse initiale de ">50% de gratuités"
 reposait sur ce bug et était fausse).
 
-**Seuil final retenu pour le *résultat*/l'historique : taux de marge
-estimé < 5%** (`Marge_estimee / Prix_forfait_HT`), pas une marge brute en
-euros. Choix motivé par calibrage sur données réelles (méthode déjà
-utilisée pour les seuils VO Bloc 8, cf. `CADRAGE_VO.md` §11) — distribution
-du taux de marge sur 30 jours (15 701 forfaits facturés) :
+**Seuil retenu pour le *résultat*/l'historique : taux de marge estimé <
+10%** (`Marge_estimee / Prix_forfait_HT`), pas une marge brute en euros.
+Relevé de 5% à 10% le 2026-09-23, décision prise en réunion — remplace le
+seuil initial du 2026-09-18, une seule tranche (pas de niveaux de
+sévérité). Choix initial motivé par calibrage sur données réelles (méthode
+déjà utilisée pour les seuils VO Bloc 8, cf. `CADRAGE_VO.md` §11) —
+distribution du taux de marge sur 30 jours (15 701 forfaits facturés) :
 
 | Seuil taux de marge | % des forfaits en dessous |
 |---|---|
 | < 0% (négatif strict) | 4,5% |
-| < 5% | ~7-9% (retenu) |
-| < 10% | 8,9% |
+| < 5% | ~7-9% (seuil initial du 2026-09-18) |
+| < 10% | 8,9% (**seuil retenu depuis le 2026-09-23**) |
 | < 20% | 17,9% |
 | < 30% | 30,8% |
 
-Médiane à 41,8% — un seuil à 5% isole bien les cas "flagrants" (Corentin,
-2026-09-18) sans noyer le signal, contrairement à un seuil plus large
-(20-30%) qui aurait remonté près d'un tiers du volume. **Garde-fou** :
+Médiane à 41,8%. **Garde-fou** :
 un forfait à prix nul (0€) mais avec un coût réel (PR ou MO) n'a pas de
 taux de marge défini (division par 0) — remonté quand même explicitement
 (`Prix_forfait_HT <= 0 AND coût > 0`), sinon il échapperait au filtre.
@@ -500,6 +500,15 @@ resynchronisées dans `docs/sql/marge_forfaits_j1_extract.sql` le
 2026-09-23) : `Receptionnaire` (juste après `Categorie_client`) et
 `Taux_remise_forfait_pct` (juste après `Prix_forfait_HT`) ; filtre
 additionnel `e.Est_interne = 0` (exclut les OR internes).
+
+**Transcodification concession ajoutée (2026-09-23)** : le classeur
+`Anomalies forfaits` étant séparé du classeur principal, la colonne
+`Concession` des flux forfaits (marges et pièces suspectes) remontait le
+nom brut (`entete_or.Concession`), pas le code canonique. Résolu via un
+`IMPORTRANGE` de `Mapping concession` + `INDEX/EQUIV` ligne par ligne (pas
+en `ARRAYFORMULA` — piège rencontré : ne se vectorise pas, répète le
+résultat de la 1ʳᵉ ligne partout). Détail complet :
+[`docs/sheets-formulas/transco_concession_anomalies_forfaits.txt`](../sheets-formulas/transco_concession_anomalies_forfaits.txt).
 
 **Point clarifié (2026-09-23), pas un bug** : certains forfaits ressortent
 avec `Prix_forfait_HT = 0` alors que la facture affiche un prix — normal,

@@ -1,0 +1,61 @@
+Transcodification du code concession canonique dans le classeur
+"Anomalies forfaits" (fichier separe du classeur principal "Rapport
+quotidien APV"). Ajoutee le 2026-09-23 - voir CADRAGE_APV.md §2 pour le
+principe general du code canonique et §9/§10 pour ce chantier.
+
+Probleme : les requetes BigQuery des flux forfaits (marge_forfaits_j1_extract.sql,
+forfaits_pieces_suspectes.sql) renvoient le nom BRUT de la concession
+(entete_or.Concession, ex. "Renault Belfort"), pas le code canonique
+(ex. "RENNIS_BELFORT_MONT") utilise partout ailleurs dans le projet - la
+table de transcodification "Mapping concession" vit dans le classeur
+principal, inaccessible depuis un fichier BigQuery/Sheet separe sans
+import explicite.
+
+Etape 1 - importer la table de mapping dans "Anomalies forfaits" :
+nouvel onglet nomme "Mapping", cellule A1 :
+
+=IMPORTRANGE("https://docs.google.com/spreadsheets/d/1MtgVOe17uB4gjb88Dgx-AgRbp3SMr44Rr8kdw0qumYw/edit";"Mapping concession!A:E")
+
+(locale FR du classeur -> separateur d'arguments ";", pas ","). Autoriser
+l'acces au premier calcul (popup Google Sheets).
+
+Etape 2 - lookup par onglet, formule ligne par ligne (PAS en ARRAYFORMULA -
+piege rencontre le 2026-09-23 : ARRAYFORMULA(INDEX(...;EQUIV(...))) ne se
+vectorise pas correctement, calcule le resultat de la 1ere ligne seulement
+et le recopie identique sur toute la colonne - meme piege que documente en
+CADRAGE_APV.md §2.1, d'ou une formule glissee manuellement plutot qu'un
+ARRAYFORMULA sur toute la plage) :
+
+- "Extrait J-1 - Marges<10%" (ex-"Marges<5%"), colonne Concession = B,
+  nouvelle colonne "Code_Concession" en V (ajoutee hors de la zone geree
+  par l'extrait natif Sheets, pour ne pas risquer d'etre ecrasee a
+  l'actualisation) :
+
+  V1 (entete) : Code_Concession
+  V2 : =SI($B2="";"";SIERREUR(INDEX(Mapping!$D:$D;EQUIV("entete_or||"&$B2;Mapping!$E:$E;0));SIERREUR(RECHERCHEV($B2;Mapping!$C:$D;2;FAUX);$B2)))
+  -> etirer vers le bas (ex. V2:V500, largement au-dela du volume
+  quotidien attendu).
+
+- "Forfaits suspects", colonne Concession = C, nouvelle colonne
+  "Code_Concession" en O (l'Apps Script historiserForfaitsSuspects
+  n'ecrit que dans les colonnes A-N issues de la source, cette colonne
+  reste donc intacte et s'applique automatiquement aux lignes ajoutees
+  au fil de l'eau) :
+
+  O1 (entete) : Code_Concession
+  O2 : =SI($C2="";"";SIERREUR(INDEX(Mapping!$D:$D;EQUIV("entete_or||"&$C2;Mapping!$E:$E;0));SIERREUR(RECHERCHEV($C2;Mapping!$C:$D;2;FAUX);$C2)))
+  -> etirer vers le bas (ex. O2:O500).
+
+Cle de recherche "entete_or||<valeur>" : reprend la cle composee
+Source_BigQuery||Valeur_Source deja construite dans Mapping concession!E
+(cf. CADRAGE_APV.md §2.1) - le prefixe "entete_or" correspond au
+Source_BigQuery utilise pour entete_or.Concession dans cette table (verifie
+le 2026-09-23, la paire (entete_or, Concession) existe bien dans le
+mapping).
+
+Le "Historique" (flux marges) n'a pas besoin de sa propre formule : le
+script Apps Script copie les VALEURS deja calculees de la colonne V de
+"Extrait J-1 - Marges<10%" (getDataRange().getValues() recupere le
+resultat de la formule, pas la formule elle-meme), donc Code_Concession
+se propage automatiquement a l'Historique des que la colonne existe cote
+extrait.

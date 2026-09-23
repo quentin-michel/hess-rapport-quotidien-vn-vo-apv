@@ -120,9 +120,9 @@ WHERE a.a_une_ligne_entete
   AND e.Est_annule = 0
   AND e.Est_interne = 0
   AND (
-    -- taux de marge < 5% (seuil retenu le 2026-09-18, calibre sur donnees
-    -- reelles - voir CADRAGE_APV.md §9)
-    (a.Prix_forfait_HT > 0 AND SAFE_DIVIDE(a.Prix_forfait_HT - a.Cout_PR - (a.Heures_MO * 60.0), a.Prix_forfait_HT) < 0.05)
+    -- taux de marge < 10% (seuil releve de 5% a 10% le 2026-09-23, decide
+    -- en reunion - voir CADRAGE_APV.md §9)
+    (a.Prix_forfait_HT > 0 AND SAFE_DIVIDE(a.Prix_forfait_HT - a.Cout_PR - (a.Heures_MO * 60.0), a.Prix_forfait_HT) < 0.10)
     -- garde-fou : forfait a prix nul mais avec un vrai cout (PR ou MO) -
     -- taux de marge non defini (division par 0), a remonter quand meme
     OR (a.Prix_forfait_HT <= 0 AND (a.Cout_PR + a.Heures_MO * 60.0) > 0)
