@@ -444,11 +444,13 @@ séparé du fichier principal `Rapport quotidien APV` (déjà à 27 onglets) :
   9h-10h, cf. §5). Colonnes (texte/contexte d'abord, clés techniques
   ensuite, données numériques regroupées à la fin, demande explicite de
   Corentin) : `Date_reference, Concession, Societe, Numero_OR_DMS,
-  Nom_client, Canal_imputation, Canal_categorie_client, Code_intervention,
-  Libelle_forfait, id_ligne_entete, Identifiant_groupe_forfait,
-  Detail_pieces, Prix_forfait_HT, Cout_PR, Heures_MO,
-  Taux_horaire_MO_estime, Cout_MO_estime, Marge_estimee,
-  Taux_marge_estime_pct`.
+  Nom_client, Canal_imputation, Canal_categorie_client, Receptionnaire,
+  Code_intervention, Libelle_forfait, id_ligne_entete,
+  Identifiant_groupe_forfait, Detail_pieces, Prix_forfait_HT,
+  Taux_remise_forfait_pct, Cout_PR, Heures_MO, Taux_horaire_MO_estime,
+  Cout_MO_estime, Marge_estimee, Taux_marge_estime_pct` (`Receptionnaire` et
+  `Taux_remise_forfait_pct` ajoutés le 2026-09-23, ainsi qu'un filtre
+  `Est_interne = 0` au WHERE — exclut les OR internes/cessions).
   `Detail_pieces` liste les pièces du forfait (nom + référence + quantité +
   PAMP, via `Libelle_detail_operation`/`Reference_ecran` sur les lignes
   `Pièce`). `Canal_imputation` = `Libelle_type_imputation` (niveau ligne,
@@ -485,18 +487,88 @@ séparé du fichier principal `Rapport quotidien APV` (déjà à 27 onglets) :
   conservés dans le repo si le volume dépasse un jour la limite Connected
   Sheets (~5M cellules) et qu'il faut y revenir.
 
-**Reste à faire** :
-- Construire les onglets `Extrait J-1`, `Extrait J-1 (grid)` et
-  `Historique` dans le nouveau Sheet, et le déclencheur Apps Script (fait
-  par Corentin, pas par Claude).
-- Détections #2 (écarts de tarification entre ateliers d'une même Plaque)
-  et #3 (pièces incohérentes avec le forfait) — pas commencées, référentiel
-  Plaque ↔ code canonique toujours à vérifier (cf. §8 pt.5).
+**Statut (2026-09-23) : en production.** Le pipeline `Extrait J-1` →
+`Extrait J-1 - Marges<5%` (extrait natif Sheets, pas la formule `QUERY`
+initialement envisagée) → `Historique` tourne quotidiennement, historique
+alimenté depuis le 2026-09-18 sans erreur signalée. Colonnes enrichies en
+cours de route (ajoutées directement dans le connecteur par Corentin,
+resynchronisées dans `docs/sql/marge_forfaits_j1_extract.sql` le
+2026-09-23) : `Receptionnaire` (juste après `Categorie_client`) et
+`Taux_remise_forfait_pct` (juste après `Prix_forfait_HT`) ; filtre
+additionnel `e.Est_interne = 0` (exclut les OR internes). **Reste à faire**
+sur cette détection : recette ponctuelle d'un cas où `Prix_forfait_HT`
+ressort à 0 alors que la facture réelle affiche un prix — pas encore
+diagnostiqué, pas reproduit sur les échantillons testés le 2026-09-23 (les
+cas trouvés étaient tous des remises forcées à 100%, donc corrects) ; à
+reprendre avec un exemple précis (`Numero_OR_DMS`) le jour où le cas se
+représente.
 
-## 10. Prochaines étapes
+## 10. Forfaits pièces suspectes — détection n°3 (2026-09-2x)
+
+**Contexte** : reprend la détection n°3 identifiée en §8 pt.5 ("pièces
+incohérentes avec le type de forfait"), reformulée par Corentin comme une
+question de fraude potentielle : *repérer une pièce chère et inhabituelle
+facturée dans un forfait qui n'a rien à voir avec elle*. Construit dans une
+session Claude Chat séparée (pas Claude Code) pendant une indisponibilité
+temporaire de l'outil, sans accès à `gws` ni au repo — d'où la
+resynchronisation faite ici a posteriori (2026-09-23).
+
+**Méthode** (requête complète :
+[`docs/sql/forfaits_pieces_suspectes.sql`](sql/forfaits_pieces_suspectes.sql)) :
+1. **Classification en `famille`** par mots-clés (regex) sur le libellé du
+   forfait : `REVISION_ENTRETIEN`, `PNEUS`, `FREINAGE`, `CLIMATISATION`,
+   `DISTRIBUTION`, `BATTERIE`, `EMBRAYAGE`, `SUSPENSION`. **Limite connue** :
+   un forfait qui ne matche aucun mot-clé est ignoré (`famille` NULL) — la
+   détection ne couvre donc pas tous les types de forfaits (ex.
+   carrosserie, contrôles divers, forfaits génériques).
+2. **Baseline historique** : pour chaque couple (famille, libellé de
+   pièce), nombre d'occurrences sur tout l'historique **avant J-3** (depuis
+   2025-01-01) — construit la distribution normale de ce qui compose
+   habituellement chaque famille de forfait.
+3. **Fenêtre d'analyse** : J-3 à aujourd'hui (plus large que le J-1 strict
+   du flux marges, cf. §9).
+4. **Filtre "suspect"** — double critère : occurrence baseline **≤ 2**
+   (jamais/quasi jamais vue pour cette famille) **ET** coût de la pièce
+   (`PAMP_facturation`) **≥ 150€** (seuil de matérialité, pour ne pas noyer
+   le signal dans des pièces rares mais bon marché).
+
+**Même piège clé composite** que le flux marges : toujours grouper par
+`(id_ligne_entete, Identifiant_groupe_forfait)`, jamais
+`Identifiant_groupe_forfait` seul (§9).
+
+**Architecture** : connecteur BigQuery `Forfaits pièces suspectes`
+(DATA_SOURCE) → extrait natif Sheets `Forfaits suspects` (GRID) → historisé
+par une fonction Apps Script **séparée** (`historiserForfaitsSuspects`,
+[`docs/apps-script/historique_forfaits_append.gs`](../apps-script/historique_forfaits_append.gs)),
+avec son propre déclencheur temporel indépendant de celui du flux marges
+(pour ne pas risquer de casser un flux qui tournait déjà). **Différence de
+clé de dédoublonnage** par rapport au flux marges : inclut
+`Reference_ecran` en plus de `(date_doc, id_ligne_entete,
+Identifiant_groupe_forfait)` — plusieurs pièces suspectes peuvent coexister
+sur un même forfait, sinon la 2ᵉ serait prise pour un doublon de la 1ʳᵉ.
+
+**Statut (2026-09-23)** : en observation, aucune ligne historisée pour
+l'instant — **normal, pas un bug** : le filtre (rareté ≤ 2 + coût ≥ 150€)
+est volontairement strict, la plupart des jours ne remontent aucun cas.
+Pas encore de recul sur le volume réel pour juger si le seuil doit être
+ajusté.
+
+**Point technique à surveiller** : contrairement au flux marges (extrait
+natif intercalé), `historiserForfaitsSuspects` lit **directement** l'onglet
+DATA_SOURCE `Forfaits pièces suspectes` sans extrait intermédiaire. Ça
+fonctionne à ce jour (pas d'erreur remontée), mais si des erreurs de
+lecture apparaissent un jour dans *Exécutions* (Apps Script), appliquer le
+même correctif que pour `Extrait J-1` (extrait natif ou `QUERY`).
+
+## 11. Prochaines étapes
 
 1. Définir le format du mail APV (contenu, ton, destinataires) — sur le
    modèle de la spec VO, en s'appuyant sur le mockup déjà testé.
 2. Trancher le sort du seuil `Ratio remises/CA` générique.
-3. Construire les onglets `Extrait J-1` / `Historique` et le déclencheur
-   Apps Script du chantier anomalies forfaits (voir §9).
+3. Diagnostiquer le cas `Prix_forfait_HT = 0` avec facture réelle non nulle
+   (détection n°1, §9) dès qu'un exemple précis se représente.
+4. Laisser tourner `Forfaits pièces suspectes` (détection n°3, §10) quelques
+   semaines pour juger du volume réel et calibrer le seuil si besoin.
+5. Détection n°2 (écarts de tarification entre ateliers d'une même Plaque)
+   — pas commencée, référentiel Plaque ↔ code canonique toujours à
+   vérifier (cf. §8 pt.5).

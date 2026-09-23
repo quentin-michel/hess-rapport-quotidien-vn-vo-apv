@@ -94,3 +94,62 @@ function appendHistoriqueForfaits() {
 function buildKey(row, idxDate, idxEntete, idxGroupe) {
   return [row[idxDate], row[idxEntete], row[idxGroupe]].join('|');
 }
+
+/**
+ * Meme principe qu'appendHistoriqueForfaits, pour le flux "Forfaits
+ * pieces suspectes" (detection n3, docs/sql/forfaits_pieces_suspectes.sql
+ * et CADRAGE_APV.md §10) - fonction et declencheur separes de
+ * appendHistoriqueForfaits (ajoutee le 2026-09-2x, sans toucher au flux
+ * marges qui tournait deja).
+ *
+ * Cle de dedoublonnage differente : inclut Reference_ecran en plus du
+ * forfait, car plusieurs pieces suspectes peuvent coexister sur un meme
+ * forfait (sinon la 2e serait prise pour un doublon de la 1ere).
+ *
+ * Lit directement l'onglet DATA_SOURCE "Forfaits pièces suspectes" (pas
+ * d'onglet grid intermediaire ici, contrairement au flux marges) - a
+ * surveiller si des erreurs de lecture apparaissent un jour dans
+ * Executions (Apps Script) ; le cas echeant, appliquer le meme correctif
+ * que pour "Extrait J-1" (onglet grid via QUERY, ou "Extraire" natif).
+ *
+ * "0 ligne ajoutee" la plupart des jours est attendu (le filtre rarete<=2
+ * + PAMP>=150€ est volontairement strict), pas un signe de bug.
+ */
+function historiserForfaitsSuspects() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var source = ss.getSheetByName('Forfaits pièces suspectes');
+  var historique = ss.getSheetByName('Forfaits suspects');
+
+  if (!source) { Logger.log('Onglet source introuvable.'); return; }
+  if (!historique) { Logger.log('Onglet historique introuvable.'); return; }
+
+  var sourceData = source.getDataRange().getValues();
+  if (sourceData.length < 2) { Logger.log('Rien a copier.'); return; }
+
+  var header = sourceData[0];
+  var rows = sourceData.slice(1);
+
+  if (historique.getLastRow() === 0) historique.appendRow(header);
+
+  var colonnesCle = ['date_doc', 'id_ligne_entete', 'Identifiant_groupe_forfait', 'Reference_ecran'];
+  var idxCle = colonnesCle.map(function (nom) {
+    var idx = header.indexOf(nom);
+    if (idx === -1) throw new Error('Colonne "' + nom + '" introuvable.');
+    return idx;
+  });
+
+  var histData = historique.getDataRange().getValues();
+  var existingKeys = {};
+  for (var i = 1; i < histData.length; i++) {
+    existingKeys[idxCle.map(function (idx) { return histData[i][idx]; }).join('|')] = true;
+  }
+
+  var toAppend = rows.filter(function (row) {
+    return !existingKeys[idxCle.map(function (idx) { return row[idx]; }).join('|')];
+  });
+
+  if (toAppend.length === 0) { Logger.log('Rien de nouveau.'); return; }
+
+  historique.getRange(historique.getLastRow() + 1, 1, toAppend.length, header.length).setValues(toAppend);
+  Logger.log(toAppend.length + ' ligne(s) ajoutee(s).');
+}

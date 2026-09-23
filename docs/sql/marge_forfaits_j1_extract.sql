@@ -40,6 +40,16 @@
 -- clients.Nom_prenom : donnee nominative (table clients labellisee
 -- "donnees_personnelles" cote BigQuery) - jointe via CRC_client_facture
 -- (client facture), pas conducteur/proprietaire.
+--
+-- Resynchronise le 2026-09-23 avec la version reellement deployee dans le
+-- connecteur (colonnes ajoutees directement par Corentin sans repasser par
+-- le repo - recuperees via l'API Sheets, spreadsheets.get?fields=dataSources,
+-- seul moyen de lire le texte d'une requete de connecteur, gws/values.get
+-- ne l'exposant pas) :
+--   - e.Receptionnaire (juste apres Canal_categorie_client)
+--   - Taux_remise_forfait_pct (juste apres Prix_forfait_HT), = la remise
+--     appliquee sur la ligne entete du forfait (Remise_appliquee_pourcentage_facturation)
+--   - e.Est_interne = 0 ajoute au WHERE (exclut les OR internes/cessions)
 
 WITH forfait_lignes AS (
   SELECT
@@ -47,7 +57,8 @@ WITH forfait_lignes AS (
     f.Est_entete_forfait, f.Est_ligne_forfait, f.Libelle_type_operation,
     f.Libelle_type_imputation, f.Quantite_facturation, f.PAMP_facturation,
     f.Montant_HT_facturation, f.Code_intervention, f.Libelle_detail_intervention,
-    f.Libelle_detail_operation, f.Reference_ecran
+    f.Libelle_detail_operation, f.Reference_ecran,
+    f.Remise_appliquee_pourcentage_facturation
   FROM `hess-data.datamart_apres_vente.facturation_detaillee_or` f
   WHERE f.Id_date_document = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
     AND f.Identifiant_groupe_forfait IS NOT NULL
@@ -74,12 +85,12 @@ agg AS (
              THEN IFNULL(PAMP_facturation, 0) ELSE 0 END) AS Cout_PR,
     SUM(CASE WHEN Est_ligne_forfait = 1 AND Libelle_type_operation = "Main d'oeuvre"
              THEN IFNULL(Quantite_facturation, 0) ELSE 0 END) AS Heures_MO,
+    MAX(CASE WHEN Est_entete_forfait = 1 THEN Remise_appliquee_pourcentage_facturation END) AS Remise_pct_forfait,
     LOGICAL_OR(Est_entete_forfait = 1) AS a_une_ligne_entete
   FROM forfait_lignes
   GROUP BY 1, 2
 )
 SELECT
-  -- contexte
   a.Date_reference,
   e.Concession,
   e.Societe,
@@ -87,26 +98,27 @@ SELECT
   c.Nom_prenom AS Nom_client,
   a.Libelle_type_imputation AS Canal_imputation,
   e.Categorie_client AS Canal_categorie_client,
+  e.Receptionnaire,
   a.Code_intervention,
   a.Libelle_forfait,
-  -- cles techniques
   a.id_ligne_entete,
   a.Identifiant_groupe_forfait,
   a.Detail_pieces,
-  -- donnees numeriques
   a.Prix_forfait_HT,
+  a.Remise_pct_forfait AS Taux_remise_forfait_pct,
   a.Cout_PR,
   a.Heures_MO,
   60.0 AS Taux_horaire_MO_estime,
   ROUND(a.Heures_MO * 60.0, 2) AS Cout_MO_estime,
   ROUND(a.Prix_forfait_HT - a.Cout_PR - (a.Heures_MO * 60.0), 2) AS Marge_estimee,
-  ROUND(SAFE_DIVIDE(a.Prix_forfait_HT - a.Cout_PR - (a.Heures_MO * 60.0), a.Prix_forfait_HT) * 100, 1) AS Taux_marge_estime_pct
+  SAFE_DIVIDE(a.Prix_forfait_HT - a.Cout_PR - (a.Heures_MO * 60.0), a.Prix_forfait_HT) * 100 AS Taux_marge_estime_pct
 FROM agg a
 JOIN `hess-data.datamart_apres_vente.entete_or` e USING (id_ligne_entete)
 LEFT JOIN `hess-data.datamart_apres_vente.clients` c ON c.CRC_client = e.CRC_client_facture
 WHERE a.a_une_ligne_entete
   AND e.Est_ferme = 1
   AND e.Est_annule = 0
+  AND e.Est_interne = 0
   AND (
     -- taux de marge < 5% (seuil retenu le 2026-09-18, calibre sur donnees
     -- reelles - voir CADRAGE_APV.md §9)
