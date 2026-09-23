@@ -3,11 +3,11 @@
 Voir [`CADRAGE.md`](CADRAGE.md) pour le cadrage transverse (objectif général,
 architecture, destinataires, décisions communes aux 3 services).
 
-**Statut (2026-09-17) : démarré, construction bloc par bloc en cours** — même
-méthode que VO (Sheet par bloc, validé sur données réelles avant de documenter).
-Bloc 1 (Leads) construit et partiellement validé. Bloc 2 (Commandes/Feuille de
-marge) en pause, en attente d'un champ manquant côté data. Bloc 3 (Stock)
-requête BigQuery validée, lecture Sheet à valider sur données réelles.
+**Statut (2026-09-23) : blocs 1, 3, 4 et 6 terminés et validés, maquette de
+mail construite sur une concession pilote** — même méthode que VO (Sheet par
+bloc, validé sur données réelles avant de documenter). Bloc 2
+(Commandes/Feuille de marge) en pause, en attente d'un champ manquant côté
+data.
 
 **Principe de méthode (rappel 2026-09-16)** : ne pas extrapoler de logique
 métier VN par analogie avec le VO sans vérification — un essai de proposition
@@ -491,7 +491,74 @@ parasite qui réapparaît au milieu des résultats.
 jours glissants, réparties sur les 3 catégories, plusieurs marques
 (BMW, Renault, Nissan, Hyundai, Toyota, Lexus).
 
-## 6. Questions ouvertes VN
+## 6. Maquette mail VN
+
+**Statut : structure validée (2026-09-23)**, maquette construite sur la
+concession pilote Renault/Nissan Mulhouse, à partir de données réelles issues
+des Blocs 1, 3, 4 et 6 ci-dessus.
+
+**Fichier** : [`docs/mockup_email_vn.html`](mockup_email_vn.html) — reprend
+telle quelle la charte graphique du mockup VO (navy `#2D3250` / gold
+`#C8AA73`, Montserrat, thème clair fixe — les clients mail ne respectent pas
+fiablement le thème sombre).
+
+**Structure retenue** (ordre final) :
+1. Header + titleblock (concession, "chiffres de la veille").
+2. 4 tuiles KPI : Leads reçus J-1, Couverture stock, Stock âgé VN (+6 mois),
+   Anomalies ventes.
+3. Synthèse : un commentaire factuel unique pointant l'anomalie la plus
+   significative du jour — voir règle de rédaction ci-dessous.
+4. **Anomalies ventes** (tableau, colonnes VIN/véhicule/marge/motif).
+5. **Leads VN** (reçus/non traités, J-1 et 7j).
+6. **Qualité du stock VN/VD** : compteurs (Stock VN/VD, âgé VN/VD +6 mois,
+   contremarqué +90j) + 3 mini-listes des véhicules les plus anciens (VN, VD,
+   contremarqué), issues de l'onglet `BLOC 3 P2 Stock VN_VD`.
+7. **Rotation & couverture** : tableau concession vs Plaque (Stock, ventes
+   moy. mensuelle, couverture), agrégé à partir des lignes du Bloc 4 sur les
+   modèles propres à la concession.
+8. **Excès de stock** : podium top 3 modèles (Bloc 4).
+9. Footer.
+
+**Décision d'ordre des sections (2026-09-23)** : Anomalies ventes en premier
+juste après la Synthèse — c'est le contenu le plus actionnable (perte
+d'argent à corriger). Puis Leads (actions du jour : relances). Le stock passe
+en dernier : il évolue lentement, plus informatif qu'urgent. Décision
+explicite de Quentin, retenue après un test de réorganisation en 3 sections
+(fusion des blocs stock) présenté puis écarté au profit de la structure
+d'origine à 5 sections — préférée telle quelle.
+
+**Décision de cadence (2026-09-23)** : le stock reste envoyé **quotidiennement**
+malgré son évolution lente, avec les listes top-3 statiques (les plus
+anciens). Une approche "n'afficher que les nouveautés depuis la veille" a été
+envisagée mais écartée pour l'instant, car elle suppose une historisation
+qui n'est pas encore construite — à reconsidérer plus tard.
+
+**Règle de rédaction du commentaire de synthèse** : rester strictement
+factuel, ne jamais inventer de lien causal entre deux blocs qui partagent
+un mot-clé/modèle sans preuve réelle (ex. rejeté : lier un excès de stock
+Clio à une perte de marge sur un dossier Clio, alors que rien ne les relie
+réellement). Un vrai recoupement inter-blocs doit être présenté comme "deux
+signaux distincts sur le même véhicule/modèle", jamais comme une causalité,
+sauf si elle est réellement établie. Une perte substantielle et chiffrée
+(ex. -5 265€) doit être signalée directement plutôt que reformulée.
+
+**Décisions d'affichage du tableau Anomalies ventes** : VIN affiché (pas
+d'immatriculation disponible sur les ventes VN fraîches, champ vide côté
+Icar) ; pas de pastille de statut ("à corriger"/"à vérifier") affichée — la
+classification (§5) sert au tri interne, pas à l'affichage destinataire.
+
+**Comparaison Plaque au niveau agrégat concession** : en plus du détail
+modèle par modèle déjà présent dans le Bloc 4, le mail affiche désormais un
+agrégat concession vs Plaque pour la Rotation & couverture (somme des
+colonnes Stock/Ventes moy. Plaque du Bloc 4 sur les seuls modèles portés par
+la concession).
+
+**Limite connue de la maquette** : les données proviennent de Sheets
+rafraîchis à des dates différentes (Leads : 14/09, Stock/Ventes : 23/09) —
+pas encore synchronisés comme pour le VO. À refaire sur données toutes
+alignées à la même date avant diffusion réelle.
+
+## 7. Questions ouvertes VN
 
 1. **Bloc 2 bloqué** : nom du champ aide côté vente (§2.3).
 2. **Bloc 2, périmètre VD** : le VD est-il dans le périmètre de l'anomalie
@@ -517,7 +584,7 @@ jours glissants, réparties sur les 3 catégories, plusieurs marques
 9. **Existe-t-il une spec équivalente à `Spec_Mail_IA_ChefVentesVN`** —
    toujours pas, contrairement au VO qui a une spec dédiée.
 
-## 7. Prochaines étapes
+## 8. Prochaines étapes
 
 1. Reprendre le Bloc 2 dès que le champ aide-vente est communiqué par le
    service data.
@@ -525,7 +592,8 @@ jours glissants, réparties sur les 3 catégories, plusieurs marques
    sur le modèle de ce qui a été fait pour BMW.
 3. Repasser le Bloc 6 en fenêtre J-1 stricte une fois le datamart ventes à
    jour.
-4. Une fois Blocs 1, 3, 4 et 6 stabilisés, revenir sur le format du mail —
-   y compris la question de savoir si le Bloc 4 (comparaison plaque incluse)
-   reste dans le mail Service ou est réservé au futur mail directeur de
-   plaque, comme le Bloc 7 VO.
+4. Réaligner les données de la maquette mail sur une même date de
+   rafraîchissement avant tout envoi réel (voir limite connue, §6).
+5. Trancher si le Bloc 4 (comparaison plaque incluse) reste dans le mail
+   Service ou est réservé au futur mail directeur de plaque, comme le
+   Bloc 7 VO.
