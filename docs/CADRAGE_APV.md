@@ -7,8 +7,15 @@ architecture, destinataires, décisions communes aux 3 services).
 objectifs MO/PR/PR externe branchés et seuils recalibrés (2026-09-14) — en
 avance sur le séquencement initial** (le cadrage global priorisait VO, mais
 Corentin a repris et largement dépassé l'état "prêt côté données" du
-2026-09-08 ci-dessous, qui est **obsolète**). Reste : construire la lecture
-orchestrateur et le format de mail (seul point encore ouvert, voir §8).
+2026-09-08 ci-dessous, qui est **obsolète**).
+
+**Priorité (2026-09-23) : formalisation du mail**, sur la base des blocs
+déjà construits et validés (`Analyse Globale`, `Encours prioritaires`,
+`Analyse pièces J-1`, `Efficience OR CI trop élevé`, `Taux remise MO/PR
+interne élevé`) — voir §8 pt.1 et §12. **Le chantier anomalies forfaits
+(§9-10 : marge estimée, forfaits pièces suspectes) est mis en pause**,
+gardé comme piste à reprendre plus tard une fois le mail lui-même
+formalisé — décision explicite de Corentin, pas d'abandon.
 
 ## 1. Source
 
@@ -325,7 +332,7 @@ cette section a été reconstruite et étendue depuis (§1-3).
      intégrées (ex. une pièce hors-sujet facturée dans un forfait donné) —
      pas commencé.
 
-## 9. Anomalies forfaits — marge estimée (2026-09-18)
+## 9. Anomalies forfaits — marge estimée (2026-09-18, en pause depuis le 2026-09-23)
 
 **Contexte** : premier des 3 chantiers forfaits de §8 pt.5 attaqué — la
 détection de forfaits en marge négative. Accord métier avec la BU APV : un
@@ -521,7 +528,7 @@ affiché sur la facture est non nul. Confirmé sur données réelles le
 sert la colonne `Taux_remise_forfait_pct` : elle rend ce cas visible dans
 le Sheet plutôt que de le laisser passer pour une anomalie de calcul.
 
-## 10. Forfaits pièces suspectes — détection n°3 (2026-09-2x)
+## 10. Forfaits pièces suspectes — détection n°3 (2026-09-2x, en pause depuis le 2026-09-23)
 
 **Contexte** : reprend la détection n°3 identifiée en §8 pt.5 ("pièces
 incohérentes avec le type de forfait"), reformulée par Corentin comme une
