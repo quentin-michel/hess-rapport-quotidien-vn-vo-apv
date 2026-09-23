@@ -357,10 +357,9 @@ détention longue sur VD.
   `datamart_ventes.vehicules` cette fois — répond à la question ouverte du
   Bloc 4 sur la table à utiliser, au moins pour ce bloc).
 
-**Fenêtre** : théoriquement J-1, mais actuellement élargie à **7 jours
-glissants** (`BETWEEN J-7 AND J-1`) à cause d'un décalage de fraîcheur du
-datamart ventes (formule de repli vers J-1 strict laissée en commentaire dans
-la requête, à réactiver quand le datamart sera à jour).
+**Fenêtre** : **J-1 strict**, repassée depuis la fenêtre 7 jours glissants
+initiale le 2026-09-23 (le décalage de fraîcheur du datamart ventes qui
+justifiait l'élargissement est résolu).
 
 **Calcul de la marge** : reproduit la logique déjà validée dans l'outil
 Tableau existant plutôt que d'inventer un calcul — notamment le **transfert
@@ -383,10 +382,7 @@ WITH dossiers AS (
     Est_VN_VD_ou_VO AS type_vehicule, Date_de_vente, Date_achat,
     CRC_vehicule_vendu, Destination_du_vehicule_canal_vente AS destination
   FROM `hess-data.datamart_ventes.entete_du_dossier`
-  WHERE Date_de_vente BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
-                          AND DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
-    -- Repasser à "WHERE Date_de_vente = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)"
-    -- quand le datamart sera à jour.
+  WHERE Date_de_vente = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
     AND Est_VN_VD_ou_VO IN ('VN', 'VD')
 ),
 config_dedup AS (
@@ -462,10 +458,15 @@ par une puis vérifiées sur données réelles) :
    - **Exception à la règle 2** : marge véhicule fortement négative, aucune
      aide au châssis, **et** marge dossier également négative — dans ce cas
      précis, les périphériques ne compensent pas non plus, donc à corriger.
-     Seuil générique en cellule `AA1` (valeur absolue, à calibrer) sauf pour
-     **BMW**, qui a son propre seuil en **pourcentage de marge (-1,5%)**
-     plutôt qu'en valeur absolue — première marque traitée spécifiquement,
-     "on regardera marque par marque" pour la suite (décision 2026-09-23).
+     Seuil générique en cellule `AA1` (valeur absolue) sauf pour **BMW**, qui
+     a son propre seuil en **pourcentage de marge (-1,5%)** plutôt qu'en
+     valeur absolue. Une calibration marque par marque a été tentée le
+     2026-09-23 (percentiles sur 6 mois de données réelles) mais
+     **abandonnée** : sur toutes les marques hors BMW/MINI, seules RENAULT
+     (12 dossiers) et BMW MOTORRAD (14 dossiers) atteignaient un volume
+     suffisant (≥5) sur 6 mois — trop peu pour généraliser marque par marque.
+     `AA1` reste donc un seuil générique unique pour toutes les marques hors
+     BMW/MINI, non recalibré.
    - **MINI est totalement exclu** de toute anomalie (aucune remontée, quel
      que soit le montant) — décision explicite de Quentin, raison métier non
      documentée plus précisément.
@@ -555,8 +556,19 @@ la concession).
 
 **Limite connue de la maquette** : les données proviennent de Sheets
 rafraîchis à des dates différentes (Leads : 14/09, Stock/Ventes : 23/09) —
-pas encore synchronisés comme pour le VO. À refaire sur données toutes
-alignées à la même date avant diffusion réelle.
+pas encore synchronisés comme pour le VO. Quentin met en place une
+actualisation automatique des Sheets pour résoudre ce point (2026-09-23, en
+cours).
+
+**Décision de périmètre Bloc 4 dans le mail (2026-09-23)** : la comparaison
+Plaque (colonnes Stock/Ventes moy./Couverture Plaque du Bloc 4, y compris
+l'agrégat concession vs Plaque de la section "Rotation & couverture"
+ci-dessus) est **réservée à un futur mail Directeur de plaque**, sur le même
+principe que le Bloc 7 VO — elle ne restera pas dans le mail Service à
+terme. Le détail concession seul (couverture, excès de stock) reste dans le
+mail Service. La maquette actuelle inclut encore la comparaison Plaque ;
+retrait à faire quand le mail Service sera finalisé pour de vrai (pas encore
+fait, maquette non modifiée à ce stade).
 
 ## 7. Questions ouvertes VN
 
@@ -576,24 +588,19 @@ alignées à la même date avant diffusion réelle.
    n'ont pas de `Code_concession` — mis de côté par Quentin, mais à garder en
    tête si des écarts de volumétrie inattendus apparaissent plus tard.
 7. **Bloc 6, seuil générique `AA1`** : "marge fortement négative" pour les
-   marques autres que BMW — valeur provisoire, à calibrer marque par marque
-   (seule BMW a un seuil dédié à ce jour, MINI est exclu).
-8. **Bloc 6, fenêtre 7j au lieu de J-1** : à resserrer quand le décalage de
-   fraîcheur du datamart ventes sera résolu (formule de repli déjà présente
-   en commentaire dans la requête).
-9. **Existe-t-il une spec équivalente à `Spec_Mail_IA_ChefVentesVN`** —
+   marques autres que BMW — valeur provisoire, non calibrée (calibration
+   marque par marque tentée et abandonnée le 2026-09-23, volume insuffisant ;
+   seule BMW a un seuil dédié à ce jour, MINI est exclu).
+8. **Existe-t-il une spec équivalente à `Spec_Mail_IA_ChefVentesVN`** —
    toujours pas, contrairement au VO qui a une spec dédiée.
 
 ## 8. Prochaines étapes
 
 1. Reprendre le Bloc 2 dès que le champ aide-vente est communiqué par le
    service data.
-2. Calibrer le seuil générique de marge négative (`AA1`) marque par marque,
-   sur le modèle de ce qui a été fait pour BMW.
-3. Repasser le Bloc 6 en fenêtre J-1 stricte une fois le datamart ventes à
-   jour.
-4. Réaligner les données de la maquette mail sur une même date de
-   rafraîchissement avant tout envoi réel (voir limite connue, §6).
-5. Trancher si le Bloc 4 (comparaison plaque incluse) reste dans le mail
-   Service ou est réservé au futur mail directeur de plaque, comme le
-   Bloc 7 VO.
+2. Retirer la comparaison Plaque du mail Service (maquette + mail réel) une
+   fois le futur mail Directeur de plaque cadré — décision de périmètre
+   prise (§6), reste à exécuter.
+3. Suivre la mise en place par Quentin de l'actualisation automatique des
+   Sheets, puis vérifier que la maquette mail tourne sur des données toutes
+   alignées à la même date.
