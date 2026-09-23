@@ -495,13 +495,18 @@ cours de route (ajoutées directement dans le connecteur par Corentin,
 resynchronisées dans `docs/sql/marge_forfaits_j1_extract.sql` le
 2026-09-23) : `Receptionnaire` (juste après `Categorie_client`) et
 `Taux_remise_forfait_pct` (juste après `Prix_forfait_HT`) ; filtre
-additionnel `e.Est_interne = 0` (exclut les OR internes). **Reste à faire**
-sur cette détection : recette ponctuelle d'un cas où `Prix_forfait_HT`
-ressort à 0 alors que la facture réelle affiche un prix — pas encore
-diagnostiqué, pas reproduit sur les échantillons testés le 2026-09-23 (les
-cas trouvés étaient tous des remises forcées à 100%, donc corrects) ; à
-reprendre avec un exemple précis (`Numero_OR_DMS`) le jour où le cas se
-représente.
+additionnel `e.Est_interne = 0` (exclut les OR internes).
+
+**Point clarifié (2026-09-23), pas un bug** : certains forfaits ressortent
+avec `Prix_forfait_HT = 0` alors que la facture affiche un prix — normal,
+`Montant_HT_facturation` (utilisé pour `Prix_forfait_HT`) est **net de
+remise** ; quand la remise appliquée est de 100% (geste commercial forcé,
+`Remise_forcee = 1`), le prix net est bien 0€ même si le prix de liste
+affiché sur la facture est non nul. Confirmé sur données réelles le
+2026-09-23 (tous les cas échantillonnés avaient
+`Remise_appliquee_pourcentage_facturation = 100`). C'est justement à ça que
+sert la colonne `Taux_remise_forfait_pct` : elle rend ce cas visible dans
+le Sheet plutôt que de le laisser passer pour une anomalie de calcul.
 
 ## 10. Forfaits pièces suspectes — détection n°3 (2026-09-2x)
 
@@ -565,10 +570,8 @@ même correctif que pour `Extrait J-1` (extrait natif ou `QUERY`).
 1. Définir le format du mail APV (contenu, ton, destinataires) — sur le
    modèle de la spec VO, en s'appuyant sur le mockup déjà testé.
 2. Trancher le sort du seuil `Ratio remises/CA` générique.
-3. Diagnostiquer le cas `Prix_forfait_HT = 0` avec facture réelle non nulle
-   (détection n°1, §9) dès qu'un exemple précis se représente.
-4. Laisser tourner `Forfaits pièces suspectes` (détection n°3, §10) quelques
+3. Laisser tourner `Forfaits pièces suspectes` (détection n°3, §10) quelques
    semaines pour juger du volume réel et calibrer le seuil si besoin.
-5. Détection n°2 (écarts de tarification entre ateliers d'une même Plaque)
+4. Détection n°2 (écarts de tarification entre ateliers d'une même Plaque)
    — pas commencée, référentiel Plaque ↔ code canonique toujours à
    vérifier (cf. §8 pt.5).
