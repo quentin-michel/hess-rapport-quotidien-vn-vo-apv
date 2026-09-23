@@ -1,0 +1,189 @@
+<title>Rapport VN Mulhouse</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --page-bg:#FFFFFF; --surface:#FFFFFF;
+  --navy:#2D3250; --navy-soft:#4A5278;
+  --gold:#C8AA73; --gold-soft:#F1E7D3; --gold-deep:#A88A56;
+  --text:#3B3A36; --text-muted:#8A8474;
+  --border:#E7E1D3; --row-alt:#F8F6F0;
+  --green:#2E7D5F; --green-soft:#E4F1EB;
+  --red:#B0413E; --red-soft:#F8E9E8;
+  --orange:#C1793A; --orange-soft:#F6EADA;
+  --on-navy:#FFFFFF;
+  --shadow: 0 1px 2px rgba(45,50,80,0.06), 0 8px 24px -12px rgba(45,50,80,0.18);
+}
+/* Fixe en clair comme un vrai email (Gmail/Outlook n'appliquent pas le theme
+   sombre a un mail HTML de toute facon) — meme choix que le mockup VO. */
+*{box-sizing:border-box}
+body{background:var(--page-bg);color:var(--text);font-family:'Montserrat',Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;}
+.page{max-width:660px;margin:0 auto;padding:32px 16px 56px;}
+.card{background:var(--surface);border-radius:6px;overflow:hidden;box-shadow:var(--shadow);}
+.header{background:var(--navy);padding:22px 32px;}
+.logo{color:var(--on-navy);font-weight:800;font-size:17px;letter-spacing:0.04em;}
+.logo span{color:var(--gold);}
+.hairline{height:3px;background:var(--gold);}
+.titleblock{padding:30px 32px 22px;border-bottom:1px solid var(--border);}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold-deep);margin:0 0 8px;}
+h1{margin:0;font-size:24px;font-weight:700;color:var(--navy);line-height:1.25;text-wrap:balance;}
+.meta{margin:8px 0 0;font-size:13px;color:var(--text-muted);}
+.meta b{color:var(--text);font-weight:600;}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border);}
+.kpi{padding:18px 12px;text-align:center;border-left:1px solid var(--border);}
+.kpi:first-child{border-left:none;}
+.kpi .v{font-size:22px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;line-height:1;}
+.kpi .l{margin-top:6px;font-size:9.5px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);}
+.kpi .v.down{color:var(--red);} .kpi .v.up{color:var(--green);}
+
+.synthese{margin:24px 32px;padding:20px 22px;background:var(--gold-soft);border-radius:6px;border-left:3px solid var(--gold);}
+.synthese .eyebrow{color:var(--gold-deep);}
+.synthese p{margin:0;font-size:13.5px;line-height:1.65;color:var(--text);}
+.synthese b{color:var(--navy);}
+
+.section{padding:22px 32px;border-top:1px solid var(--border);}
+.section h2{margin:0 0 3px;font-size:14px;font-weight:700;color:var(--navy);letter-spacing:0.01em;}
+.section .sub{margin:0 0 14px;font-size:11.5px;color:var(--text-muted);}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th{background:var(--navy);color:var(--on-navy);text-align:left;font-weight:600;font-size:10.5px;
+   letter-spacing:0.04em;text-transform:uppercase;padding:8px 10px;}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums;}
+td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text);}
+tr:nth-child(even) td{background:var(--row-alt);}
+.plate{font-family:'Montserrat',monospace;font-weight:600;color:var(--navy);white-space:nowrap;}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;white-space:nowrap;}
+.pill.red{background:var(--red-soft);color:var(--red);}
+.pill.orange{background:var(--orange-soft);color:var(--orange);}
+.stat-row{display:flex;flex-wrap:wrap;gap:8px 18px;margin-bottom:14px;font-size:12.5px;}
+.stat-row .item b{color:var(--navy);font-variant-numeric:tabular-nums;}
+.mini-list{margin:10px 0 0;padding:0;list-style:none;font-size:12px;color:var(--text-muted);}
+.mini-list li{padding:5px 0;border-top:1px solid var(--border);}
+.mini-list li:first-child{border-top:none;}
+.mini-list .plate{margin-right:6px;}
+.mini-list .age{float:right;color:var(--text-muted);font-variant-numeric:tabular-nums;}
+.more{margin-top:10px;font-size:11.5px;color:var(--text-muted);font-style:italic;}
+.podium{display:flex;flex-direction:column;gap:8px;}
+.podium .row{display:flex;align-items:center;gap:10px;}
+.podium .rank{width:20px;height:20px;border-radius:50%;background:var(--navy);color:var(--on-navy);
+  font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;}
+.podium .name{flex:1;font-size:12.5px;color:var(--text);}
+.podium .name b{color:var(--navy);}
+.podium .exces{font-size:14px;font-weight:700;color:var(--orange);font-variant-numeric:tabular-nums;}
+.footer{background:var(--navy);padding:22px 32px;text-align:center;}
+.footer p{margin:0;font-size:11px;color:rgba(255,255,255,0.55);line-height:1.6;}
+.footer strong{color:var(--gold);}
+@media (max-width:480px){.kpis{grid-template-columns:repeat(2,1fr);}
+  .kpi:nth-child(3){border-left:none;}
+  .titleblock,.section,.header{padding-left:20px;padding-right:20px;}
+  .synthese{margin-left:20px;margin-right:20px;}}
+</style>
+
+<div class="page">
+  <div class="card">
+
+    <div class="header">
+      <div class="logo">HESS<span>&middot;</span>AUTOMOBILE</div>
+    </div>
+    <div class="hairline"></div>
+
+    <div class="titleblock">
+      <p class="eyebrow">Rapport quotidien &middot; V&eacute;hicules Neufs</p>
+      <h1>Renault/Nissan Mulhouse</h1>
+      <p class="meta">Chiffres de la veille &mdash; <b>exemple avec donn&eacute;es r&eacute;elles</b></p>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="v">33</div><div class="l">Leads re&ccedil;us J-1</div></div>
+      <div class="kpi"><div class="v">2,4<span style="font-size:12px;">&nbsp;mois</span></div><div class="l">Couverture stock</div></div>
+      <div class="kpi"><div class="v">42</div><div class="l">Stock &acirc;g&eacute; VN (+6 mois)</div></div>
+      <div class="kpi"><div class="v down">3</div><div class="l">Anomalies ventes</div></div>
+    </div>
+
+    <div class="synthese">
+      <p class="eyebrow">Synth&egrave;se</p>
+      <p>&Agrave; corriger : le dossier Kangoo Van VN affiche une marge de -5&nbsp;265&euro;, sans aide au ch&acirc;ssis identifi&eacute;e &mdash; la perte la plus importante des 3 anomalies ventes du jour.</p>
+    </div>
+
+    <div class="section">
+      <h2>Anomalies ventes</h2>
+      <p class="sub">3 dossiers sur 7 jours glissants</p>
+      <table>
+        <tr><th>VIN</th><th>V&eacute;hicule</th><th class="num">Marge</th><th>Anomalie</th></tr>
+        <tr><td><span class="plate">VF1RJA00477044237</span></td><td>Clio VN &middot; Administration</td><td class="num" style="color:var(--red);font-weight:700;">-1&nbsp;073&euro;</td><td>marge n&eacute;gative sans aide</td></tr>
+        <tr><td><span class="plate">VF1RFK00377227765</span></td><td>Kangoo Van VN &middot; Flottes/Soci&eacute;t&eacute;s</td><td class="num" style="color:var(--red);font-weight:700;">-5&nbsp;265&euro;</td><td>marge n&eacute;gative sans aide</td></tr>
+        <tr><td><span class="plate">VYSP0100577081535</span></td><td>Renault 5 E-Tech VN &middot; Particuliers</td><td class="num" style="color:var(--green);font-weight:700;">+463&euro;</td><td>aide au ch&acirc;ssis possible manquante</td></tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Leads VN</h2>
+      <div class="stat-row">
+        <div class="item">Re&ccedil;us J-1 : <b>33</b></div>
+        <div class="item">Re&ccedil;us 7j : <b>210</b></div>
+        <div class="item">Non trait&eacute;s J-1 : <b>14</b></div>
+        <div class="item">Non trait&eacute;s 7j : <b>33</b></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Qualit&eacute; du stock VN/VD</h2>
+      <p class="sub">Photo du jour</p>
+      <div class="stat-row">
+        <div class="item">Stock VN : <b>381</b></div>
+        <div class="item">Stock VD : <b>59</b></div>
+        <div class="item">&Acirc;g&eacute; VN +6 mois : <b>42</b></div>
+        <div class="item">&Acirc;g&eacute; VD +6 mois : <b>28</b></div>
+        <div class="item">Contremarqu&eacute; +90j : <b>29</b></div>
+      </div>
+      <h3 style="margin:18px 0 4px;font-size:12px;font-weight:700;color:var(--navy);">VN les plus anciens</h3>
+      <ul class="mini-list">
+        <li><span class="plate">Nissan</span> Nouveau Qashqai 2024<span class="age">418j</span></li>
+        <li><span class="plate">Nissan</span> Qashqai Hybrid<span class="age">363j</span></li>
+        <li><span class="plate">Nissan</span> X-Trail E-Power<span class="age">361j</span></li>
+      </ul>
+
+      <h3 style="margin:18px 0 4px;font-size:12px;font-weight:700;color:var(--navy);">VD les plus anciens</h3>
+      <ul class="mini-list">
+        <li><span class="plate">Nissan</span> Nouveau Qashqai 2024<span class="age">636j</span></li>
+        <li><span class="plate">Renault</span> Trafic FG<span class="age">602j</span></li>
+        <li><span class="plate">Renault</span> Master FG<span class="age">601j</span></li>
+      </ul>
+
+      <h3 style="margin:18px 0 4px;font-size:12px;font-weight:700;color:var(--navy);">Contremarqu&eacute;s depuis le plus longtemps</h3>
+      <ul class="mini-list">
+        <li><span class="plate">Nissan</span> Nouveau Qashqai 2024<span class="age">364j</span></li>
+        <li><span class="plate">Renault</span> Master IV<span class="age">320j</span></li>
+        <li><span class="plate">Renault</span> Master Fourgon<span class="age">314j</span></li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Rotation &amp; couverture</h2>
+      <p class="sub">Stock total (VN+VD) &divide; ventes moyennes mensuelles, tous mod&egrave;les confondus</p>
+      <table>
+        <tr><th></th><th class="num">Renault/Nissan Mulhouse</th><th class="num">Plaque Renault</th></tr>
+        <tr><td>Stock</td><td class="num">440</td><td class="num">2&nbsp;447</td></tr>
+        <tr><td>Ventes moy. mensuelle</td><td class="num">184,9</td><td class="num">807,6</td></tr>
+        <tr><td>Couverture</td><td class="num" style="color:var(--green);font-weight:700;">2,4 mois</td><td class="num">3,0 mois</td></tr>
+      </table>
+      <p class="more">Mulhouse tourne plus vite que la moyenne de sa Plaque. Agr&eacute;gat calcul&eacute; sur les mod&egrave;les pr&eacute;sents chez Mulhouse uniquement.</p>
+    </div>
+
+    <div class="section">
+      <h2>Exc&egrave;s de stock &mdash; top 3 mod&egrave;les</h2>
+      <p class="sub">Stock vs ventes moyennes sur 90 jours</p>
+      <div class="podium">
+        <div class="row"><div class="rank">1</div><div class="name"><b>Clio</b> &mdash; stock 53, ventes 22,3</div><div class="exces">31</div></div>
+        <div class="row"><div class="rank">2</div><div class="name"><b>Sandero</b> &mdash; stock 47, ventes 25,0</div><div class="exces">22</div></div>
+        <div class="row"><div class="rank">3</div><div class="name"><b>Master</b> &mdash; stock 29, ventes 7,7</div><div class="exces">21</div></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p><strong>HESS Automobile</strong> &middot; Rapport g&eacute;n&eacute;r&eacute; automatiquement, donn&eacute;es BigQuery &amp; Google Sheets<br>
+      [MAQUETTE] Renault/Nissan Mulhouse &middot; donn&eacute;es r&eacute;elles issues de Sheets rafra&icirc;chis &agrave; des dates diff&eacute;rentes (Leads : 14/09, Stock/Ventes : 23/09) &mdash; pas encore synchronis&eacute;s comme pour le VO</p>
+    </div>
+
+  </div>
+</div>
