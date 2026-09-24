@@ -602,6 +602,42 @@ mail Service. La maquette actuelle inclut encore la comparaison Plaque ;
 retrait à faire quand le mail Service sera finalisé pour de vrai (pas encore
 fait, maquette non modifiée à ce stade).
 
+**Intégration du Bloc 2 (2026-09-24)** : section "Commandes & Facturations vs
+Objectifs" ajoutée entre Anomalies ventes et Leads VN (pacing d'objectif,
+plus directement actionnable qu'un simple compteur d'activité, mais moins
+urgent qu'une anomalie déjà constatée). Format compact inspiré de la
+maquette APV de Corentin (`docs/mockup_email_apv.html`, relue avant de
+construire cette section) : ligne de synthèse "valeur MTD / objectif (%,
+tendance)" plutôt qu'un tableau à 10 colonnes par flux — le `BLOC 2` Sheet
+a beaucoup plus de colonnes (J-1, 7j, moy. hebdo, MTD, MTD N-1, objectif,
+manque à date, taux, projection, reste à faire, tendance × 2 flux) que ce
+qui est montré dans le mail ; seuls MTD/Objectif/% par marque sont affichés
+en tableau, le reste (manque à date, projection) reste dans le Sheet sans
+remonter dans le mail V1. Données réelles Renault/Nissan Mulhouse
+(concession `RENNIS_MULHOUSE`), lues directement dans `BLOC 2` : Commandes
+168/254 (66,1%, stable), Facturations 182/216 (84,3%, hausse confirmée) ;
+détail par marque (Renault, Dacia, Nissan, Alpine — Peugeot exclu, volume
+nul ce mois-ci).
+
+**Tuiles KPI "Tendance Commande/Facturation" (2026-09-24, corrigé)** : la
+Tendance du Bloc 2 croise **2 comparaisons distinctes**, pas une seule
+(cf. formule §2) — niveau (mois à date vs même période l'an dernier, dates
+calendaires égales) et rythme (7 derniers jours vs moyenne hebdo des 4
+semaines précédentes). Une première version de la tuile n'affichait que le
+% de niveau, ce qui laissait croire que c'était le seul critère derrière le
+qualificatif ("Stable", "Hausse confirmée"...) — **corrigé** : la tuile
+affiche le qualificatif (flèche + mot, valeur brute du Sheet), et un
+tooltip explique les 2 comparaisons avec leurs valeurs réelles (ex.
+niveau 168 vs 179 = -6,1%, rythme 42 vs 41,25 = 102%), sur le même principe
+que le tooltip déjà utilisé pour le score de vigilance.
+
+**Note BMW Motorrad — conditionnelle, pas démontrée sur cette maquette** :
+Renault/Nissan Mulhouse ne porte pas la marque BMW Motorrad, donc la note
+documentée au §2 ("suivi mensuel déclaratif, pas de détail J-1/7j") n'a pas
+de données réelles à afficher ici. À template-driver : la note doit
+apparaître uniquement sur les lignes marque = BMW Motorrad, pas codée en
+dur pour toutes les concessions.
+
 ## 7. Questions ouvertes VN
 
 1. **Bloc 4, table `vehicules`** : confirmer si `hess-data.datamart_ventes.vehicules`
@@ -620,9 +656,10 @@ fait, maquette non modifiée à ce stade).
 
 ## 8. Prochaines étapes
 
-1. Intégrer le Bloc 2 (Commandes & Facturations vs Objectifs) à la maquette
-   mail VN — pas encore fait, y compris la note sur les lignes BMW Motorrad
-   (§2).
+1. ~~Intégrer le Bloc 2 (Commandes & Facturations vs Objectifs) à la
+   maquette mail VN~~ **fait (2026-09-24)** — voir §6. La note BMW Motorrad
+   reste à implémenter en conditionnel côté mail réel (pas démontrable sur
+   la maquette Mulhouse, qui ne porte pas cette marque).
 2. Retirer la comparaison Plaque du mail Service (maquette + mail réel) une
    fois le futur mail Directeur de plaque cadré — décision de périmètre
    prise (§6), reste à exécuter.

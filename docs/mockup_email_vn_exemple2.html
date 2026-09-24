@@ -1,4 +1,4 @@
-<title>Rapport VN Mulhouse</title>
+<title>Rapport VN Mulhouse — Exemple 2</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
 <style>
 :root{
@@ -13,8 +13,6 @@
   --on-navy:#FFFFFF;
   --shadow: 0 1px 2px rgba(45,50,80,0.06), 0 8px 24px -12px rgba(45,50,80,0.18);
 }
-/* Fixe en clair comme un vrai email (Gmail/Outlook n'appliquent pas le theme
-   sombre a un mail HTML de toute facon) — meme choix que le mockup VO. */
 *{box-sizing:border-box}
 body{background:var(--page-bg);color:var(--text);font-family:'Montserrat',Helvetica,Arial,sans-serif;
   -webkit-font-smoothing:antialiased;}
@@ -74,6 +72,7 @@ tr:nth-child(even) td{background:var(--row-alt);}
 .brand-list li>b:first-child{color:var(--navy);font-size:12.5px;}
 .brand-nums{font-size:12px;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap;}
 .more{margin-top:10px;font-size:11.5px;color:var(--text-muted);font-style:italic;}
+.empty{margin:0;font-size:12.5px;color:var(--text-muted);font-style:italic;}
 .podium{display:flex;flex-direction:column;gap:8px;}
 .podium .row{display:flex;align-items:center;gap:10px;}
 .podium .rank{width:20px;height:20px;border-radius:50%;background:var(--navy);color:var(--on-navy);
@@ -102,64 +101,55 @@ tr:nth-child(even) td{background:var(--row-alt);}
       <div>
         <p class="eyebrow">Rapport quotidien &middot; V&eacute;hicules Neufs</p>
         <h1>Renault/Nissan Mulhouse</h1>
-        <p class="meta">Chiffres de la veille &mdash; <b>exemple avec donn&eacute;es r&eacute;elles</b></p>
+        <p class="meta">Chiffres de la veille &mdash; <b>exemple hypoth&eacute;tique (jour diff&eacute;rent, pour illustrer l'adaptation du commentaire)</b></p>
       </div>
-      <div class="weather" title="Score de vigilance 5/5 (br&#0111;uillon, seuils &#224; valider) &mdash; anomalies ventes (3, +2 pts), retard commandes -11,1% vs objectif mois &agrave; date (+3 pts). Crit&egrave;re couverture stock pas encore int&eacute;gr&eacute; (zone normale non d&eacute;finie, comme c&ocirc;t&eacute; VO).">
+      <div class="weather" title="Score de vigilance 3/5 (br&#0111;uillon, seuils &agrave; valider) &mdash; anomalies ventes (0, +0 pt), retard facturations -41,4% vs objectif mois &agrave; date (+3 pts, pire des 2 flux).">
         <svg viewBox="0 0 24 24" fill="none" stroke="var(--navy-soft)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <path d="M17.5 16.5H8a4.5 4.5 0 0 1-1-8.9A5 5 0 0 1 16.5 5.5a4.5 4.5 0 0 1 1 11z"/>
-          <line x1="9" y1="19.5" x2="8" y2="21.5"/>
-          <line x1="13" y1="19.5" x2="12" y2="21.5"/>
-          <line x1="17" y1="19.5" x2="16" y2="21.5"/>
         </svg>
-        <span class="w-label">Pluie</span>
+        <span class="w-label">Nuage</span>
       </div>
     </div>
 
     <div class="kpis">
-      <div class="kpi"><div class="v">33</div><div class="l">Leads J-1</div></div>
-      <div class="kpi" title="Niveau (mois &agrave; date vs m&ecirc;me p&eacute;riode l'an dernier) : 168 vs 179 (-6,1%). Rythme (7 derniers jours vs moyenne hebdo des 4 semaines pr&eacute;c&eacute;dentes) : 42 vs 41,25 (102%, dans la norme). &rarr; Stable : aucun des 2 crit&egrave;res de confirmation n'est atteint."><div class="v trend">&rarr; Stable</div><div class="l">Commande &middot; tendance</div></div>
-      <div class="kpi" title="Niveau (mois &agrave; date vs m&ecirc;me p&eacute;riode l'an dernier) : 182 vs 114 (+59,6%). Rythme (7 derniers jours vs moyenne hebdo des 4 semaines pr&eacute;c&eacute;dentes) : 49 vs 49 (100%, dans la norme). &uarr; Hausse confirm&eacute;e : niveau &ge; +10% et rythme &ge; 80% de la moyenne."><div class="v trend up">&uarr; Hausse</div><div class="l">Facturation &middot; tendance</div></div>
-      <div class="kpi"><div class="v down">3</div><div class="l">Anomalies signal&eacute;es</div></div>
+      <div class="kpi"><div class="v">30</div><div class="l">Leads J-1</div></div>
+      <div class="kpi" title="Niveau (mois &agrave; date vs m&ecirc;me p&eacute;riode l'an dernier) : 175 vs 183 (-4,4%). Rythme (7 derniers jours vs moyenne hebdo des 4 semaines pr&eacute;c&eacute;dentes) : 40 vs 41 (98%, dans la norme). &rarr; Stable : aucun des 2 crit&egrave;res de confirmation n'est atteint."><div class="v trend">&rarr; Stable</div><div class="l">Commande &middot; tendance</div></div>
+      <div class="kpi" title="Niveau (mois &agrave; date vs m&ecirc;me p&eacute;riode l'an dernier) : 97 vs 150 (-35,3%). Rythme (7 derniers jours vs moyenne hebdo des 4 semaines pr&eacute;c&eacute;dentes) : 20 vs 22 (91%, dans la norme). &darr; Baisse confirm&eacute;e : niveau &le; -10% et rythme &le; 120% de la moyenne."><div class="v trend down">&darr; Baisse</div><div class="l">Facturation &middot; tendance</div></div>
+      <div class="kpi"><div class="v up">0</div><div class="l">Anomalies signal&eacute;es</div></div>
     </div>
 
     <div class="synthese">
       <p class="eyebrow">Synth&egrave;se</p>
-      <p>&Agrave; corriger : le dossier Kangoo Van VN affiche une marge de -5&nbsp;265&euro;, sans aide au ch&acirc;ssis identifi&eacute;e &mdash; la perte la plus importante des 3 anomalies ventes du jour.</p>
-      <p>Pour atteindre l'objectif du mois, il reste &agrave; r&eacute;aliser 17 commandes et 7 facturations par jour ouvr&eacute; sur les 5 jours restants &mdash; Nissan et Dacia sont les marques les plus en retard sur objectif.</p>
+      <p>&Agrave; traiter en priorit&eacute; : 21 des 30 leads re&ccedil;us hier restent sans r&eacute;ponse (70%, contre 14/33 habituellement) &mdash; un volume de leads non trait&eacute;s nettement sup&eacute;rieur &agrave; la normale, avant qu'ils ne se transforment en ventes perdues.</p>
+      <p>Les facturations d&eacute;crochent fortement : 97 dossiers factur&eacute;s ce mois contre un objectif de 216 (44,9%, baisse confirm&eacute;e) &mdash; sans acc&eacute;l&eacute;ration, l'objectif du mois ne sera pas atteint.</p>
     </div>
 
     <div class="section">
       <h2>Leads VN</h2>
       <div class="stat-row">
-        <div class="item">Re&ccedil;us J-1 : <b>33</b></div>
-        <div class="item">Re&ccedil;us 7j : <b>210</b></div>
-        <div class="item">Non trait&eacute;s J-1 : <b>14</b></div>
-        <div class="item">Non trait&eacute;s 7j : <b>33</b></div>
+        <div class="item">Re&ccedil;us J-1 : <b>30</b></div>
+        <div class="item">Re&ccedil;us 7j : <b>195</b></div>
+        <div class="item">Non trait&eacute;s J-1 : <b style="color:var(--red);">21</b></div>
+        <div class="item">Non trait&eacute;s 7j : <b>45</b></div>
       </div>
     </div>
 
     <div class="section">
       <h2>Commandes &amp; Facturations vs Objectifs</h2>
-      <p class="sub">Mois &agrave; date &middot; prorata sur 17/22 jours ouvr&eacute;s &eacute;coul&eacute;s</p>
-      <p class="narrative">Les commandes suivent leur rythme habituel (<b>66%</b> de l'objectif mensuel, stable), tir&eacute;es par Alpine (136%) et Renault (78%). Les facturations acc&eacute;l&egrave;rent nettement (<b>84%</b>, hausse confirm&eacute;e) : Renault a d&eacute;j&agrave; d&eacute;pass&eacute; son objectif du mois (111%). Nissan et Dacia restent en net retard sur les deux flux, avec seulement 24% et 42% de leurs commandes atteintes.</p>
+      <p class="sub">Mois &agrave; date &middot; prorata sur 19/22 jours ouvr&eacute;s &eacute;coul&eacute;s</p>
+      <p class="narrative">Les commandes tiennent &agrave; peu pr&egrave;s le rythme (<b>69%</b> de l'objectif, stable), port&eacute;es surtout par Renault (85%) &mdash; les autres marques sont toutes en retard (44 &agrave; 48%). Les facturations, elles, d&eacute;crochent sur l'ensemble des marques (<b style="color:var(--red);">45%</b> au global, baisse confirm&eacute;e) : Alpine et Nissan sont les plus en difficult&eacute; (13% et 24% de leur objectif atteint).</p>
       <table style="margin-top:14px;">
         <tr><th>Marque</th><th class="num">Cde MTD</th><th class="num">Cde Obj.</th><th class="num">Cde %</th><th class="num">Fact MTD</th><th class="num">Fact Obj.</th><th class="num">Fact %</th></tr>
-        <tr><td>Renault</td><td class="num">119</td><td class="num">153</td><td class="num">78%</td><td class="num">133</td><td class="num">120</td><td class="num" style="color:var(--green);font-weight:700;">111%</td></tr>
-        <tr><td>Dacia</td><td class="num">29</td><td class="num">69</td><td class="num" style="color:var(--red);font-weight:700;">42%</td><td class="num">34</td><td class="num">60</td><td class="num" style="color:var(--red);font-weight:700;">57%</td></tr>
-        <tr><td>Nissan</td><td class="num">5</td><td class="num">21</td><td class="num" style="color:var(--red);font-weight:700;">24%</td><td class="num">5</td><td class="num">21</td><td class="num" style="color:var(--red);font-weight:700;">24%</td></tr>
-        <tr><td>Alpine</td><td class="num">15</td><td class="num">11</td><td class="num" style="color:var(--green);font-weight:700;">136%</td><td class="num">10</td><td class="num">15</td><td class="num">67%</td></tr>
+        <tr><td>Renault</td><td class="num">130</td><td class="num">153</td><td class="num">85%</td><td class="num">70</td><td class="num">120</td><td class="num" style="color:var(--red);font-weight:700;">58%</td></tr>
+        <tr><td>Dacia</td><td class="num">30</td><td class="num">69</td><td class="num" style="color:var(--red);font-weight:700;">44%</td><td class="num">20</td><td class="num">60</td><td class="num" style="color:var(--red);font-weight:700;">33%</td></tr>
+        <tr><td>Nissan</td><td class="num">10</td><td class="num">21</td><td class="num" style="color:var(--red);font-weight:700;">48%</td><td class="num">5</td><td class="num">21</td><td class="num" style="color:var(--red);font-weight:700;">24%</td></tr>
+        <tr><td>Alpine</td><td class="num">5</td><td class="num">11</td><td class="num" style="color:var(--red);font-weight:700;">46%</td><td class="num">2</td><td class="num">15</td><td class="num" style="color:var(--red);font-weight:700;">13%</td></tr>
       </table>
     </div>
 
     <div class="section">
       <h2>Anomalies ventes</h2>
-      <p class="sub">3 dossiers sur 7 jours glissants</p>
-      <table>
-        <tr><th>VIN</th><th>V&eacute;hicule</th><th class="num">Marge</th><th>Anomalie</th></tr>
-        <tr><td><span class="plate">VF1RJA00477044237</span></td><td>Clio VN &middot; Administration</td><td class="num" style="color:var(--red);font-weight:700;">-1&nbsp;073&euro;</td><td>marge n&eacute;gative sans aide</td></tr>
-        <tr><td><span class="plate">VF1RFK00377227765</span></td><td>Kangoo Van VN &middot; Flottes/Soci&eacute;t&eacute;s</td><td class="num" style="color:var(--red);font-weight:700;">-5&nbsp;265&euro;</td><td>marge n&eacute;gative sans aide</td></tr>
-        <tr><td><span class="plate">VYSP0100577081535</span></td><td>Renault 5 E-Tech VN &middot; Particuliers</td><td class="num" style="color:var(--green);font-weight:700;">+463&euro;</td><td>aide au ch&acirc;ssis possible manquante</td></tr>
-      </table>
+      <p class="empty">Rien &agrave; signaler &mdash; aucune anomalie de marge d&eacute;tect&eacute;e sur les 7 derniers jours glissants.</p>
     </div>
 
     <div class="section">
@@ -218,7 +208,7 @@ tr:nth-child(even) td{background:var(--row-alt);}
 
     <div class="footer">
       <p><strong>HESS Automobile</strong> &middot; Rapport g&eacute;n&eacute;r&eacute; automatiquement, donn&eacute;es BigQuery &amp; Google Sheets<br>
-      [MAQUETTE] Renault/Nissan Mulhouse &middot; donn&eacute;es r&eacute;elles issues de Sheets rafra&icirc;chis &agrave; des dates diff&eacute;rentes (Leads : 14/09, Stock/Ventes : 23/09) &mdash; pas encore synchronis&eacute;s comme pour le VO &middot; score de vigilance en brouillon, seuils non valid&eacute;s</p>
+      [MAQUETTE] Renault/Nissan Mulhouse &middot; <b>exemple 2, hypoth&eacute;tique</b> &mdash; Leads/Commandes/Facturations/Anomalies modifi&eacute;s pour illustrer un jour diff&eacute;rent ; Stock inchang&eacute; (n'&eacute;volue pas vite d'un jour &agrave; l'autre) &middot; score de vigilance en brouillon, seuils non valid&eacute;s</p>
     </div>
 
   </div>
