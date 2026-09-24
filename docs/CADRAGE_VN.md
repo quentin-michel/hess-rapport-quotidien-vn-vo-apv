@@ -112,16 +112,20 @@ SINON                                                           → "→ Stable"
 ```
 
 **Grain et totaux** : une ligne par concession × marque, plus des lignes de
-total (Groupe, Plaque, total par marque au niveau groupe). Totaux calculés
-par `SUMIFS` sur `Extrait_ComFact` avec un critère `"<>§"` (chaîne
-improbable comme valeur de comparaison) pour agréger "toutes les valeurs"
-quand la ligne est un total, sans dupliquer une formule séparée sans filtre.
+total par Plaque et par marque au niveau groupe. **Ligne "TOTAL GROUPE"
+retirée par Quentin (2026-09-25)** — cohérence avec le Bloc VO équivalent
+(§ci-dessous), qui n'en a jamais eu. Totaux calculés par `SUMIFS` sur
+`Extrait_ComFact` avec un critère `"<>§"` (chaîne improbable comme valeur de
+comparaison) pour agréger "toutes les valeurs" quand la ligne est un total,
+sans dupliquer une formule séparée sans filtre — la logique reste valable
+pour les totaux Plaque et marque, seule la ligne Groupe a disparu.
 
-**Validé (2026-09-24)** sur données réelles, Total Groupe VN : Commandes
-2 145 mois à date / objectif 2 904 (73,9%, tendance stable) ; Facturations
-1 327 mois à date / objectif 2 662 (49,8%, tendance hausse confirmée) —
-écart révélateur entre les deux flux (le groupe commande à un rythme proche
-de l'objectif mais facture en retard).
+**Validé (2026-09-24)**, chiffres historiques observés au niveau groupe
+avant retrait de la ligne : Commandes 2 145 mois à date / objectif 2 904
+(73,9%, tendance stable) ; Facturations 1 327 mois à date / objectif 2 662
+(49,8%, tendance hausse confirmée) — écart révélateur entre les deux flux
+(le groupe commandait à un rythme proche de l'objectif mais facturait en
+retard).
 
 ### 2.x Ancienne piste abandonnée — anomalie "aide non respectée"
 

@@ -52,6 +52,8 @@ h1{margin:0;font-size:24px;font-weight:700;color:var(--navy);line-height:1.25;te
 .section{padding:22px 32px;border-top:1px solid var(--border);}
 .section h2{margin:0 0 3px;font-size:14px;font-weight:700;color:var(--navy);letter-spacing:0.01em;}
 .section .sub{margin:0 0 14px;font-size:11.5px;color:var(--text-muted);}
+.narrative{margin:0;font-size:13px;line-height:1.65;color:var(--text);}
+.narrative b{color:var(--navy);}
 table{width:100%;border-collapse:collapse;font-size:12.5px;}
 th{background:var(--navy);color:var(--on-navy);text-align:left;font-weight:600;font-size:10.5px;
    letter-spacing:0.04em;text-transform:uppercase;padding:8px 10px;}
@@ -126,7 +128,7 @@ tr:nth-child(even) td{background:var(--row-alt);}
     <div class="synthese">
       <p class="eyebrow">Synthèse</p>
       <p>Deux véhicules demandent une action <b>aujourd'hui</b>, pas seulement un suivi : <b>FN-627-YH</b> (308), signalé dès l'achat pour des écarts de prix/km/date, se retrouve depuis 7 jours à la fois sans prix de vente <i>et</i> sans destination en stock &mdash; le problème identifié à l'achat n'a pas été traité en aval. <b>GK-964-EX</b> (Mégane E-Tech), acheté hier avec les écarts les plus importants de la semaine, n'a lui non plus pas encore de prix.</p>
-      <p>Par ailleurs, l'excès de <b>Clio Hybride essence</b> (18 unités) ne va pas se résorber seul : les ventes du modèle reculent de 21% sur 30 jours &mdash; sans action commerciale ciblée, l'écart va se creuser plutôt que se corriger.</p>
+      <p>Les facturations VO risquent de manquer l'objectif du mois : le rythme des 7 derniers jours (<b>3,7</b>/jour) est loin des <b>10,2</b> facturations/jour ouvré nécessaires sur les 5 jours restants.</p>
     </div>
 
     <div class="section">
@@ -140,12 +142,18 @@ tr:nth-child(even) td{background:var(--row-alt);}
     </div>
 
     <div class="section">
-      <h2>Offres VO &amp; reprises</h2>
+      <h2>Offres VO &amp; Facturations vs Objectifs</h2>
       <div class="stat-row">
         <div class="item">Commandes VOP acceptées : <b>3</b> (27)</div>
         <div class="item">Offres refusées : <b>1</b> (19)</div>
         <div class="item">Reprises acceptées : <b>1</b> (10)</div>
       </div>
+      <p class="narrative">Les commandes VO reculent nettement par rapport &agrave; l'an dernier (<b style="color:var(--red);">-10%</b>, baisse confirm&eacute;e), malgr&eacute; un taux d'atteinte de l'objectif au-dessus de la moyenne de la Plaque (<b>88%</b> contre 76%). Les facturations, elles, progressent fortement (<b style="color:var(--green);">+33%</b>, hausse confirm&eacute;e) mais restent en retard sur l'objectif du mois (59%, comme au niveau Plaque).</p>
+      <table style="margin-top:12px;">
+        <tr><th></th><th class="num">MTD</th><th class="num">Objectif</th><th class="num">%</th></tr>
+        <tr><td>Commandes</td><td class="num">105</td><td class="num">120</td><td class="num">88%</td></tr>
+        <tr><td>Facturations</td><td class="num">72</td><td class="num">123</td><td class="num" style="color:var(--red);font-weight:700;">59%</td></tr>
+      </table>
     </div>
 
     <div class="section">
@@ -162,7 +170,21 @@ tr:nth-child(even) td{background:var(--row-alt);}
     </div>
 
     <div class="section">
-      <h2>Qualité du stock</h2>
+      <h2>Anomalies ventes</h2>
+      <p class="sub">7 jours glissants &middot; 8 dossiers &middot; 5 plus significatifs affichés</p>
+      <table>
+        <tr><th>Véhicule</th><th class="num">Marge</th><th>Anomalie</th></tr>
+        <tr><td><span class="plate">GR-375-VL</span> Master FG</td><td class="num" style="color:var(--red);font-weight:700;">-6 737€</td><td>Marge négative + détention 275j</td></tr>
+        <tr><td><span class="plate">GN-200-CK</span> Captur</td><td class="num" style="color:var(--red);font-weight:700;">-4 658€</td><td>Marge négative + écart FRE +914€</td></tr>
+        <tr><td><span class="plate">GV687NL</span> Austral</td><td class="num" style="color:var(--red);font-weight:700;">-3 574€</td><td>Marge négative</td></tr>
+        <tr><td><span class="plate">GQ-262-TD</span> Trafic FG</td><td class="num" style="color:var(--red);font-weight:700;">-3 218€</td><td>Marge négative + détention 340j</td></tr>
+        <tr><td><span class="plate">GS-237-BD</span> Austral</td><td class="num" style="color:var(--red);font-weight:700;">-1 386€</td><td>Marge négative</td></tr>
+      </table>
+      <p class="more">+ 3 autres anomalies (2 marges élevées, 1 marge négative mineure)</p>
+    </div>
+
+    <div class="section">
+      <h2>État du stock</h2>
       <p class="sub">Photo du jour &middot; véhicules ST/CL/IM</p>
       <div class="stat-row">
         <div class="item">Stock ST : <b>204</b></div>
@@ -210,20 +232,6 @@ tr:nth-child(even) td{background:var(--row-alt);}
         <div class="row"><div class="rank">2</div><div class="name"><b>Master FG</b> Diesel &mdash; stock 15, ventes 4</div><div class="exces">11</div></div>
         <div class="row"><div class="rank">3</div><div class="name"><b>Mégane</b> Électrique / <b>Sandero</b> GPL (ex æquo)</div><div class="exces">7</div></div>
       </div>
-    </div>
-
-    <div class="section">
-      <h2>Anomalies ventes</h2>
-      <p class="sub">7 jours glissants &middot; 8 dossiers &middot; 5 plus significatifs affichés</p>
-      <table>
-        <tr><th>Véhicule</th><th class="num">Marge</th><th>Anomalie</th></tr>
-        <tr><td><span class="plate">GR-375-VL</span> Master FG</td><td class="num" style="color:var(--red);font-weight:700;">-6 737€</td><td>Marge négative + détention 275j</td></tr>
-        <tr><td><span class="plate">GN-200-CK</span> Captur</td><td class="num" style="color:var(--red);font-weight:700;">-4 658€</td><td>Marge négative + écart FRE +914€</td></tr>
-        <tr><td><span class="plate">GV687NL</span> Austral</td><td class="num" style="color:var(--red);font-weight:700;">-3 574€</td><td>Marge négative</td></tr>
-        <tr><td><span class="plate">GQ-262-TD</span> Trafic FG</td><td class="num" style="color:var(--red);font-weight:700;">-3 218€</td><td>Marge négative + détention 340j</td></tr>
-        <tr><td><span class="plate">GS-237-BD</span> Austral</td><td class="num" style="color:var(--red);font-weight:700;">-1 386€</td><td>Marge négative</td></tr>
-      </table>
-      <p class="more">+ 3 autres anomalies (2 marges élevées, 1 marge négative mineure)</p>
     </div>
 
     <div class="footer">
