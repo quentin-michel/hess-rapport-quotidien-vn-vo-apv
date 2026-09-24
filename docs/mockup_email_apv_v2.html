@@ -1,0 +1,199 @@
+<title>Rapport APV v2 — BMW Belfort</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --page-bg:#FFFFFF; --surface:#FFFFFF;
+  --navy:#2D3250; --navy-soft:#4A5278;
+  --gold:#C8AA73; --gold-soft:#F1E7D3; --gold-deep:#A88A56;
+  --text:#3B3A36; --text-muted:#8A8474;
+  --border:#E7E1D3; --row-alt:#F8F6F0;
+  --green:#2E7D5F; --green-soft:#E4F1EB;
+  --red:#B0413E; --red-soft:#F8E9E8;
+  --orange:#C1793A; --orange-soft:#F6EADA;
+  --on-navy:#FFFFFF;
+  --atelier:#4A5278; --atelier-soft:#EEF0F7;
+  --magasin:#A88A56; --magasin-soft:#F5EFE2;
+  --shadow: 0 1px 2px rgba(45,50,80,0.06), 0 8px 24px -12px rgba(45,50,80,0.18);
+}
+/* Design volontairement fige en clair (comme un vrai email). */
+*{box-sizing:border-box}
+body{background:var(--page-bg);color:var(--text);font-family:'Montserrat',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+.page{max-width:680px;margin:0 auto;padding:32px 16px 56px;}
+.card{background:var(--surface);border-radius:6px;overflow:hidden;box-shadow:var(--shadow);}
+.header{background:var(--navy);padding:22px 32px;display:flex;align-items:center;justify-content:space-between;}
+.logo{color:var(--on-navy);font-weight:800;font-size:17px;letter-spacing:0.04em;}
+.logo span{color:var(--gold);}
+.hairline{height:3px;background:var(--gold);}
+
+.titleblock{padding:28px 32px 20px;border-bottom:1px solid var(--border);}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold-deep);margin:0 0 8px;}
+h1{margin:0;font-size:23px;font-weight:700;color:var(--navy);line-height:1.25;}
+.meta{margin:8px 0 0;font-size:13px;color:var(--text-muted);}
+.meta b{color:var(--text);font-weight:600;}
+
+.icons-row{display:flex;gap:14px;margin-top:18px;}
+.dept-icon{flex:1;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:6px;border:1px solid var(--border);}
+.dept-icon svg{width:30px;height:30px;flex:none;}
+.dept-icon .di-label{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);}
+.dept-icon .di-status{font-size:12.5px;font-weight:600;color:var(--navy);}
+
+.synthese{margin:22px 32px 0;padding:18px 20px;background:var(--gold-soft);border-radius:6px;border-left:3px solid var(--gold);}
+.synthese .eyebrow{color:var(--gold-deep);margin-bottom:6px;}
+.synthese p{margin:0 0 8px;font-size:13.5px;line-height:1.6;color:var(--text);}
+.synthese p:last-child{margin-bottom:0;}
+.synthese b{color:var(--navy);}
+
+.dept-band{margin:26px 32px 0;display:flex;align-items:center;gap:10px;}
+.dept-band .bar{width:4px;height:16px;border-radius:2px;}
+.dept-band.atelier .bar{background:var(--atelier);}
+.dept-band.magasin .bar{background:var(--magasin);}
+.dept-band h2{margin:0;font-size:13px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--navy);}
+
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);margin:14px 32px 0;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.kpi{background:var(--surface);padding:14px 10px;text-align:center;}
+.kpi .v{font-size:18px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;line-height:1.1;}
+.kpi .v.down{color:var(--red);} .kpi .v.up{color:var(--green);}
+.kpi .l{margin-top:5px;font-size:9px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);line-height:1.3;}
+
+.section{padding:16px 32px 4px;}
+.section.tight{padding-top:8px;}
+.narrated{font-size:13px;line-height:1.65;color:var(--text);margin:10px 0;}
+.narrated b{color:var(--navy);}
+.narrated .plate{font-weight:600;color:var(--navy);}
+.tag{display:inline-block;padding:1px 7px;border-radius:9px;font-size:10px;font-weight:700;letter-spacing:0.02em;vertical-align:1px;}
+.tag.critique{background:var(--red-soft);color:var(--red);}
+.tag.alerte{background:var(--orange-soft);color:var(--orange);}
+.tag.surveillance{background:var(--gold-soft);color:var(--gold-deep);}
+.tag.ras{background:var(--green-soft);color:var(--green);}
+
+.sub-h{margin:16px 0 6px;font-size:11.5px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--text-muted);}
+table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0 4px;}
+th{background:var(--navy);color:var(--on-navy);text-align:left;font-weight:600;font-size:10px;letter-spacing:0.03em;text-transform:uppercase;padding:7px 9px;}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums;}
+td{padding:7px 9px;border-bottom:1px solid var(--border);color:var(--text);}
+tr:nth-child(even) td{background:var(--row-alt);}
+.ras-line{font-size:12.5px;color:var(--text-muted);font-style:italic;margin:8px 0;}
+
+.divider{height:1px;background:var(--border);margin:20px 32px 0;}
+.footer{background:var(--navy);padding:20px 32px;text-align:center;margin-top:24px;}
+.footer p{margin:0;font-size:11px;color:rgba(255,255,255,0.55);line-height:1.6;}
+.footer strong{color:var(--gold);}
+@media (max-width:480px){.kpis{grid-template-columns:repeat(2,1fr);}.titleblock,.section,.header{padding-left:20px;padding-right:20px;}.synthese,.dept-band,.kpis,.divider{margin-left:20px;margin-right:20px;}.icons-row{flex-direction:column;}}
+</style>
+
+<div class="page">
+  <div class="card">
+
+    <div class="header"><div class="logo">HESS<span>&middot;</span>AUTOMOBILE</div></div>
+    <div class="hairline"></div>
+
+    <div class="titleblock">
+      <p class="eyebrow">Rapport quotidien &middot; Apr&egrave;s-Vente</p>
+      <h1>BMW Belfort</h1>
+      <p class="meta">Chiffres de la veille &mdash; <b>mercredi 23 septembre 2026</b></p>
+
+      <div class="icons-row">
+        <div class="dept-icon" title="Atelier &mdash; score de vigilance">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--atelier)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.5 16.5H8a4.5 4.5 0 0 1-1-8.9A5 5 0 0 1 16.5 5.5a4.5 4.5 0 0 1 1 11z"/>
+            <line x1="9" y1="19.5" x2="8" y2="21.5"/><line x1="13" y1="19.5" x2="12" y2="21.5"/><line x1="17" y1="19.5" x2="16" y2="21.5"/>
+          </svg>
+          <div><div class="di-label">Atelier</div><div class="di-status">Pluie &mdash; &agrave; surveiller</div></div>
+        </div>
+        <div class="dept-icon" title="Magasin &mdash; score de vigilance">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--magasin)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4.2"/>
+            <line x1="12" y1="2.5" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="21.5"/>
+            <line x1="2.5" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="21.5" y2="12"/>
+            <line x1="5.5" y1="5.5" x2="7" y2="7"/><line x1="17" y1="17" x2="18.5" y2="18.5"/>
+            <line x1="18.5" y1="5.5" x2="17" y2="7"/><line x1="7" y1="17" x2="5.5" y2="18.5"/>
+          </svg>
+          <div><div class="di-label">Magasin</div><div class="di-status">Soleil &mdash; RAS</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="synthese">
+      <p class="eyebrow">Synth&egrave;se du jour</p>
+      <p><b>Atelier :</b> journ&eacute;e sous tension &mdash; efficience des cessions internes &agrave; surveiller, encours qui continue de grimper, et plusieurs remises accord&eacute;es au-del&agrave; des seuils habituels.</p>
+      <p><b>Magasin :</b> situation calme, aucun signal notable au-del&agrave; de quelques remises forc&eacute;es isol&eacute;es.</p>
+    </div>
+
+    <!-- ================= ATELIER ================= -->
+    <div class="dept-band atelier"><div class="bar"></div><h2>Atelier</h2></div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="v">9&nbsp;185&nbsp;&euro;</div><div class="l">CA MO Net HT J-1</div></div>
+      <div class="kpi"><div class="v">49&nbsp;551&nbsp;&euro;</div><div class="l">CA MO Net HT MTD</div></div>
+      <div class="kpi"><div class="v up">104%</div><div class="l">% R&eacute;al. objectif MO</div></div>
+      <div class="kpi"><div class="v">22&nbsp;442&nbsp;&euro;</div><div class="l">CA PR interne J-1</div></div>
+      <div class="kpi"><div class="v">98&nbsp;340&nbsp;&euro;</div><div class="l">CA PR interne MTD</div></div>
+      <div class="kpi"><div class="v down">87%</div><div class="l">% R&eacute;al. objectif PR interne</div></div>
+      <div class="kpi" style="grid-column:span 3;"><div class="v">89%</div><div class="l">Productivit&eacute; J-1</div></div>
+    </div>
+
+    <div class="section">
+      <p class="narrated"><span class="tag alerte">ALERTE</span> Les encours atteignent <b>32,4 jours de CA</b> (seuil d'alerte : 30j), en hausse par rapport aux jours pr&eacute;c&eacute;dents. La r&eacute;partition par anciennet&eacute; montre <b>31 dossiers entre 180 et 365 jours (31 672&euro;)</b> et <b>8 dossiers de plus d'un an (2 766&euro;)</b> &mdash; cette tranche ancienne m&eacute;rite un point avec les r&eacute;ceptionnaires concern&eacute;s.</p>
+      <div class="sub-h">Top encours prioritaires</div>
+      <table>
+        <tr><th>N&deg; OR</th><th>Immat.</th><th class="num">Valeur MO+PR</th><th class="num">Anciennet&eacute;</th></tr>
+        <tr><td>148088</td><td>HE-720-TS</td><td class="num">11&nbsp;489&nbsp;&euro;</td><td class="num">239j</td></tr>
+        <tr><td>150343</td><td>HH-205-LV</td><td class="num">11&nbsp;761&nbsp;&euro;</td><td class="num">162j</td></tr>
+        <tr><td>150434</td><td>HH-367-VP</td><td class="num">11&nbsp;761&nbsp;&euro;</td><td class="num">156j</td></tr>
+      </table>
+    </div>
+
+    <div class="section tight">
+      <p class="narrated"><span class="tag alerte">1 cas</span> Sur l'OR <b>154477</b>, le m&eacute;canicien <b>M&eacute;canicien A</b> a factur&eacute; <b>2h50</b> pour un temps pass&eacute; r&eacute;el de seulement <b>1h47</b>, soit une efficience de <b>140%</b> sur une cession interne &mdash; bien au-dessus du seuil de 105%.</p>
+    </div>
+
+    <div class="section tight">
+      <p class="narrated"><span class="tag surveillance">1 cas</span> L'OR <b>154533</b> (r&eacute;ceptionnaire <b>R&eacute;ceptionnaire A</b>) porte une remise de <b>34% sur les pi&egrave;ces internes</b>, au-dessus du seuil de 20% pour un client particulier.</p>
+    </div>
+
+    <div class="section tight">
+      <p class="narrated"><span class="tag alerte">2 cas</span> Deux forfaits sont en marge estim&eacute;e tr&egrave;s d&eacute;grad&eacute;e : le forfait <b>&laquo;&nbsp;ENTRETIEN SELON PLAN CONSTRUCTEUR&nbsp;&raquo;</b> (client particulier) facture&eacute; 349&euro; pour un co&ucirc;t estim&eacute; de 882&euro; (marge &asymp; <b>-533&euro;</b>), et un forfait <b>&laquo;&nbsp;carrosserie&nbsp;&raquo;</b> factur&eacute; 200&euro; pour 255&euro; de main-d'&oelig;uvre estim&eacute;e (marge &asymp; <b>-55&euro;</b>).</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ================= MAGASIN ================= -->
+    <div class="dept-band magasin"><div class="bar"></div><h2>Magasin</h2></div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="v">2&nbsp;847&nbsp;&euro;</div><div class="l">CA PR Externe J-1</div></div>
+      <div class="kpi"><div class="v">59&nbsp;514&nbsp;&euro;</div><div class="l">CA PR Externe MTD</div></div>
+      <div class="kpi"><div class="v up">112%</div><div class="l">% R&eacute;al. objectif PR ext.</div></div>
+      <div class="kpi" style="grid-column:span 1.5;"><div class="v">381&nbsp;&euro;</div><div class="l">Marge PR Externe J-1</div></div>
+      <div class="kpi" style="grid-column:span 1.5;"><div class="v">13%</div><div class="l">Taux marge PR Externe</div></div>
+    </div>
+
+    <div class="section">
+      <p class="narrated"><span class="tag surveillance">3 cas</span> Trois lignes en remise forc&eacute;e au comptoir : <b>Vendeur A</b> a accord&eacute; 15% sur un embl&egrave;me MINI et 25% sur un r&eacute;troviseur (client Garage Exemple), <b>Vendeur B</b> 10% sur une articulation angulaire &mdash; marges restantes correctes (5 &agrave; 8%) mais &agrave; garder &agrave; l'&oelig;il si &ccedil;a se r&eacute;p&egrave;te.</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ================= VENTES A PERTE (partagé) ================= -->
+    <div class="section">
+      <p class="narrated" style="margin-top:0;"><b>Ventes &agrave; perte du jour</b> (prix de vente net &lt; co&ucirc;t PAMP) &mdash; envoy&eacute;es int&eacute;gralement, ce sont d&eacute;j&agrave; des anomalies qualifi&eacute;es.</p>
+      <div class="sub-h">Atelier</div>
+      <table>
+        <tr><th>R&eacute;f&eacute;rence</th><th>D&eacute;signation</th><th class="num">Marge</th></tr>
+        <tr><td>280906RN2D (OR 204732)</td><td>Tache &eacute;crans</td><td class="num" style="color:var(--red);font-weight:700;">-29&nbsp;&euro;</td></tr>
+      </table>
+      <div class="sub-h">Magasin</div>
+      <table>
+        <tr><th>R&eacute;f&eacute;rence</th><th>D&eacute;signation</th><th class="num">Marge</th></tr>
+        <tr><td>8201588853</td><td>V mati&egrave;re mot R9M</td><td class="num" style="color:var(--red);font-weight:700;">-215&nbsp;&euro;</td></tr>
+        <tr><td>7711579592</td><td>Ixtra Evo</td><td class="num" style="color:var(--red);font-weight:700;">-26&nbsp;&euro;</td></tr>
+      </table>
+    </div>
+
+    <div class="footer">
+      <p><strong>HESS Automobile</strong> &middot; Rapport g&eacute;n&eacute;r&eacute; automatiquement, donn&eacute;es BigQuery &amp; Google Sheets<br>
+      Brouillon de structure v2 (2026-09-24) &mdash; donn&eacute;es composites/illustratives issues de plusieurs exemples r&eacute;els rencontr&eacute;s pendant le cadrage, pas un envoi r&eacute;el pour BMW Belfort</p>
+    </div>
+
+  </div>
+</div>
