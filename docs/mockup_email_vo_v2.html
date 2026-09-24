@@ -1,4 +1,4 @@
-<title>Rapport VO Mulhouse</title>
+<title>Rapport VO Mulhouse — v2</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
 <style>
 :root{
@@ -13,9 +13,6 @@
   --on-navy:#FFFFFF;
   --shadow: 0 1px 2px rgba(45,50,80,0.06), 0 8px 24px -12px rgba(45,50,80,0.18);
 }
-/* Design volontairement figé en clair (comme un vrai email — Gmail/Outlook
-   n'appliquent pas prefers-color-scheme à un mail en HTML inline de toute
-   façon) : pas d'adaptation au thème sombre du visiteur. */
 *{box-sizing:border-box}
 body{background:var(--page-bg);color:var(--text);font-family:'Montserrat',Helvetica,Arial,sans-serif;
   -webkit-font-smoothing:antialiased;}
@@ -24,7 +21,6 @@ body{background:var(--page-bg);color:var(--text);font-family:'Montserrat',Helvet
 .header{background:var(--navy);padding:22px 32px;display:flex;align-items:center;justify-content:space-between;}
 .logo{color:var(--on-navy);font-weight:800;font-size:17px;letter-spacing:0.04em;}
 .logo span{color:var(--gold);}
-.logo small{display:block;font-weight:500;font-size:9px;letter-spacing:0.18em;color:rgba(255,255,255,0.6);margin-top:2px;}
 .hairline{height:3px;background:var(--gold);}
 .titleblock{padding:30px 32px 22px;border-bottom:1px solid var(--border);
   display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
@@ -78,13 +74,11 @@ tr:nth-child(even) td{background:var(--row-alt);}
 .podium .name{flex:1;font-size:12.5px;color:var(--text);}
 .podium .name b{color:var(--navy);}
 .podium .exces{font-size:14px;font-weight:700;color:var(--orange);font-variant-numeric:tabular-nums;}
-.health-card{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
-  background:var(--row-alt);border-radius:5px;}
-.health-card .l{font-size:12px;color:var(--text-muted);}
-.health-card .v{font-size:13px;font-weight:700;color:var(--navy);}
 .footer{background:var(--navy);padding:22px 32px;text-align:center;}
 .footer p{margin:0;font-size:11px;color:rgba(255,255,255,0.55);line-height:1.6;}
 .footer strong{color:var(--gold);}
+h3.sub-h{margin:20px 0 8px;font-size:12px;font-weight:700;color:var(--navy);}
+h3.sub-h:first-child{margin-top:0;}
 @media (max-width:480px){.kpis{grid-template-columns:repeat(2,1fr);}
   .kpi:nth-child(3){border-left:none;}
   .titleblock,.section,.header{padding-left:20px;padding-right:20px;}
@@ -95,13 +89,13 @@ tr:nth-child(even) td{background:var(--row-alt);}
   <div class="card">
 
     <div class="header">
-      <div class="logo">HESS<span>·</span>AUTOMOBILE</div>
+      <div class="logo">HESS<span>&middot;</span>AUTOMOBILE</div>
     </div>
     <div class="hairline"></div>
 
     <div class="titleblock">
       <div>
-        <p class="eyebrow">Rapport quotidien &middot; Véhicules d'Occasion</p>
+        <p class="eyebrow">Rapport quotidien &middot; V&eacute;hicules d'Occasion</p>
         <h1>Renault/Nissan Mulhouse</h1>
         <p class="meta">Chiffres de la veille &mdash; <b>vendredi 11 septembre 2026</b></p>
       </div>
@@ -117,69 +111,35 @@ tr:nth-child(even) td{background:var(--row-alt);}
     </div>
 
     <div class="kpis">
-      <div class="kpi"><div class="v">29</div><div class="l">Leads reçus J-1</div></div>
+      <div class="kpi"><div class="v">29</div><div class="l">Leads re&ccedil;us J-1</div></div>
       <div class="kpi"><div class="v">2,3<span style="font-size:12px;">&nbsp;mois</span></div><div class="l">Couverture stock</div></div>
       <div class="kpi"><div class="v down">-21%</div><div class="l">Tendance ventes 30j</div></div>
       <div class="kpi"><div class="v">13</div><div class="l">Anomalies ouvertes</div></div>
     </div>
 
     <div class="synthese">
-      <p class="eyebrow">Synthèse</p>
-      <p>Deux véhicules demandent une action <b>aujourd'hui</b>, pas seulement un suivi : <b>FN-627-YH</b> (308), signalé dès l'achat pour des écarts de prix/km/date, se retrouve depuis 7 jours à la fois sans prix de vente <i>et</i> sans destination en stock &mdash; le problème identifié à l'achat n'a pas été traité en aval. <b>GK-964-EX</b> (Mégane E-Tech), acheté hier avec les écarts les plus importants de la semaine, n'a lui non plus pas encore de prix.</p>
-      <p>Par ailleurs, l'excès de <b>Clio Hybride essence</b> (18 unités) ne va pas se résorber seul : les ventes du modèle reculent de 21% sur 30 jours &mdash; sans action commerciale ciblée, l'écart va se creuser plutôt que se corriger.</p>
+      <p class="eyebrow">Synth&egrave;se</p>
+      <p>Deux v&eacute;hicules demandent une action <b>aujourd'hui</b>, pas seulement un suivi : <b>FN-627-YH</b> (308) a &eacute;t&eacute; not&eacute; 7/10 d&egrave;s l'achat pour &eacute;carts de prix/km/date &mdash; et se retrouve depuis 7 jours &agrave; la fois sans prix de vente <i>et</i> sans destination en stock. Le probl&egrave;me identifi&eacute; &agrave; l'achat n'a pas &eacute;t&eacute; trait&eacute; en aval. <b>GK-964-EX</b> (M&eacute;gane E-Tech), la pire note d'achat de la semaine (10/10) achet&eacute; hier, n'a lui non plus pas encore de prix.</p>
+      <p>Par ailleurs, l'exc&egrave;s de <b>Clio Hybride essence</b> (18 unit&eacute;s) ne va pas se r&eacute;sorber seul : les ventes du mod&egrave;le reculent de 21% sur 30 jours &mdash; sans action commerciale cibl&eacute;e, l'&eacute;cart va se creuser plut&ocirc;t que se corriger.</p>
     </div>
 
     <div class="section">
-      <h2>Leads VO</h2>
-      <div class="stat-row">
-        <div class="item">Reçus J-1 : <b>29</b></div>
-        <div class="item">Reçus 7j : <b>163</b></div>
-        <div class="item">Non traités J-1 : <b>0</b></div>
-        <div class="item">Non traités 7j : <b>9</b></div>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>Offres VO &amp; reprises</h2>
-      <div class="stat-row">
-        <div class="item">Commandes VOP acceptées : <b>3</b> (27)</div>
-        <div class="item">Offres refusées : <b>1</b> (19)</div>
-        <div class="item">Reprises acceptées : <b>1</b> (10)</div>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>Anomalies achat &amp; reprise</h2>
-      <p class="sub">5 dossiers sur 7 jours glissants, du plus récent au plus ancien</p>
+      <h2>Anomalies ventes</h2>
+      <p class="sub">7 jours glissants &middot; 8 dossiers &middot; 5 plus significatifs affich&eacute;s</p>
       <table>
-        <tr><th>Véhicule</th><th>Date</th><th>Écarts constatés à l'achat</th></tr>
-        <tr><td><span class="plate">GK-964-EX</span></td><td>09/09</td><td>Prix +2 616€ &middot; aide/transfert +2 180€</td></tr>
-        <tr><td><span class="plate">BB-403-QG</span></td><td>08/09</td><td>Prix +999€ &middot; aide +999€</td></tr>
-        <tr><td><span class="plate">GK-311-KP</span></td><td>04/09</td><td>Prix +660€ &middot; 38j retard &middot; aide +840€</td></tr>
-        <tr><td><span class="plate">GR-492-LK</span></td><td>04/09</td><td>Prix +500€ &middot; aide +500€</td></tr>
-        <tr><td><span class="plate">FN-627-YH</span></td><td>03/09</td><td>Prix +711€ &middot; 2 768 km &middot; 43j retard &middot; aide +711€</td></tr>
+        <tr><th>V&eacute;hicule</th><th class="num">Marge</th><th>Anomalie</th></tr>
+        <tr><td><span class="plate">GR-375-VL</span> Master FG</td><td class="num" style="color:var(--red);font-weight:700;">-6&nbsp;737&euro;</td><td>Marge n&eacute;gative + d&eacute;tention 275j</td></tr>
+        <tr><td><span class="plate">GN-200-CK</span> Captur</td><td class="num" style="color:var(--red);font-weight:700;">-4&nbsp;658&euro;</td><td>Marge n&eacute;gative + &eacute;cart FRE +914&euro;</td></tr>
+        <tr><td><span class="plate">GV687NL</span> Austral</td><td class="num" style="color:var(--red);font-weight:700;">-3&nbsp;574&euro;</td><td>Marge n&eacute;gative</td></tr>
+        <tr><td><span class="plate">GQ-262-TD</span> Trafic FG</td><td class="num" style="color:var(--red);font-weight:700;">-3&nbsp;218&euro;</td><td>Marge n&eacute;gative + d&eacute;tention 340j</td></tr>
+        <tr><td><span class="plate">GS-237-BD</span> Austral</td><td class="num" style="color:var(--red);font-weight:700;">-1&nbsp;386&euro;</td><td>Marge n&eacute;gative</td></tr>
       </table>
+      <p class="more">+ 3 autres anomalies (2 marges &eacute;lev&eacute;es, 1 marge n&eacute;gative mineure)</p>
     </div>
 
     <div class="section">
-      <h2>Qualité du stock</h2>
-      <p class="sub">Photo du jour &middot; véhicules ST/CL/IM</p>
-      <div class="stat-row">
-        <div class="item">Stock ST : <b>204</b></div>
-        <div class="item">Stock CL : <b>78</b></div>
-        <div class="item">Stock IM : <b>15</b></div>
-        <div class="item">Portefeuille livraison : <b>78</b></div>
-        <div class="item">CL en retard : <b>5</b></div>
-      </div>
-      <ul class="mini-list">
-        <li><span class="plate">FZ-089-NK</span> Captur &mdash; sans prix<span class="age">69j</span></li>
-        <li><span class="plate">FN-627-YH</span> 308 &mdash; sans prix, sans destination<span class="age">7j</span></li>
-        <li><span class="plate">AS-016-AE</span> Audi A3 &mdash; sans photo, jamais publié<span class="age">301j</span></li>
-        <li><span class="plate">DT-375-JG</span> 206 &mdash; sans photo, jamais publié<span class="age">29j</span></li>
-      </ul>
-      <p class="more">Sans prix (3) &middot; sans destination (10, 5 plus anciens affichés dans le détail complet) &middot; sans photo / jamais publié (24 / 26, listes quasi identiques)</p>
-
-      <h3 style="margin:18px 0 4px;font-size:12px;font-weight:700;color:var(--navy);">Clients en attente de livraison (CL en retard)</h3>
+      <h2>Clients en attente de livraison</h2>
+      <p class="sub">5 dossiers en retard, du plus long au plus court</p>
       <ul class="mini-list">
         <li><span class="plate">GS-767-VC</span> Master FG<span class="age">37j</span></li>
         <li><span class="plate">FS-967-NG</span> Qashqai<span class="age">18j</span></li>
@@ -190,45 +150,75 @@ tr:nth-child(even) td{background:var(--row-alt);}
     </div>
 
     <div class="section">
-      <h2>Rotation &amp; couverture</h2>
-      <p class="sub">Moyenne lissée sur 90 jours &middot; comparaison 30j vs 30j précédents</p>
+      <h2>Stock &agrave; corriger</h2>
+
+      <h3 class="sub-h">Anomalies achat &amp; reprise</h3>
+      <p class="sub">5 dossiers sur 7 jours glissants, du plus r&eacute;cent au plus ancien</p>
+      <table>
+        <tr><th>V&eacute;hicule</th><th>Date</th><th>&Eacute;carts constat&eacute;s &agrave; l'achat</th></tr>
+        <tr><td><span class="plate">GK-964-EX</span></td><td>09/09</td><td>Prix +2&nbsp;616&euro; &middot; aide/transfert +2&nbsp;180&euro;</td></tr>
+        <tr><td><span class="plate">BB-403-QG</span></td><td>08/09</td><td>Prix +999&euro; &middot; aide +999&euro;</td></tr>
+        <tr><td><span class="plate">GK-311-KP</span></td><td>04/09</td><td>Prix +660&euro; &middot; 38j retard &middot; aide +840&euro;</td></tr>
+        <tr><td><span class="plate">GR-492-LK</span></td><td>04/09</td><td>Prix +500&euro; &middot; aide +500&euro;</td></tr>
+        <tr><td><span class="plate">FN-627-YH</span></td><td>03/09</td><td>Prix +711&euro; &middot; 2&nbsp;768 km &middot; 43j retard &middot; aide +711&euro;</td></tr>
+      </table>
+
+      <h3 class="sub-h">Qualit&eacute; du stock</h3>
+      <p class="sub">Photo du jour &middot; v&eacute;hicules ST/CL/IM</p>
+      <div class="stat-row">
+        <div class="item">Stock ST : <b>204</b></div>
+        <div class="item">Stock CL : <b>78</b></div>
+        <div class="item">Stock IM : <b>15</b></div>
+        <div class="item">Sans prix : <b>3</b></div>
+        <div class="item">Sans destination : <b>10</b></div>
+        <div class="item">Sans photo / jamais publi&eacute; : <b>24</b> / <b>26</b></div>
+      </div>
+      <ul class="mini-list">
+        <li><span class="plate">FZ-089-NK</span> Captur &mdash; sans prix<span class="age">69j</span></li>
+        <li><span class="plate">FN-627-YH</span> 308 &mdash; sans prix, sans destination<span class="age">7j</span></li>
+        <li><span class="plate">AS-016-AE</span> Audi A3 &mdash; sans photo, jamais publi&eacute;<span class="age">301j</span></li>
+        <li><span class="plate">DT-375-JG</span> 206 &mdash; sans photo, jamais publi&eacute;<span class="age">29j</span></li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Activit&eacute; commerciale</h2>
+      <div class="stat-row">
+        <div class="item">Leads re&ccedil;us J-1 : <b>29</b></div>
+        <div class="item">Leads re&ccedil;us 7j : <b>163</b></div>
+        <div class="item">Leads non trait&eacute;s J-1 : <b>0</b></div>
+        <div class="item">Leads non trait&eacute;s 7j : <b>9</b></div>
+      </div>
+      <div class="stat-row">
+        <div class="item">Commandes VOP accept&eacute;es : <b>3</b> (27 / 7j)</div>
+        <div class="item">Offres refus&eacute;es : <b>1</b> (19 / 7j)</div>
+        <div class="item">Reprises accept&eacute;es : <b>1</b> (10 / 7j)</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Performance du stock</h2>
+      <p class="sub">Rotation vs Plaque, et mod&egrave;les en exc&egrave;s</p>
       <table>
         <tr><th></th><th class="num">Concession</th><th class="num">Plaque Renault</th></tr>
         <tr><td>Ventes moy. mensuelle</td><td class="num">91</td><td class="num">492</td></tr>
         <tr><td>Couverture</td><td class="num">2,3 mois</td><td class="num">2,1 mois</td></tr>
         <tr><td>Tendance 30j</td><td class="num" style="color:var(--red);font-weight:700;">-21%</td><td class="num" style="color:var(--green);font-weight:700;">+2%</td></tr>
-        <tr><td>Délai médian livraison</td><td class="num">16j</td><td class="num">15j</td></tr>
+        <tr><td>D&eacute;lai m&eacute;dian livraison</td><td class="num">16j</td><td class="num">15j</td></tr>
       </table>
-      <p class="more">Mulhouse recule plus vite que la moyenne de la Plaque &mdash; à surveiller.</p>
-    </div>
+      <p class="more">Mulhouse recule plus vite que la moyenne de la Plaque &mdash; &agrave; surveiller.</p>
 
-    <div class="section">
-      <h2>Excès de stock &mdash; top 3 modèles</h2>
-      <p class="sub">Stock vs ventes moyennes lissées &middot; seuil d'excès &ge; 3</p>
+      <h3 class="sub-h">Top 3 mod&egrave;les en exc&egrave;s</h3>
       <div class="podium">
         <div class="row"><div class="rank">1</div><div class="name"><b>Clio</b> Hybride essence &mdash; stock 23, ventes 5</div><div class="exces">18</div></div>
         <div class="row"><div class="rank">2</div><div class="name"><b>Master FG</b> Diesel &mdash; stock 15, ventes 4</div><div class="exces">11</div></div>
-        <div class="row"><div class="rank">3</div><div class="name"><b>Mégane</b> Électrique / <b>Sandero</b> GPL (ex æquo)</div><div class="exces">7</div></div>
+        <div class="row"><div class="rank">3</div><div class="name"><b>M&eacute;gane</b> &Eacute;lectrique / <b>Sandero</b> GPL (ex &aelig;quo)</div><div class="exces">7</div></div>
       </div>
     </div>
 
-    <div class="section">
-      <h2>Anomalies ventes</h2>
-      <p class="sub">7 jours glissants &middot; 8 dossiers &middot; 5 plus significatifs affichés</p>
-      <table>
-        <tr><th>Véhicule</th><th class="num">Marge</th><th>Anomalie</th></tr>
-        <tr><td><span class="plate">GR-375-VL</span> Master FG</td><td class="num" style="color:var(--red);font-weight:700;">-6 737€</td><td>Marge négative + détention 275j</td></tr>
-        <tr><td><span class="plate">GN-200-CK</span> Captur</td><td class="num" style="color:var(--red);font-weight:700;">-4 658€</td><td>Marge négative + écart FRE +914€</td></tr>
-        <tr><td><span class="plate">GV687NL</span> Austral</td><td class="num" style="color:var(--red);font-weight:700;">-3 574€</td><td>Marge négative</td></tr>
-        <tr><td><span class="plate">GQ-262-TD</span> Trafic FG</td><td class="num" style="color:var(--red);font-weight:700;">-3 218€</td><td>Marge négative + détention 340j</td></tr>
-        <tr><td><span class="plate">GS-237-BD</span> Austral</td><td class="num" style="color:var(--red);font-weight:700;">-1 386€</td><td>Marge négative</td></tr>
-      </table>
-      <p class="more">+ 3 autres anomalies (2 marges élevées, 1 marge négative mineure)</p>
-    </div>
-
     <div class="footer">
-      <p><strong>HESS Automobile</strong> &middot; Rapport généré automatiquement, données BigQuery &amp; Google Sheets<br>
-      Destinataire test &middot; périmètre pilote Plaque Renault</p>
+      <p><strong>HESS Automobile</strong> &middot; Rapport g&eacute;n&eacute;r&eacute; automatiquement, donn&eacute;es BigQuery &amp; Google Sheets<br>
+      [MAQUETTE V2 &mdash; alternative de structure] Destinataire test &middot; p&eacute;rim&egrave;tre pilote Plaque Renault</p>
     </div>
 
   </div>

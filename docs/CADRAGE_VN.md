@@ -3,11 +3,10 @@
 Voir [`CADRAGE.md`](CADRAGE.md) pour le cadrage transverse (objectif général,
 architecture, destinataires, décisions communes aux 3 services).
 
-**Statut (2026-09-23) : blocs 1, 3, 4 et 6 terminés et validés, maquette de
+**Statut (2026-09-24) : blocs 1, 2, 3, 4 et 6 terminés et validés, maquette de
 mail construite sur une concession pilote** — même méthode que VO (Sheet par
-bloc, validé sur données réelles avant de documenter). Bloc 2
-(Commandes/Feuille de marge) en pause, en attente d'un champ manquant côté
-data.
+bloc, validé sur données réelles avant de documenter). Le Bloc 2 n'est pas
+encore intégré à la maquette mail.
 
 **Principe de méthode (rappel 2026-09-16)** : ne pas extrapoler de logique
 métier VN par analogie avec le VO sans vérification — un essai de proposition
@@ -35,73 +34,106 @@ retourne des valeurs cohérentes, filtrage déjà en place par Quentin/Corentin)
   fort (~40% des leads de la veille pas traités).
 - Renault Saverne : 6 reçus J-1, 2 non traités.
 
-## 2. Bloc 2 — Commandes VN / Feuille de marge (EN PAUSE)
+## 2. Bloc 2 — Commandes & Facturations VN vs Objectifs
 
-**Sources** (Salesforce, `hess-data.salesforce_source_views`) :
-- `v_sf_feuille_de_marge` — 127 colonnes, un enregistrement par "feuille de
-  marge" (bon de commande VN avec marge prévisionnelle et validations).
-- `v_sf_vente` (même table que VO, filtrée `Type__c IN ('VN','VD')`) — colonnes
-  confirmées : `Id, numero_vente, Type__c, Canal_de_vente__c, Statut__c,
-  Date_de_vente__c, Date_de_livraison__c, Facture_totale__c,
-  Montant_vehicule_TTC__c, Marge_Vente__c, Marge_Vehicule__c,
-  Montant_Reprise_VO__c, Kilometres__c, Marque_Vehicule__c, Modele_Vehicule__c,
-  Energie_vehicule_vendu__c, Immatriculation__c, Concession__c,
-  TECH_ConcessionName__c, TECH_Nom_du_vendeur_de_la_vente__c, Nom_du_client__c,
-  Vehicule_vendu__c, Vendeur_Id__c` + `Difference_Aides_Ventes_FDM__c` et
-  `Feuille_de_marge__c` (ajoutés par le service data le 2026-09-16/17, voir
-  ci-dessous).
+**Statut : terminé et validé (2026-09-24), construit par Quentin.** Remplace
+définitivement l'ancienne piste "anomalie aide non respectée" (comparaison
+feuille de marge vs vente) — **abandonnée**, elle était bloquée depuis le
+2026-09-17 sur un nom de champ manquant côté vente et n'a jamais été
+débloquée. Nouvelle direction, plus directement utile au quotidien : suivi
+Commandes/Facturations VN vs objectifs budgétaires, par concession × marque.
+*(Résumé de l'ancienne piste abandonnée en fin de section, pour mémoire.)*
 
-Fichier de travail (Sheet de test, structure amenée à changer) :
-`14iuxhKZr34StlxCn8IodM9iquoqH9wnc5EhsBYxBUDE`.
+**Fichier** : même spreadsheet que l'ancien travail Bloc 2
+(`14iuxhKZr34StlxCn8IodM9iquoqH9wnc5EhsBYxBUDE`), structure refaite. Tabs :
+`Mapping` (transco `Valeur_Source → Code_concession/Code_Plaque`),
+`Obj Com/Fact.` (Connected Sheet BigQuery, objectifs), `Extrait_ComFact`
+(extraction réduite, une ligne par flux × concession × marque × jour) →
+`BLOC 2` (final, grain concession × marque + totaux plaque/groupe/marque).
 
-### 2.1 Comptage des bons de commande
+**Sources BigQuery** :
+- **Commandes** : `hess-data.salesforce_source_views.v_sf_feuille_de_marge`,
+  VN+VD, `Statut__c IN ('Approuvée', 'Soumise pour approbation')`, sur
+  `Date_de_commande__c`. **Pas de dédoublonnage par châssis** — décidé
+  volontairement : les châssis "bouchons" (`12345678`, `00000000...`,
+  `XXXXXXXX`) fusionnaient à tort des commandes distinctes.
+- **Facturations** : `hess-data.salesforce_source_views.v_sf_vente`,
+  `Statut__c = 'Validée'`, VN+VD, sur `Date_de_vente__c`, hors 7 canaux
+  (`Cession, Export, Intra-groupe sauf Primocar, Marchands, MRA, Primocar,
+  Rétrocession (confrère)`).
+- **Objectifs** : `hess-data.budget.objectifs_commandes_facturation`, filtré
+  `Activité = 'VN'`, année/mois courants. **Fiabilité confirmée par Quentin**
+  (2026-09-24).
 
-**Règle validée** : un bon de commande compte si `Validation_vendeur__c =
-TRUE` **ET** `Date_de_commande__c` = J-1 (pas `Date_de_validation__c`, qui
-peut être postérieure — décidé explicitement 2026-09-16, écart entre les deux
-dates existant réellement, cf. champ `Ecart_date_validation_commande__c`).
-Comptage groupé par `Concession__c`. **Non encore testé sur données réelles.**
+**Normalisations appliquées** : `FIAT PROFESSIONAL → FIAT`,
+`MOBILIZE → RENAULT`, v&eacute;los exclus, concessions de Bâle exclues (hors
+périmètre). BMW Motorrad codé `BMW` côté objectifs mais `BMW MOTORRAD` côté
+réalisé Salesforce — recodé explicitement dans la requête.
 
-### 2.2 Anomalie "aide non respectée" (objectif métier, cf. §2.3 pour le blocage)
+**Cas particulier BMW Motorrad** : pas de commande dans Salesforce pour cette
+activité — remplacé par un **déclaratif mensuel**
+(`Nb_commande_d__claratif`, saisi manuellement) utilisé comme réalisé "mois à
+date" (année courante et année précédente, pas de détail jour). **Conséquence
+à surveiller dans le mail** : les colonnes J-1 et 7 jours affichent 0 pour
+ces lignes même quand le mois à date est réel (ex. BMWM Besançon : J-1=0,
+7j=0, MTD=13/16 commandes) — pas un bug, mais risque de lecture trompeuse
+("aucune activité") si affiché sans note. **Décision (2026-09-24)** : ajouter
+une note explicite sur les lignes BMW Motorrad dans le mail (ex. "suivi
+mensuel déclaratif, pas de détail J-1/7j").
 
-Objectif de Quentin : sur une vente VN à marge négative, vérifier que les
-aides indiquées sur la feuille de marge approuvée se retrouvent bien dans le
-dossier de vente — **au sens B** (comparaison de valeurs, pas juste "y a-t-il
-eu une validation ?"), et principalement pour les cas où une aide chiffrée sur
-la feuille de marge est absente du dossier de vente final.
+**Calcul du prorata temporis** : jours ouvrés réels (lundi-vendredi, hors
+fériés nationaux listés jusqu'en 2027), pas un simple ratio jour du mois /
+nombre de jours du mois. Trois valeurs constantes par extrait quotidien
+(`Extrait_ComFact!$J$2/$K$2/$L$2` = jours ouvrés écoulés/total/restants du
+mois), réutilisées telles quelles dans toutes les formules `BLOC 2`.
 
-Le service data a ajouté, directement dans `v_sf_vente` :
-- `Difference_Aides_Ventes_FDM__c` (2026-09-16) — écart pré-calculé entre
-  l'aide de la vente et celle de la feuille de marge liée. **Type STRING**,
-  séparateur décimal `,` — nécessite
-  `SAFE_CAST(REPLACE(champ, ',', '.') AS FLOAT64)` avant tout filtre/tri
-  numérique (sinon `No matching signature for operator`).
-- `Feuille_de_marge__c` (2026-09-17) — champ de liaison vers
-  `v_sf_feuille_de_marge` (jointure supposée sur `Id` — **hypothèse non
-  confirmée avec Quentin/le service data à ce jour**).
+**Colonnes calculées** (`BLOC 2`, répétées pour les 2 flux Commandes et
+Facturations) : J-1, 7 jours, moyenne hebdo sur les 4 semaines précédentes,
+mois à date, mois à date N-1, objectif du mois, manque à date, taux
+d'atteinte %, projection fin de mois, reste à faire par jour ouvré, tendance.
+```
+Manque à date            = ROUND(MTD - Objectif × jo_écoulés/jo_mois; 1)
+Taux atteinte %          = ROUND(MTD / Objectif × 100; 1)                 [vide si Objectif=0]
+Projection fin de mois   = ROUND(MTD × jo_mois/jo_écoulés; 0)             [vide si jo_écoulés=0]
+Reste à faire/jour ouvré = ROUND(MAX(Objectif-MTD; 0) / jo_restants; 1)   [vide si jo_restants=0]
+```
 
-**Constat sur les données réelles (2026-01-01 → 2026-09-16, VN+VD, 43 994
-ventes)** :
-- 161 ventes à marge négative au total.
-- Seulement **9** d'entre elles ont `Difference_Aides_Ventes_FDM__c ≠ 0` — la
-  majorité des marges négatives n'a rien à voir avec un problème d'aide.
-- Les écarts trouvés sont substantiels (1 194€ à 10 380€), pas du bruit
-  d'arrondi.
-- Plusieurs des plus gros écarts sont sur des ventes **VD** (véhicule de
-  démonstration), pas VN — **question ouverte non tranchée** : le VD reste-t-il
-  dans le périmètre de cette anomalie ?
-- Des écarts d'aide substantiels (1 250€ à 2 500€) existent aussi sur des
-  ventes à **marge positive** — **question ouverte non tranchée** : l'anomalie
-  doit-elle rester conditionnée à "marge négative ET écart d'aide", ou tout
-  écart d'aide notable est-il à signaler indépendamment du signe de la marge ?
+**Tendance** (classification à 2 signaux : direction annuelle + vitesse
+récente — évite de qualifier de "confirmée" une tendance qui repart déjà
+dans l'autre sens) :
+```
+SI MAX(MTD; MTD_N-1) < 5                                      → "· Volume trop faible"
+SINON SI MTD_N-1 = 0                                           → "Nouveau"
+SINON SI (MTD-MTD_N-1)/MTD_N-1 ≥ +10% ET 7j ≥ moy_hebdo×0,8    → "↑ Hausse confirmée"
+SINON SI (MTD-MTD_N-1)/MTD_N-1 ≤ -10% ET 7j ≤ moy_hebdo×1,2    → "↓ Baisse confirmée"
+SINON SI 7j > moy_hebdo×1,2                                    → "↗ Accélère"
+SINON SI 7j < moy_hebdo×0,8                                    → "↘ Ralentit"
+SINON                                                           → "→ Stable"
+```
 
-### 2.3 Point bloquant (2026-09-17)
+**Grain et totaux** : une ligne par concession × marque, plus des lignes de
+total (Groupe, Plaque, total par marque au niveau groupe). Totaux calculés
+par `SUMIFS` sur `Extrait_ComFact` avec un critère `"<>§"` (chaîne
+improbable comme valeur de comparaison) pour agréger "toutes les valeurs"
+quand la ligne est un total, sans dupliquer une formule séparée sans filtre.
 
-Il manque le **nom exact du champ "montant d'aide" côté vente** dans
-`v_sf_vente` pour finaliser la requête complète (vente + jointure feuille de
-marge + numéro de feuille de marge + aide FDM + aide vente). Bloc mis en pause
-par Quentin en attendant ce champ — **reprendre à ce point précis**, ne pas
-redemander les questions déjà tranchées ci-dessus.
+**Validé (2026-09-24)** sur données réelles, Total Groupe VN : Commandes
+2 145 mois à date / objectif 2 904 (73,9%, tendance stable) ; Facturations
+1 327 mois à date / objectif 2 662 (49,8%, tendance hausse confirmée) —
+écart révélateur entre les deux flux (le groupe commande à un rythme proche
+de l'objectif mais facture en retard).
+
+### 2.x Ancienne piste abandonnée — anomalie "aide non respectée"
+
+Objectif initial : sur une vente VN à marge négative, vérifier que les aides
+indiquées sur la feuille de marge approuvée se retrouvent bien dans le
+dossier de vente. Constat sur données réelles (2026-01-01→09-16, 43 994
+ventes VN+VD) : seulement 9 des 161 ventes à marge négative avaient un écart
+d'aide non nul — question ouverte non tranchée sur le périmètre VD et sur la
+condition marge négative. **Bloquée définitivement** sur le nom exact du
+champ "montant d'aide" côté vente dans `v_sf_vente`, jamais communiqué par le
+service data. Remplacée par le Bloc 2 ci-dessus — non reprise sauf demande
+explicite si le champ manquant est un jour communiqué.
 
 ## 3. Bloc 3 — Stock VN/VD
 
@@ -572,32 +604,25 @@ fait, maquette non modifiée à ce stade).
 
 ## 7. Questions ouvertes VN
 
-1. **Bloc 2 bloqué** : nom du champ aide côté vente (§2.3).
-2. **Bloc 2, périmètre VD** : le VD est-il dans le périmètre de l'anomalie
-   "aide non respectée" ? (§2.2)
-3. **Bloc 2, condition marge négative** : l'anomalie doit-elle rester
-   conditionnée à la marge négative, ou tout écart d'aide notable compte ?
-   (§2.2)
-4. **Bloc 2, jointure** : confirmer que `Feuille_de_marge__c` (vente) pointe
-   bien vers `Id` de `v_sf_feuille_de_marge` (hypothèse non vérifiée).
-5. **Bloc 4, table `vehicules`** : confirmer si `hess-data.datamart_ventes.vehicules`
+1. **Bloc 4, table `vehicules`** : confirmer si `hess-data.datamart_ventes.vehicules`
    est une table distincte de `hess-data.datamart_stock.vehicules` ou la même
    partagée entre les deux datasets — le Bloc 6 utilise `datamart_stock.vehicules`
    avec succès, penche pour "table partagée", à confirmer.
-6. **Bloc 4, lignes non rattachées** : 39% des lignes stock/ventes brutes
+2. **Bloc 4, lignes non rattachées** : 39% des lignes stock/ventes brutes
    n'ont pas de `Code_concession` — mis de côté par Quentin, mais à garder en
    tête si des écarts de volumétrie inattendus apparaissent plus tard.
-7. **Bloc 6, seuil générique `AA1`** : "marge fortement négative" pour les
+3. **Bloc 6, seuil générique `AA1`** : "marge fortement négative" pour les
    marques autres que BMW — valeur provisoire, non calibrée (calibration
    marque par marque tentée et abandonnée le 2026-09-23, volume insuffisant ;
    seule BMW a un seuil dédié à ce jour, MINI est exclu).
-8. **Existe-t-il une spec équivalente à `Spec_Mail_IA_ChefVentesVN`** —
+4. **Existe-t-il une spec équivalente à `Spec_Mail_IA_ChefVentesVN`** —
    toujours pas, contrairement au VO qui a une spec dédiée.
 
 ## 8. Prochaines étapes
 
-1. Reprendre le Bloc 2 dès que le champ aide-vente est communiqué par le
-   service data.
+1. Intégrer le Bloc 2 (Commandes & Facturations vs Objectifs) à la maquette
+   mail VN — pas encore fait, y compris la note sur les lignes BMW Motorrad
+   (§2).
 2. Retirer la comparaison Plaque du mail Service (maquette + mail réel) une
    fois le futur mail Directeur de plaque cadré — décision de périmètre
    prise (§6), reste à exécuter.
