@@ -646,13 +646,123 @@ Marge %, Remise forcée, Prix forcé`).
 GRID en mode formule, pas juste en valeurs) — le changement de structure
 ne casse rien ailleurs.
 
-## 12. Prochaines étapes
+## 12. Formalisation du mail APV — cadrage (2026-09-24)
 
-1. Définir le format du mail APV (contenu, ton, destinataires) — sur le
-   modèle de la spec VO, en s'appuyant sur le mockup déjà testé.
-2. Trancher le sort du seuil `Ratio remises/CA` générique.
-3. Laisser tourner `Forfaits pièces suspectes` (détection n°3, §10) quelques
+**Contexte** : reprise du point ouvert en §8 pt.1. Décision de Corentin de
+**construire une version indépendante** (pas calquée sur le mockup
+`docs/mockup_email_apv.html` existant ni sur les choix faits par Quentin
+pour le mail VN) puis de confronter les deux versions ensuite. Les mockups
+de travail eux-mêmes (avec données réelles nominatives) ne sont **pas
+versionnés dans le repo** — seules les règles ci-dessous le sont.
+
+### 12.1 Un seul mail, deux départements visuellement séparés
+
+**Un seul mail** envoyé à la fois au responsable Atelier et au responsable
+Magasin (pas deux mails séparés) — décidé après avoir constaté que
+plusieurs sources de données mélangent déjà les deux canaux (`Analyse
+pièces J-1`, `Prix/Remises forcées`), rendant une scission propre du
+contenu difficile. Un vrai destinataire Magasin existe (`Contact` du
+classeur `Prix/Remises forcées`, colonne `Responsable Magasin`), mais n'est
+**pas encore renseigné** dans le Référentiel Concession officiel (seul
+`Atelier` y figure à ce jour, cf. §4 de `CADRAGE.md`) — à faire séparément.
+
+À l'intérieur du mail, séparation visuelle claire : une bande de couleur
++ titre `ATELIER` / `MAGASIN` devant chaque groupe de contenu, et **deux
+icônes de vigilance indépendantes** (une par département, pas une icône
+globale unique comme pour VO).
+
+### 12.2 Synthèse IA : toujours en haut, vue d'ensemble sans détail
+
+Contrairement au principe VO (§3 de `CADRAGE.md`, qui cite des dossiers
+précis), la synthèse APV se place **tout en haut du mail**, avant même les
+KPI, et donne un **état des lieux global** des deux départements — **sans
+numéro d'OR ni détail de dossier**. Le détail nominatif vit dans les
+sections narrées plus bas (§12.4) et dans le fichier Excel joint (§12.5).
+
+### 12.3 KPI : fixes vs conditionnels
+
+**KPI fixes** (tuiles chiffrées, sans narration, toujours affichés) :
+
+| Atelier | Magasin |
+|---|---|
+| CA MO Net HT J-1 | CA PR Externe Net HT J-1 |
+| CA MO Net HT MTD | CA PR Externe Net HT MTD |
+| Objectif MO mensuel | Objectif PR externe mensuel |
+| % Réalisation objectif MO | % Réalisation objectif PR externe |
+| CA PR interne Net HT J-1 | Marge PR Externe |
+| CA PR interne Net HT MTD | Taux marge % PR Externe |
+| Objectif PR interne mensuel | |
+| % Réalisation objectif PR interne | |
+| Productivité J-1 | |
+
+Toutes disponibles dans `Analyse Globale` (onglet du classeur principal).
+
+**KPI conditionnels agrégés** (narrés, n'apparaissent que si le seuil est
+franchi — Atelier uniquement, pas d'équivalent Magasin identifié à ce
+jour) :
+
+- **Efficience globale J-1** — à l'inverse de la cession interne, "plus
+  haut mieux c'est" (comme Productivité). Alerte seulement si **trop
+  bas** : **<80% = trop bas**, **80-90% = bas** (les deux mentionnés,
+  intensité différente) ; au-dessus de 90%, rien affiché.
+- **Encours en jours de CA** — seuils déjà calibrés (`Référentiel métier`,
+  §6) : **20j = surveillance** (affiche le top 5 natif de `Encours
+  prioritaires`, sans le retronquer) ; **30j = alerte** (ajoute la
+  répartition des vieux encours par tranche d'ancienneté, nombre et
+  valeur) ; **40j = critique** (précision maximale sur les encours,
+  détail le plus complet possible).
+
+### 12.4 Listes détail OR/pièce : envoyées intégralement, narrées
+
+Principe général (généralisation validée par Corentin, 2026-09-24) : tout
+ce qui est **déjà une liste d'anomalies qualifiées au niveau OR ou pièce**
+est envoyé **intégralement** (jamais de "top N" tronqué) et **narré en
+prose** (pas de tableau brut de chiffres sans explication) — parce que
+chaque ligne qui en ressort est par construction un cas à signaler, pas un
+volume à résumer :
+
+- **Efficience cessions internes >105%** (Atelier, `Référentiel métier`)
+  — seul le dépassement vers le haut compte, pas de seuil bas.
+- **Taux de remise élevé** (Atelier, MO>15% ou PR interne>20%, canal
+  CLIENT/Particuliers) — nuance de ton : c'est une **alerte à surveiller**
+  pour le chef d'atelier, pas une anomalie au sens fraude, mais le
+  traitement (envoi intégral, narré) reste identique.
+- **Ventes à perte** (Atelier + Magasin, `Analyse pièces J-1`) — affichées
+  en deux sous-listes séparées Atelier/Magasin plutôt qu'un tableau mixte,
+  cohérent avec le principe de séparation visuelle (§12.1).
+- **Prix/Remises forcées** (`Prix/Remises forcées`, classeur dédié,
+  contact : Corentin) — **filtré sur `type = Magasin` dans un premier
+  temps** (PR externe) ; le PR interne Atelier viendra dans un second
+  temps, pas prioritaire pour l'instant.
+- **Anomalies forfaits** (Atelier) — reprend le chantier §9-10 : forfaits
+  en marge estimée <10% + forfaits pièces suspectes, comme source de
+  contenu pour cette section du mail (le chantier lui-même reste par
+  ailleurs "en observation", cf. §9-10, mais son historique alimente déjà
+  le mail dès qu'il y a du contenu).
+
+### 12.5 Fichier Excel joint (nouveau, 2026-09-24)
+
+En complément du mail (qui reste narratif/synthétique), un **fichier Excel
+par concession** est joint, avec **un onglet par type d'anomalie** listé en
+§12.4 (Ventes à perte, Anomalies forfaits, Remises forcées, Taux de
+remise, Efficience cessions internes), reprenant les **mêmes colonnes que
+dans les Sheets sources**, filtré sur la concession destinataire — pour
+donner accès au détail complet à qui veut creuser, sans alourdir le corps
+du mail.
+
+## 13. Prochaines étapes
+
+1. Construire un premier mockup complet du mail APV selon les règles du
+   §12, avec de vraies données (en local, pas versionné — voir §12).
+2. Confronter cette version avec le mail VN de Quentin une fois les deux
+   prêtes.
+3. Ajouter un destinataire "Magasin" dans le Référentiel Concession
+   officiel (existe déjà dans `Prix/Remises forcées > Contact`, à
+   reporter dans le Référentiel partagé).
+4. Générer le fichier Excel joint (§12.5) — pas commencé.
+5. Trancher le sort du seuil `Ratio remises/CA` générique.
+6. Laisser tourner `Forfaits pièces suspectes` (détection n°3, §10) quelques
    semaines pour juger du volume réel et calibrer le seuil si besoin.
-4. Détection n°2 (écarts de tarification entre ateliers d'une même Plaque)
+7. Détection n°2 (écarts de tarification entre ateliers d'une même Plaque)
    — pas commencée, référentiel Plaque ↔ code canonique toujours à
    vérifier (cf. §8 pt.5).
