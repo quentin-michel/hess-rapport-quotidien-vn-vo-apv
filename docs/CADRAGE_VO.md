@@ -3,9 +3,11 @@
 Voir [`CADRAGE.md`](CADRAGE.md) pour le cadrage transverse (objectif général,
 architecture, destinataires, décisions communes aux 3 services, méthode `gws`).
 
-**Statut (2026-09-10) : les 8 blocs sont construits, filtrés et validés (données
-réelles, Renault Mulhouse) de bout en bout.** Reste : recette complète sur les 9
-concessions pilote, envoi réel de test.
+**Statut (2026-09-25) : les 8 blocs originaux + le Bloc 9 (Commandes &
+Facturations vs Objectifs, §11) sont construits, filtrés et validés (données
+réelles, Renault Mulhouse) de bout en bout.** Reste : intégrer le Bloc 9 à la
+maquette mail (§11, §17 pt.7), recette complète sur les 9 concessions pilote,
+envoi réel de test.
 
 ## 1. Spécification cible : `Spec_Mail_IA_ChefVentesVO_v3.docx`
 
@@ -330,7 +332,76 @@ garantie.
 l'exemple du spec original**, excellente cohérence. *(Fenêtre 7j historique —
 voir ci-dessus pour le changement à ~J-1 du 2026-09-15.)*
 
-## 11. Calibrage des seuils Bloc 8 — méthode
+## 11. Bloc 9 — Commandes & Facturations vs Objectifs
+
+**Statut : terminé et validé (2026-09-25), construit par Quentin** sur le
+même modèle que le Bloc 2 VN (voir `CADRAGE_VN.md` §2) — suivi quotidien
+Commandes/Facturations VO vs objectifs budgétaires, par concession.
+
+**Fichier** : même fichier que le Bloc 2 (Offres VO/Reprises)
+(`1C1jMlaD8M1TearS98aiC_J3t6lieq7sp2GdMq_fKDzI`). Tabs : `Com/Fact/Obj`
+(Connected Sheet BigQuery) → `Extrait_Com_Fact_Obj` (extraction réduite) →
+`BLOC 2_1 Com_Fact_Obj` (final).
+
+**Sources BigQuery** (d'après le commentaire de la requête connectée) :
+- **Commandes** : `v_sf_quote` — offres VO acceptées = BDC (date de
+  confirmation commande client), véhicule joint (périmètre Tableau), hors
+  véhicules de démonstration (`v_sf_vehicule.is_vd__c`). **Comptage figé à
+  la fin de chaque fenêtre** (règle officielle reprise du Tableau) : une
+  commande annulée n'est retirée que si l'annulation est intervenue avant
+  la fin de la fenêtre comptée — mois en cours = BDC nets à J-1, N-1 = BDC
+  nets tels qu'ils étaient au même jour l'an dernier. Concession = concession
+  vendeuse de l'offre (`TECH_Concession__c`, parité Tableau).
+- **Facturations** : `v_sf_vente` — Type VO, Validée, VOP (canaux
+  Particuliers + Flottes/Sociétés), hors véhicules de démonstration.
+- **Objectifs** : `hess-data.budget.objectifs_commandes_facturation`, filtré
+  `Activité = 'VO'` — même table que le Bloc 2 VN, seule la valeur
+  d'`Activité` change.
+- **Périmètre** : concessions de **Bâle et BMW Motorrad** exclues
+  (alignement sur le Tableau "Quotidienne VOP" existant — BMW Motorrad
+  exclu ici contrairement au VN, cohérent car le concept de BDC VOP n'a pas
+  de sens pour cette activité).
+- **Référence** : logique reprise du Tableau "Quotidienne VOP" déjà
+  existant et validé, pas inventée.
+
+**Différence notable avec le VN : prorata jours ouvrés différencié par
+flux**, documenté explicitement dans le commentaire SQL — **Commandes =
+lundi-samedi** (les concessions VO prennent des BDC le samedi),
+**Facturations = lundi-vendredi** (traitement administratif). Conséquence
+sur les formules : contrairement au VN où `jo_ecoules/jo_mois/jo_restants`
+sont identiques pour les 2 flux (référence fixe `$J$2`/`$K$2`/`$L$2`
+possible), ici les 2 flux ont des valeurs différentes (ex. 2026-09-24 :
+Commandes 20/26 jours écoulés/total, Facturations 17/22) — les formules
+Facturations utilisent donc `XLOOKUP("Facturations";
+Extrait_Com_Fact_Obj!$A:$A; Extrait_Com_Fact_Obj!$J:$J)` (et `$K:$K`/`$L:$L`)
+pour récupérer la valeur propre au flux Facturations, plutôt que la
+référence fixe utilisée côté Commandes. **Vérifié explicitement** : une
+référence fixe copiée telle quelle vers les formules Facturations aurait
+donné le mauvais calendrier de jours ouvrés à ce flux — bon réflexe côté
+formule.
+
+**Grain** : une ligne par concession (Plaque × Concession) — **pas de
+détail par marque** (colonne fixée à `"VO"`), contrairement au Bloc 2 VN
+qui détaille par marque. **Pas de ligne "TOTAL GROUPE"** (seulement des
+totaux par Plaque) — décision confirmée par Quentin (2026-09-25), appliquée
+rétroactivement aussi au Bloc 2 VN (Total Groupe retiré, voir
+`CADRAGE_VN.md` §2). Colonnes et formules identiques au Bloc 2 VN par
+ailleurs (Cde/Fact × J-1, 7j, moy. hebdo 4 sem., MTD, MTD N-1, Objectif
+mois, Manque à date, Taux atteinte %, Projection fin de mois, Reste à
+faire/jour ouvré, Tendance).
+
+**Validé (2026-09-25)** sur données réelles, exemples : BMW Belfort
+Commandes 17/19 MTD/obj. (89,5%, Accélère), Facturations 8/18 (44,4%,
+Baisse confirmée) ; Fiat Bischheim Commandes 33/30 (110%, Stable),
+Facturations 21/36 (58,3%, Hausse confirmée) — plage de valeurs cohérente
+avec le Bloc 2 VN, aucune anomalie de calcul détectée à la relecture des
+formules.
+
+**Reste à faire** : intégrer ce bloc à la maquette mail VO
+(`docs/mockup_email_vo.html`), sur le modèle de ce qui a été fait pour le
+Bloc 2 VN dans sa maquette.
+
+## 12. Calibrage des seuils Bloc 8 — méthode
 
 1. Élargissement temporaire de la requête BigQuery à 90 jours (au lieu de 7)
    pour obtenir un échantillon robuste (~8963 ventes vs ~610 sur 7j).
@@ -344,7 +415,7 @@ voir ci-dessus pour le changement à ~J-1 du 2026-09-15.)*
    discussion, pas de règle automatique.
 5. Requête rebasculée à 7 jours après calibrage.
 
-## 12. Simulation de mail complète — Renault Mulhouse (2026-09-10)
+## 13. Simulation de mail complète — Renault Mulhouse (2026-09-10)
 
 Deux simulations réalisées (texte du mail, pas d'envoi réel) :
 - Une première avec les Blocs 1-4 seulement (avant que 5-8 soient construits).
@@ -358,7 +429,7 @@ ET encore sans prix/destination 7j plus tard) et transformer les tendances en
 risques prospectifs actionnables plutôt que de répéter les chiffres. Principe
 documenté dans `CADRAGE.md` §3 (s'applique à tous les services, pas que VO).
 
-## 13. Format du mail — décisions (2026-09-11)
+## 14. Format du mail — décisions (2026-09-11)
 
 Retours de Quentin sur le mockup (`docs/mockup_email_vo.html`), traités point
 par point :
@@ -390,7 +461,7 @@ par point :
 10. **Anomalies ventes (Bloc 8)** : même règle de tri que le point 6 — date
     décroissante en premier, puis note/montant décroissant.
 
-## 14. Icône météo — score de vigilance (2026-09-11)
+## 15. Icône météo — score de vigilance (2026-09-11)
 
 Indicateur visuel en haut du mail (à côté du titre), pour donner un état
 d'esprit global de la concession en un coup d'œil, sans lire le détail des
@@ -453,7 +524,7 @@ Le calcul du score (agrégation des 3 critères + seuil de significativité)
 reste à implémenter côté Sheet, comme le reste de la logique métier — pas
 par Claude à la volée.
 
-## 15. Fraîcheur des données — synchronisation des rafraîchissements (2026-09-11)
+## 16. Fraîcheur des données — synchronisation des rafraîchissements (2026-09-11)
 
 Constat lors d'une extraction de test (Renault Saverne, pour un pointage manuel
 de Quentin) : les 6 fichiers Google Sheets qui portent les 8 blocs **ne sont
@@ -473,19 +544,24 @@ service VO. Conséquences :
   (comparer que tous les blocs référencent bien le même jour, pas seulement
   compter sur l'heure de planification) — cf. Prochaines étapes ci-dessous.
 
-## 16. Prochaines étapes
+## 17. Prochaines étapes
 
 1. Recette du pilote sur les 9 concessions Renault (pas seulement Mulhouse).
 2. ~~Ajouter `date_vente` à la requête `QUERY` de `BLOC 8 Ano_Vente`~~ **fait**
    (colonne `Date_vente` présente, vérifié le 2026-09-11 lors d'un extrait
    Renault Saverne) — le tri date-décroissante du §10 est donc applicable.
-3. Construire côté Sheet : moyennes/tendance Plaque pour le Bloc 5 (§13 pt.8,
-   déjà partiellement fait — voir §7) et le score de vigilance météo (§14),
+3. Construire côté Sheet : moyennes/tendance Plaque pour le Bloc 5 (§14 pt.8,
+   déjà partiellement fait — voir §7) et le score de vigilance météo (§15),
    y compris le seuil "zone normale" de couverture qui reste à définir
-   (cf. §14 pt.3, non tranché à ce jour).
-4. Vérifier que l'actualisation automatique 6h-7h (§15) fonctionne bien sur
+   (cf. §15 pt.3, non tranché à ce jour).
+4. Vérifier que l'actualisation automatique 6h-7h (§16) fonctionne bien sur
    les 6 fichiers, puis construire la vérification de fraîcheur avant envoi.
 5. Provisionner la boîte Gmail dédiée (cf. `CADRAGE.md` §6) pour un premier
    envoi de test réel aux 2 adresses pilote.
 6. Une fois VO validé : reprendre APV (déjà prêt côté données) et VN (sheet à
    créer) sur le même modèle.
+7. **Intégrer le Bloc 9 (Commandes & Facturations vs Objectifs) à la
+   maquette mail VO** (§11) — prochaine étape immédiate, sur le modèle de
+   ce qui a été fait pour le Bloc 2 VN dans sa propre maquette (tuiles KPI
+   Tendance avec tooltip niveau/rythme, paragraphe narratif + tableau
+   détaillé).
