@@ -4,9 +4,9 @@ Voir [`CADRAGE.md`](CADRAGE.md) pour le cadrage transverse (objectif général,
 architecture, destinataires, décisions communes aux 3 services).
 
 **Statut (2026-09-24) : blocs 1, 2, 3, 4 et 6 terminés et validés, maquette de
-mail construite sur une concession pilote** — même méthode que VO (Sheet par
-bloc, validé sur données réelles avant de documenter). Le Bloc 2 n'est pas
-encore intégré à la maquette mail.
+mail entièrement retravaillée sur une concession pilote (météo, KPI, Bloc 2
+intégré)** — même méthode que VO (Sheet par bloc, validé sur données réelles
+avant de documenter).
 
 **Principe de méthode (rappel 2026-09-16)** : ne pas extrapoler de logique
 métier VN par analogie avec le VO sans vérification — un essai de proposition
