@@ -490,6 +490,19 @@ par point :
       en retard sur le rythme nécessaire → remonté ; Commandes proches du
       rythme nécessaire → pas remonté, cohérent avec le principe
       "commentaire qui s'adapte au signal du jour" (`CADRAGE.md` §3).
+    - **Précision importante (2026-09-25, même clarification que côté VN,
+      voir `CADRAGE_VN.md` §6)** : ce **texte narratif n'est pas une
+      formule Sheet** — comme l'encart Synthèse en haut du mail, c'est du
+      **commentaire IA**, rédigé à partir des chiffres réels du Bloc 9
+      (MTD, objectif, tendance, rythme 7j vs moyenne), soumis aux mêmes
+      règles que la Synthèse (`CADRAGE.md` §3 : factuel, pas de jargon
+      interne, langage simple). Seul le tableau MTD/Objectif/%/Rythme est
+      une donnée pure, directement lue dans le Sheet. **Tant que l'étape
+      de génération IA de l'orchestrateur n'est pas construite**
+      (`CADRAGE.md` §3, toujours à l'état de conception), ce paragraphe ne
+      peut pas être produit mécaniquement — un mail assemblé sans cette
+      étape aura normalement ce texte absent, ce n'est pas un bug de
+      calcul.
 
 ## 15. Icône météo — score de vigilance (2026-09-11)
 
