@@ -363,7 +363,76 @@ Maquette (données réelles Renault Strasbourg, 23/09/2026, email-safe dès
 la première version — règles §6 appliquées d'emblée) :
 [`docs/mockup_email_directeur.html`](mockup_email_directeur.html).
 
-## 8. Questions ouvertes transverses
+## 8. Mail Plaque — niveau 3 de diffusion (2026-09-25)
+
+Premier mail construit pour le niveau **Plaque** de la diffusion à 4 niveaux
+(§1) — au-dessus du niveau Concession (§7), en dessous du Siège (pas encore
+abordé). **Reprend la main Corentin** à partir d'ici : il va enrichir ce
+niveau avec des analyses propres à la Plaque (au-delà de ce qui est décrit
+ci-dessous).
+
+**Périmètre pilote** : Plaque Renault (`PLQ_RENAULT`, 9 concessions —
+`REN_SAVERNE, REN_SELESTAT, REN_STLOUIS, REN_STRASBOURG,
+REN_WISSEMBOURG, RENNIS_BELFORT_MONT, RENNIS_COLMAR, RENNIS_HAGUENAU,
+RENNIS_MULHOUSE`), même choix pilote que le VO (`CADRAGE_VO.md` §1) —
+liste lue dans le Référentiel Concession, onglet `Concessions_Plaques`.
+
+**Principe validé (2026-09-25)** : même structure que le mail Directeur
+(§7 — Synthèse IA en tête, blocs VN → VO → APV, omission de bloc si rien
+de significatif), mais avec un niveau de détail supplémentaire propre à
+l'échelle Plaque :
+- **Détail par concession dans chaque bloc VN/VO**, sous forme de tableau
+  compact (Commandes/Facturations % objectif, nombre d'anomalies), plutôt
+  que le paragraphe seul du mail Directeur — la Plaque doit permettre de
+  repérer *quelle* concession est en cause, pas seulement *que* le réseau
+  a un problème.
+- **Rotation & couverture VN et VO ajoutée** (demande explicite du
+  2026-09-25) : tableau par concession (Stock, Ventes moy. mensuelle,
+  Couverture, + Délai livraison médian côté VO) avec une ligne Total
+  Plaque. Consomme des données déjà construites *pour cet usage précis* :
+  - VN Bloc 4 (`CADRAGE_VN.md` §4, colonnes `K/L/M` Stock/Ventes/Couverture
+    Plaque) — construit au grain concession × marque × modèle
+    explicitement "car l'information sert aussi au futur mail directeur
+    de plaque" ; agrégée ici par concession (somme Stock et Ventes moy.
+    sur toutes les lignes `Code_Plaque = PLQ_RENAULT` d'une concession,
+    couverture recalculée dessus) pour obtenir une ligne par concession.
+  - VO Bloc 5 (`CADRAGE_VO.md` §7) a déjà le grain concession avec les
+    colonnes `*_Plaque` en regard — lu directement, aucune agrégation
+    nécessaire côté VO.
+  - VO Bloc 7 "Santé Plaque" (`CADRAGE_VO.md` §9) — **explicitement
+    exclu du mail Service en 2026-09-11 et réservé à ce mail** :
+    diagnostic santé réseau par famille × énergie (SAIN/CORRECT/
+    FATIGUÉ/CRITIQUE + action recommandée). Utilisé ici pour signaler les
+    familles à stock vieillissant à l'échelle Plaque (ex. Master FG/Master
+    Benne Diesel, "FATIGUÉ", action "SOLDER LES ANCIENNES") — première
+    restitution réelle de ce bloc dans un mail.
+- **Anomalies ventes réseau** (VN Bloc 6, VO Bloc 8) : lues sur
+  l'ensemble des concessions de la Plaque (filtre `Code_Plaque`, ou
+  jointure sur la liste des 9 codes concession côté VO — la table finale
+  du Bloc 8 ne porte pas `Code_Plaque`), comptées par concession pour la
+  colonne "Anomalies" des tableaux, le pire dossier cité nommément dans le
+  texte (numéro de dossier ou immatriculation, comme aux niveaux
+  précédents).
+- Mêmes règles qu'au niveau Directeur pour le reste : signaler le positif
+  comme le négatif, dossiers concrets cités, pas de jargon interne, email-
+  safe dès la première version.
+
+**Gap identifié en construisant ce mail (bloquant pour le bloc APV
+uniquement)** : contrairement à VN et VO, **APV n'a pas encore de
+rattachement concession → plaque dans les données réellement exploitées**
+(`Analyse Globale`) — la notion de Plaque n'existe aujourd'hui que côté
+`Objectif APV` (déjà noté dans `CADRAGE_APV.md`, point ouvert existant).
+**Décision (2026-09-25)** : ne pas inventer de chiffre Plaque pour APV —
+le bloc affiche une note explicite ("pas encore disponible") plutôt qu'un
+contenu construit. Le bloc sera rempli dès que Quentin/Corentin auront
+construit ce rattachement côté Sheet — pas une tâche pour Claude (limite
+technique rappelée en §3 : Claude ne construit rien dans les Sheets).
+
+Maquette (données réelles Plaque Renault, 23-25/09/2026, email-safe dès
+la première version) :
+[`docs/mockup_email_plaque.html`](mockup_email_plaque.html).
+
+## 9. Questions ouvertes transverses
 
 1. **Création de la boîte Gmail HESS dédiée** — qui la crée (IT ?), quel nom
    d'adresse, et comment la connecter à la session qui porte la tâche planifiée ?
@@ -379,10 +448,16 @@ la première version — règles §6 appliquées d'emblée) :
    (voir §7) — le mockup Renault Strasbourg a les 3 services actifs, donc
    la logique d'omission de bloc n'a encore jamais été vérifiée en
    pratique.
+5. **Rattachement concession → plaque côté APV** (voir §8) — bloque le
+   bloc APV du mail Plaque tant qu'il n'existe que côté `Objectif APV`,
+   pas dans `Analyse Globale`. À construire côté Sheet (pas par Claude).
+6. **Suite du mail Plaque (§8) reprise par Corentin (2026-09-25)** — il va
+   ajouter des analyses propres au niveau Plaque, au-delà de ce qui est
+   décrit dans ce document à ce stade.
 
 Les questions ouvertes spécifiques à un service sont dans son fichier dédié.
 
-## 9. Prochaines étapes
+## 10. Prochaines étapes
 
 Le développement priorise **VO** — voir `CADRAGE_VO.md` pour le détail. APV et VN
 suivront une fois VO validé en pilote.
