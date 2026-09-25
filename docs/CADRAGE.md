@@ -1,7 +1,7 @@
 # Cadrage global — Rapport quotidien VN / VO / APV
 
 **Statut : BROUILLON — à relire et valider à deux avant tout développement.**
-Dernière mise à jour : 2026-09-08.
+Dernière mise à jour : 2026-09-25.
 
 Ce document couvre le cadrage **transverse** aux 3 services. Le détail propre à
 chaque service vit dans son propre fichier, pour permettre à plusieurs personnes
@@ -322,7 +322,48 @@ session, pas encore la boîte HESS dédiée — voir question ouverte
 ci-dessous) à Quentin et Corentin pour Renault Strasbourg, et confirmés
 correctement affichés par le destinataire.
 
-## 7. Questions ouvertes transverses
+## 7. Mail Directeur de concession — niveau 2 de diffusion (2026-09-25)
+
+Premier mail construit pour le niveau **Concession** de la diffusion à 4
+niveaux (§1) — au-dessus du niveau Service (V1, seul niveau construit
+jusqu'ici), en dessous de Plaque/Siège (pas encore abordés).
+
+**Principe validé (2026-09-25)** : contrairement aux mails Service, le
+Directeur de concession ne reçoit pas le détail complet des 3 activités,
+mais une synthèse condensée qui ne signale que l'essentiel et le
+significatif :
+- **Structure fixe : bloc VN → bloc VO → bloc APV**, dans cet ordre.
+- **Un bloc entier est omis** si le service correspondant n'a rien de
+  significatif à signaler ce jour-là — contrairement au niveau Service (où
+  l'absence d'anomalie reste affichée en italique, ex. "Rien à signaler"
+  dans `CADRAGE_VO.md` §11), ici c'est un silence complet, pas de bloc du
+  tout. **Non testé sur ce mockup** : les 3 services avaient un signal réel
+  pour Renault Strasbourg le 23/09 — le comportement d'omission reste à
+  valider sur un cas réel où un service n'a rien à signaler.
+- **Une Synthèse IA cross-service ouvre le mail**, avant les 3 blocs —
+  distincte des Synthèse par service : elle recoupe/priorise entre VN, VO
+  et APV, alors que les Synthèse Service ne travaillent qu'à l'intérieur
+  d'un seul bloc. Une phrase par service ayant un signal, même ordre
+  VN→VO→APV, mêmes règles de rédaction que §3 (factuel, dossiers concrets,
+  pas de jargon interne).
+- Chaque bloc service reste factuel et cite des dossiers concrets
+  (immatriculation/VIN/n° OR), mais **sans tableau détaillé** — condensé en
+  un paragraphe de 2 phrases maximum, précédé d'un badge résumant le
+  chiffre clé du bloc.
+- **Signaler le positif comme le négatif** (décidé 2026-09-25) : ne pas se
+  limiter aux points d'alerte — une tendance positive notable (ex.
+  facturations VO +17% vs l'an dernier) a sa place dans le bloc au même
+  titre qu'un point négatif, dès lors qu'elle est significative.
+- Réutilise les icônes météo déjà calculées par chaque service (pas de
+  nouveau score recalculé pour ce niveau) — affichées en 3 mini-cartes en
+  tête de mail, chacune avec le fait le plus marquant du service en une
+  ligne.
+
+Maquette (données réelles Renault Strasbourg, 23/09/2026, email-safe dès
+la première version — règles §6 appliquées d'emblée) :
+[`docs/mockup_email_directeur.html`](mockup_email_directeur.html).
+
+## 8. Questions ouvertes transverses
 
 1. **Création de la boîte Gmail HESS dédiée** — qui la crée (IT ?), quel nom
    d'adresse, et comment la connecter à la session qui porte la tâche planifiée ?
@@ -334,10 +375,14 @@ correctement affichés par le destinataire.
 3. ~~Reconversion email-safe des 3 maquettes~~ **fait (2026-09-25)** pour
    VN, VO (fichiers remplacés) et APV (`mockup_email_apv_v2_safe.html`,
    anonymisé) — voir §6.
+4. **Test du mail Directeur sur un cas où un service n'a rien à signaler**
+   (voir §7) — le mockup Renault Strasbourg a les 3 services actifs, donc
+   la logique d'omission de bloc n'a encore jamais été vérifiée en
+   pratique.
 
 Les questions ouvertes spécifiques à un service sont dans son fichier dédié.
 
-## 8. Prochaines étapes
+## 9. Prochaines étapes
 
 Le développement priorise **VO** — voir `CADRAGE_VO.md` pour le détail. APV et VN
 suivront une fois VO validé en pilote.
