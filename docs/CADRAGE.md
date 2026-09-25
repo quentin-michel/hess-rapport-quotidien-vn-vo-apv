@@ -248,17 +248,79 @@ Orchestrateur quotidien (matin)
 Responsables de service VN / VO / Atelier (APV)
 ```
 
-## 6. Questions ouvertes transverses
+## 6. Contrainte HTML des mails — "email-safe" (2026-09-25)
+
+**Découverte lors du premier envoi de test réel** du projet (Renault
+Strasbourg, VN/VO/APV, 2026-09-25) — les 3 maquettes existantes
+(`docs/mockup_email_*.html`) utilisent des **variables CSS** (`var(--navy)`,
+`var(--gold)`...) et du **flexbox/grid** pour la mise en page. Ces deux
+techniques ne sont **pas fiables dans les clients mail** (Gmail en tête,
+Outlook desktop encore moins) : elles sont silencieusement ignorées, et le
+mail arrive sans aucune mise en forme, en texte brut.
+
+Ce problème n'avait jamais été détecté avant car les maquettes n'avaient été
+vues qu'en rendu Artifact/navigateur (qui supporte tout ça sans problème) —
+jamais en rendu réel de client mail, puisque c'était le tout premier envoi
+réel du projet (aucune des "simulations de mail" précédentes documentées
+dans `CADRAGE_VO.md` §13 n'avait été réellement envoyée).
+
+**Règles HTML "email-safe" à appliquer à tout mail réellement envoyé** (les
+3 services sont concernés, pas seulement celui qui a servi de test) :
+1. **Pas de variables CSS** (`var(--x)`) — toutes les couleurs en valeurs
+   littérales (hex), répétées à chaque usage plutôt que centralisées.
+2. **Pas de flexbox ni de grid** — mise en page en `<table>` HTML (le seul
+   système de layout fiable sur tous les clients mail, Outlook desktop en
+   particulier, qui utilise le moteur de rendu Word).
+3. **Styles en ligne** (`style="..."` sur chaque élément) plutôt que des
+   classes CSS dans un bloc `<style>` — certains clients strippent les
+   balises `<style>`.
+4. **Pas de police externe** (le `<link>` Google Fonts des maquettes n'est
+   pas fiable en email, souvent bloqué) — police système
+   (`Arial, Helvetica, sans-serif`).
+5. **Icônes météo en emoji Unicode** (&#9728; &#9729; ...) plutôt qu'en SVG
+   inline — le SVG n'est pas supporté par de nombreux clients mail.
+
+**Conséquence** : `docs/mockup_email_vn.html` et `docs/mockup_email_vo.html`
+ont été **remplacés le 2026-09-25** par leur conversion email-safe (données
+réelles Renault Strasbourg — VIN/immatriculations, pas de donnée nominative,
+cohérent avec la pratique déjà en place sur ces 2 fichiers). Côté APV,
+`docs/mockup_email_apv_v2.html` (structure indépendante de Corentin) est
+**conservé tel quel** ; sa conversion email-safe vit dans un fichier séparé,
+`docs/mockup_email_apv_v2_safe.html`, avec les **noms de clients et de
+salariés anonymisés** (Client A/B/..., Réceptionnaire A/B/..., Mécanicien
+A/B) avant commit — seule la donnée nominative est retirée, les
+immatriculations/n° OR restent réels. `docs/mockup_email_apv.html` (version
+d'origine, Mulhouse) reste également en place, non reconverti pour
+l'instant. Ces 3 fichiers email-safe sont désormais **la base à partir de
+laquelle continuer** (structure de layout en tableaux, à conserver pour
+toute évolution future du contenu).
+
+**Validé (2026-09-25)** : les 3 mails reconvertis (avant anonymisation
+côté APV) ont été envoyés réellement (via un compte Gmail connecté à la
+session, pas encore la boîte HESS dédiée — voir question ouverte
+ci-dessous) à Quentin et Corentin pour Renault Strasbourg, et confirmés
+correctement affichés par le destinataire.
+
+## 7. Questions ouvertes transverses
 
 1. **Création de la boîte Gmail HESS dédiée** — qui la crée (IT ?), quel nom
    d'adresse, et comment la connecter à la session qui porte la tâche planifiée ?
+   Le test du 2026-09-25 (§6) a été envoyé depuis un compte Gmail connecté à
+   la session en attendant, pas la boîte dédiée.
 2. **Correction à prévoir (non bloquante V1)** : les lignes `Code_Concession = "*"`
    dans le Référentiel devront passer de `Niveau de diffusion = Concession` à
    `Siège` quand le multi-niveaux sera construit — voir §4.
+3. ~~Reconversion email-safe des 3 maquettes~~ **fait (2026-09-25)** pour
+   VN, VO (fichiers remplacés) et APV (`mockup_email_apv_v2_safe.html`,
+   anonymisé) — voir §6.
 
 Les questions ouvertes spécifiques à un service sont dans son fichier dédié.
 
-## 7. Prochaines étapes
+## 8. Prochaines étapes
 
 Le développement priorise **VO** — voir `CADRAGE_VO.md` pour le détail. APV et VN
 suivront une fois VO validé en pilote.
+
+1. Construire la suite du projet (contenu, blocs restants, intégration
+   Gmail dédiée) **à partir des 3 maquettes email-safe** (§6) plutôt que
+   des anciennes versions à variables CSS/flex/grid.

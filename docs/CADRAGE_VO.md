@@ -460,6 +460,29 @@ par point :
    au §9).
 10. **Anomalies ventes (Bloc 8)** : même règle de tri que le point 6 — date
     décroissante en premier, puis note/montant décroissant.
+11. **Intégration du Bloc 9 et restructuration (2026-09-25)** :
+    - **Fusion** de "Offres VO & reprises" (Bloc 2) et "Commandes &
+      Facturations vs Objectifs" (Bloc 9, §11) en **une seule section**
+      "Offres VO & Facturations vs Objectifs" — même origine métier (les
+      commandes VO = offres VO acceptées), pas la peine de les séparer dans
+      le mail.
+    - **Anomalies ventes (Bloc 8) remontée** juste après "Anomalies achat &
+      reprise" (Bloc 3) — auparavant tout en bas du mail. Les deux anomalies
+      restent groupées, le reste (stock, rotation, excès) suit derrière.
+    - **"Qualité du stock" renommée "État du stock"** — cohérence avec le
+      nommage retenu côté VN.
+    - **Contenu de la section Bloc 9** : texte narratif (niveau vs N-1 +
+      rythme 7j vs moyenne, en prose) suivi d'un tableau compact
+      MTD/Objectif/%/Rythme (7j / semaine, une seule colonne) + un badge
+      coloré de Tendance à côté du nom du flux (pas une colonne à part —
+      une première version à 6 colonnes texte wrappait sur mobile, corrigée
+      en fusionnant 7j+rythme habituel et en sortant la Tendance en pilule
+      colorée). **Reste à faire** : ne remonte dans la Synthèse IA que
+      s'il est réellement significatif (comparé au rythme réel des 7
+      derniers jours, pas juste au taux d'atteinte) — ex. Facturations très
+      en retard sur le rythme nécessaire → remonté ; Commandes proches du
+      rythme nécessaire → pas remonté, cohérent avec le principe
+      "commentaire qui s'adapte au signal du jour" (`CADRAGE.md` §3).
 
 ## 15. Icône météo — score de vigilance (2026-09-11)
 
