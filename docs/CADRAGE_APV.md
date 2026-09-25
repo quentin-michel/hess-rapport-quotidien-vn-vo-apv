@@ -182,13 +182,25 @@ classeur-là devrait inclure les 3, si jamais appliqué (pas fait à ce jour,
 ce classeur reste sur l'import complet non filtré).
 
 **`Prix/Remises forcées`** (classeur externe, mélange Atelier/Magasin dans
-une seule requête BigQuery) : la CTE `magasin` utilisait à tort
-`e.Concession` (champ brut, jamais mappé dans `Mapping concession`) au
-lieu de `e.Regroupement_Concession_APV` (le champ réellement mappé, même
-correctif que `docs/sql/magasin_detail_journalier.sql`) — à corriger dans
-la requête avant de brancher la transco (`RECHERCHEV` simple, onglet
-`Mapping` important `Mapping concession!A:E` du classeur APV principal,
-même source que pour `Anomalies forfaits`).
+une seule requête BigQuery) — **corrigé le 2026-09-25**, diagnostic
+initial révisé : `e.Regroupement_Concession_APV` n'est **pas** un champ
+groupé (vérifié en BigQuery — pour Dijon il vaut exactement la même
+chose que `e.Concession`/`eo.Concession`, ex. "Opel Dijon"), donc changer
+de champ dans la requête n'aurait rien réglé. Le vrai bug était **côté
+Sheet** : l'onglet `Prix/Remises forcés` avait déjà une colonne `Code
+concession` avec un `RECHERCHEV`, mais elle pointait vers un onglet
+`Mapping` renommé depuis en `Mapping concessions` — la référence était
+orpheline, et comme le `VLOOKUP` était enveloppé dans un `IFERROR(...;
+$A2)`, l'échec était avalé silencieusement et retombait sur la valeur
+brute (même famille de bug que le `#REF!` `Encours à date`/`Objectif
+APV` ci-dessus : onglet source renommé, référence externe cassée).
+Corrigé en remplaçant `Mapping!$C:$D` par `'Mapping concessions'!$C:$D`
+dans la formule, et le fallback silencieux par `"MAPPING MANQUANT: "&$A2`
+pour rendre visible tout futur cas de mapping manquant. Vérifié sur les
+~1000 lignes de l'extrait du jour : 0 `MAPPING MANQUANT`, regroupements
+multi-marques corrects (`Opel Dijon`/`Fiat Dijon` → `OPELFIAT_DIJON`,
+`Nissan Belfort`/`Renault Belfort`/`Renault Montbéliard` →
+`RENNIS_BELFORT_MONT`, etc.).
 
 ## 3. Onglets construits (2026-09-11)
 
@@ -826,8 +838,10 @@ du mail.
 5. Corriger le bug `#REF!` trouvé en production sur `Encours à date`
    (colonne V) et `Objectif APV` (colonne J) — voir §2.2, formules de
    correctif déjà données, pas encore appliquées dans le Sheet.
-6. Corriger la requête `Prix/Remises forcées` (champ Magasin, §2.2) et
-   brancher sa transco une fois fait.
+6. ~~Corriger la requête `Prix/Remises forcées` (champ Magasin, §2.2) et
+   brancher sa transco une fois fait.~~ **fait (2026-09-25)** — voir §2.2,
+   le bug était en réalité côté Sheet (référence orpheline vers l'onglet
+   `Mapping` renommé), pas dans la requête BigQuery. Corrigé et vérifié.
 5. Trancher le sort du seuil `Ratio remises/CA` générique.
 6. Laisser tourner `Forfaits pièces suspectes` (détection n°3, §10) quelques
    semaines pour juger du volume réel et calibrer le seuil si besoin.
