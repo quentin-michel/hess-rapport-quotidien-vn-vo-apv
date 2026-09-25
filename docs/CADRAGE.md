@@ -322,6 +322,18 @@ session, pas encore la boîte HESS dédiée — voir question ouverte
 ci-dessous) à Quentin et Corentin pour Renault Strasbourg, et confirmés
 correctement affichés par le destinataire.
 
+**Précision sur l'anonymisation (2026-09-25)** : l'anonymisation des noms de
+clients/salariés ne s'applique **qu'aux fichiers commités/poussés sur
+GitHub** (`docs/mockup_*.html`) — pas au mail réel lui-même. Un fichier
+versionné dans le repo est vu par toute l'équipe dev indéfiniment, sans
+lien avec qui a le droit opérationnel de voir quel dossier ; un mail
+envoyé à un destinataire précis (chef d'atelier, responsable magasin,
+directeur de plaque) n'a pas ce problème — ces destinataires sont
+légitimement en droit de voir les vrais noms des dossiers/salariés qui
+relèvent de leur périmètre, et c'est même le but du mail. Donc : **noms
+réels dans les brouillons Gmail et les envois réels**, **anonymisés dans
+tout ce qui est commité sur GitHub**.
+
 ## 7. Mail Directeur de concession — niveau 2 de diffusion (2026-09-25)
 
 Premier mail construit pour le niveau **Concession** de la diffusion à 4
