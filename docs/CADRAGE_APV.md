@@ -805,6 +805,12 @@ volume à résumer :
 - **Ventes à perte** (Atelier + Magasin, `Analyse pièces J-1`) — affichées
   en deux sous-listes séparées Atelier/Magasin plutôt qu'un tableau mixte,
   cohérent avec le principe de séparation visuelle (§12.1).
+  **Précision (2026-09-25)** : ces tableaux doivent toujours inclure le
+  **nom du client** et le **nom du réceptionnaire (Atelier) ou magasinier
+  (Magasin)**, pas seulement référence/désignation/marge — l'opérationnel
+  destinataire a besoin de savoir qui est concerné pour agir. Voir
+  `CADRAGE.md` §6 pour la règle noms réels (mail/brouillon Gmail) vs
+  anonymisés (fichiers commités sur GitHub).
 - **Prix/Remises forcées** (`Prix/Remises forcées`, classeur dédié,
   contact : Corentin) — **filtré sur `type = Magasin` dans un premier
   temps** (PR externe) ; le PR interne Atelier viendra dans un second
