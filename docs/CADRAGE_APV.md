@@ -892,3 +892,12 @@ du mail.
 7. Détection n°2 (écarts de tarification entre ateliers d'une même Plaque)
    — pas commencée, référentiel Plaque ↔ code canonique toujours à
    vérifier (cf. §8 pt.5).
+8. **Paramétrer les icônes météo (Atelier et Magasin) en fonction de
+   seuils explicites** (demandé 2026-09-25) — aujourd'hui l'icône est
+   choisie au jugé à chaque génération de mail, sans règle formalisée
+   commune. Un seul seuil existe à ce jour (Magasin : ratio pièces
+   vendues à perte >0% → Nuage, §12.3). Il faut définir, pour Atelier et
+   Magasin, la liste complète des signaux qui font monter l'icône
+   (Soleil → Nuage → Pluie → Orage) et leurs seuils, pour que la
+   sélection soit reproductible d'un mail à l'autre plutôt que
+   discrétionnaire.
