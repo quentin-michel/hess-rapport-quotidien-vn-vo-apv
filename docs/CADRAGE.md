@@ -1,7 +1,7 @@
 # Cadrage global — Rapport quotidien VN / VO / APV
 
 **Statut : BROUILLON — à relire et valider à deux avant tout développement.**
-Dernière mise à jour : 2026-09-08.
+Dernière mise à jour : 2026-09-25.
 
 Ce document couvre le cadrage **transverse** aux 3 services. Le détail propre à
 chaque service vit dans son propre fichier, pour permettre à plusieurs personnes
@@ -164,6 +164,27 @@ traîne dans le même dossier Drive, sans contenu.~~ **Supprimé (2026-09-08).**
        6), dans la limite des 2 phrases de la règle 5 — la règle 8 interdit
        de *forcer* un deuxième point faible, pas d'en garder un deuxième qui
        est légitimement fort.
+    9. **Ne jamais utiliser le vocabulaire de classification interne** ("à
+       vérifier", "à corriger", "à signaler"...) comme mot du texte, même en
+       tête de phrase pour donner le ton (décidé 2026-09-25, suite à un
+       "À corriger :" resté dans la Synthèse VN alors que la règle 4
+       l'interdit déjà pour les notes chiffrées) — ces libellés servent au
+       tri interne dans les Sheets (cf. `CADRAGE_VN.md` §5), jamais à
+       l'affichage destinataire. Décrire le fait/l'action directement
+       ("le dossier affiche une marge de -2 123€...") plutôt que de
+       préfixer par la catégorie qui l'a fait remonter. **Étendu le
+       2026-09-25** : la même règle vaut pour le vocabulaire du
+       classificateur Tendance (Bloc 2/9 Commandes & Facturations) — ne pas
+       écrire "hausse confirmée"/"baisse confirmée"/"sans que l'écart soit
+       confirmé" dans le texte, ce sont des états internes du calcul (cf.
+       `CADRAGE_VN.md` §2), pas des mots pour le lecteur. Dire le chiffre et
+       la comparaison directement ("22 commandes contre un rythme habituel
+       de 32 par semaine, léger retrait de 9,5% par rapport à l'an
+       dernier") plutôt que le résultat de la classification. Plus
+       généralement : **toute phrase de synthèse doit rester compréhensible
+       par quelqu'un qui ne connaît pas la mécanique de calcul** — un bon
+       test est de se relire en se demandant si un lecteur qui n'a jamais
+       vu les Sheets comprendrait la phrase du premier coup.
     Exemple qui a fonctionné (Mulhouse, 2026-09-10) : identifier que
     `FN-627-YH` était toujours sans prix/destination en stock alors qu'il
     avait déjà été signalé à l'achat pour des écarts de prix/km/date, plutôt
@@ -301,7 +322,117 @@ session, pas encore la boîte HESS dédiée — voir question ouverte
 ci-dessous) à Quentin et Corentin pour Renault Strasbourg, et confirmés
 correctement affichés par le destinataire.
 
-## 7. Questions ouvertes transverses
+## 7. Mail Directeur de concession — niveau 2 de diffusion (2026-09-25)
+
+Premier mail construit pour le niveau **Concession** de la diffusion à 4
+niveaux (§1) — au-dessus du niveau Service (V1, seul niveau construit
+jusqu'ici), en dessous de Plaque/Siège (pas encore abordés).
+
+**Principe validé (2026-09-25)** : contrairement aux mails Service, le
+Directeur de concession ne reçoit pas le détail complet des 3 activités,
+mais une synthèse condensée qui ne signale que l'essentiel et le
+significatif :
+- **Structure fixe : bloc VN → bloc VO → bloc APV**, dans cet ordre.
+- **Un bloc entier est omis** si le service correspondant n'a rien de
+  significatif à signaler ce jour-là — contrairement au niveau Service (où
+  l'absence d'anomalie reste affichée en italique, ex. "Rien à signaler"
+  dans `CADRAGE_VO.md` §11), ici c'est un silence complet, pas de bloc du
+  tout. **Non testé sur ce mockup** : les 3 services avaient un signal réel
+  pour Renault Strasbourg le 23/09 — le comportement d'omission reste à
+  valider sur un cas réel où un service n'a rien à signaler.
+- **Une Synthèse IA cross-service ouvre le mail**, avant les 3 blocs —
+  distincte des Synthèse par service : elle recoupe/priorise entre VN, VO
+  et APV, alors que les Synthèse Service ne travaillent qu'à l'intérieur
+  d'un seul bloc. Une phrase par service ayant un signal, même ordre
+  VN→VO→APV, mêmes règles de rédaction que §3 (factuel, dossiers concrets,
+  pas de jargon interne).
+- Chaque bloc service reste factuel et cite des dossiers concrets
+  (immatriculation/VIN/n° OR), mais **sans tableau détaillé** — condensé en
+  un paragraphe de 2 phrases maximum, précédé d'un badge résumant le
+  chiffre clé du bloc.
+- **Signaler le positif comme le négatif** (décidé 2026-09-25) : ne pas se
+  limiter aux points d'alerte — une tendance positive notable (ex.
+  facturations VO +17% vs l'an dernier) a sa place dans le bloc au même
+  titre qu'un point négatif, dès lors qu'elle est significative.
+- Réutilise les icônes météo déjà calculées par chaque service (pas de
+  nouveau score recalculé pour ce niveau) — affichées en 3 mini-cartes en
+  tête de mail, chacune avec le fait le plus marquant du service en une
+  ligne.
+
+Maquette (données réelles Renault Strasbourg, 23/09/2026, email-safe dès
+la première version — règles §6 appliquées d'emblée) :
+[`docs/mockup_email_directeur.html`](mockup_email_directeur.html).
+
+## 8. Mail Plaque — niveau 3 de diffusion (2026-09-25)
+
+Premier mail construit pour le niveau **Plaque** de la diffusion à 4 niveaux
+(§1) — au-dessus du niveau Concession (§7), en dessous du Siège (pas encore
+abordé). **Reprend la main Corentin** à partir d'ici : il va enrichir ce
+niveau avec des analyses propres à la Plaque (au-delà de ce qui est décrit
+ci-dessous).
+
+**Périmètre pilote** : Plaque Renault (`PLQ_RENAULT`, 9 concessions —
+`REN_SAVERNE, REN_SELESTAT, REN_STLOUIS, REN_STRASBOURG,
+REN_WISSEMBOURG, RENNIS_BELFORT_MONT, RENNIS_COLMAR, RENNIS_HAGUENAU,
+RENNIS_MULHOUSE`), même choix pilote que le VO (`CADRAGE_VO.md` §1) —
+liste lue dans le Référentiel Concession, onglet `Concessions_Plaques`.
+
+**Principe validé (2026-09-25)** : même structure que le mail Directeur
+(§7 — Synthèse IA en tête, blocs VN → VO → APV, omission de bloc si rien
+de significatif), mais avec un niveau de détail supplémentaire propre à
+l'échelle Plaque :
+- **Détail par concession dans chaque bloc VN/VO**, sous forme de tableau
+  compact (Commandes/Facturations % objectif, nombre d'anomalies), plutôt
+  que le paragraphe seul du mail Directeur — la Plaque doit permettre de
+  repérer *quelle* concession est en cause, pas seulement *que* le réseau
+  a un problème.
+- **Rotation & couverture VN et VO ajoutée** (demande explicite du
+  2026-09-25) : tableau par concession (Stock, Ventes moy. mensuelle,
+  Couverture, + Délai livraison médian côté VO) avec une ligne Total
+  Plaque. Consomme des données déjà construites *pour cet usage précis* :
+  - VN Bloc 4 (`CADRAGE_VN.md` §4, colonnes `K/L/M` Stock/Ventes/Couverture
+    Plaque) — construit au grain concession × marque × modèle
+    explicitement "car l'information sert aussi au futur mail directeur
+    de plaque" ; agrégée ici par concession (somme Stock et Ventes moy.
+    sur toutes les lignes `Code_Plaque = PLQ_RENAULT` d'une concession,
+    couverture recalculée dessus) pour obtenir une ligne par concession.
+  - VO Bloc 5 (`CADRAGE_VO.md` §7) a déjà le grain concession avec les
+    colonnes `*_Plaque` en regard — lu directement, aucune agrégation
+    nécessaire côté VO.
+  - VO Bloc 7 "Santé Plaque" (`CADRAGE_VO.md` §9) — **explicitement
+    exclu du mail Service en 2026-09-11 et réservé à ce mail** :
+    diagnostic santé réseau par famille × énergie (SAIN/CORRECT/
+    FATIGUÉ/CRITIQUE + action recommandée). Utilisé ici pour signaler les
+    familles à stock vieillissant à l'échelle Plaque (ex. Master FG/Master
+    Benne Diesel, "FATIGUÉ", action "SOLDER LES ANCIENNES") — première
+    restitution réelle de ce bloc dans un mail.
+- **Anomalies ventes réseau** (VN Bloc 6, VO Bloc 8) : lues sur
+  l'ensemble des concessions de la Plaque (filtre `Code_Plaque`, ou
+  jointure sur la liste des 9 codes concession côté VO — la table finale
+  du Bloc 8 ne porte pas `Code_Plaque`), comptées par concession pour la
+  colonne "Anomalies" des tableaux, le pire dossier cité nommément dans le
+  texte (numéro de dossier ou immatriculation, comme aux niveaux
+  précédents).
+- Mêmes règles qu'au niveau Directeur pour le reste : signaler le positif
+  comme le négatif, dossiers concrets cités, pas de jargon interne, email-
+  safe dès la première version.
+
+**Gap identifié en construisant ce mail (bloquant pour le bloc APV
+uniquement)** : contrairement à VN et VO, **APV n'a pas encore de
+rattachement concession → plaque dans les données réellement exploitées**
+(`Analyse Globale`) — la notion de Plaque n'existe aujourd'hui que côté
+`Objectif APV` (déjà noté dans `CADRAGE_APV.md`, point ouvert existant).
+**Décision (2026-09-25)** : ne pas inventer de chiffre Plaque pour APV —
+le bloc affiche une note explicite ("pas encore disponible") plutôt qu'un
+contenu construit. Le bloc sera rempli dès que Quentin/Corentin auront
+construit ce rattachement côté Sheet — pas une tâche pour Claude (limite
+technique rappelée en §3 : Claude ne construit rien dans les Sheets).
+
+Maquette (données réelles Plaque Renault, 23-25/09/2026, email-safe dès
+la première version) :
+[`docs/mockup_email_plaque.html`](mockup_email_plaque.html).
+
+## 9. Questions ouvertes transverses
 
 1. **Création de la boîte Gmail HESS dédiée** — qui la crée (IT ?), quel nom
    d'adresse, et comment la connecter à la session qui porte la tâche planifiée ?
@@ -313,10 +444,20 @@ correctement affichés par le destinataire.
 3. ~~Reconversion email-safe des 3 maquettes~~ **fait (2026-09-25)** pour
    VN, VO (fichiers remplacés) et APV (`mockup_email_apv_v2_safe.html`,
    anonymisé) — voir §6.
+4. **Test du mail Directeur sur un cas où un service n'a rien à signaler**
+   (voir §7) — le mockup Renault Strasbourg a les 3 services actifs, donc
+   la logique d'omission de bloc n'a encore jamais été vérifiée en
+   pratique.
+5. **Rattachement concession → plaque côté APV** (voir §8) — bloque le
+   bloc APV du mail Plaque tant qu'il n'existe que côté `Objectif APV`,
+   pas dans `Analyse Globale`. À construire côté Sheet (pas par Claude).
+6. **Suite du mail Plaque (§8) reprise par Corentin (2026-09-25)** — il va
+   ajouter des analyses propres au niveau Plaque, au-delà de ce qui est
+   décrit dans ce document à ce stade.
 
 Les questions ouvertes spécifiques à un service sont dans son fichier dédié.
 
-## 8. Prochaines étapes
+## 10. Prochaines étapes
 
 Le développement priorise **VO** — voir `CADRAGE_VO.md` pour le détail. APV et VN
 suivront une fois VO validé en pilote.

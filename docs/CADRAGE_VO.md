@@ -315,11 +315,16 @@ détention (Quentin a tranché de ne pas resserrer), ajustés seulement pour
 de gravité** (option envisagée puis écartée) — tri par **date décroissante en
 premier, puis note/montant décroissant** en cas d'égalité de date (décidé
 2026-09-11, remplace l'idée initiale d'ordre de priorité par catégorie),
-top 5 + note "+N autres anomalies". Géré par Claude à la composition du mail,
+top 5 + note "+N autres anomalies". **Règle inversée le 2026-09-25** : tri
+par **montant/note décroissant en premier, date décroissante seulement en
+cas d'égalité de montant** — l'ampleur de l'anomalie prime sur sa fraîcheur.
+S'applique aussi au Bloc 6 VN (Anomalies Ventes) dès que son volume
+nécessitera une troncature. Géré par Claude à la composition du mail,
 pas par une colonne Sheet. **Même règle de tri appliquée au Bloc 3** (Anomalies
 Achat/Reprise). `Date_vente` est bien présente dans `Bloc 8 Ano_Vente`
-(vérifié le 2026-09-11) — le tri par date est donc applicable ; avec la
-fenêtre resserrée à ~J-1 (voir ci-dessus), le cas "plus de 5 anomalies/jour"
+(vérifié le 2026-09-11) — le tri par date reste disponible comme critère
+secondaire ; avec la fenêtre resserrée à ~J-1 (voir ci-dessus), le cas
+"plus de 5 anomalies/jour"
 devrait de toute façon devenir rare.
 
 **Piège de jointure** : `frais_estimes`/`frais_reels` proviennent du **même
@@ -446,8 +451,9 @@ par point :
 5. **Sources** : ne pas afficher les références de fichiers/onglets sources
    dans le mail (info technique sans valeur pour le destinataire).
 6. **Anomalies achat/reprise (Bloc 3)** : ne pas afficher la colonne note ;
-   trier par **date décroissante en premier, puis note décroissante** en cas
-   d'égalité (même règle que Bloc 8, cf. §10).
+   trier par montant/note décroissant en premier, date décroissante en cas
+   d'égalité (même règle que Bloc 8, cf. §10 — **règle inversée le
+   2026-09-25**, voir §10).
 7. **Qualité du stock (Bloc 4)** : détailler la liste des **CL en retard**
    (pas seulement le total) — voir §5.
 8. **Rotation & couverture (Bloc 5)** : ajouter les **moyennes Plaque** en
@@ -458,8 +464,9 @@ par point :
 9. **Contexte réseau/plaque (Bloc 7)** : ne pas l'inclure dans le mail
    Service — réservé au futur mail directeur de plaque (voir note ajoutée
    au §9).
-10. **Anomalies ventes (Bloc 8)** : même règle de tri que le point 6 — date
-    décroissante en premier, puis note/montant décroissant.
+10. **Anomalies ventes (Bloc 8)** : même règle de tri que le point 6 —
+    montant/note décroissant en premier, date décroissante en cas d'égalité
+    (voir §11 pour la règle d'origine et son inversion le 2026-09-25).
 11. **Intégration du Bloc 9 et restructuration (2026-09-25)** :
     - **Fusion** de "Offres VO & reprises" (Bloc 2) et "Commandes &
       Facturations vs Objectifs" (Bloc 9, §11) en **une seule section**
