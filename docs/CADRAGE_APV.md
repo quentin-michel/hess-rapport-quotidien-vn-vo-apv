@@ -791,8 +791,9 @@ Vérifié sur données réelles (Renault Strasbourg, 24/09/2026) : 339 pièces
 vendues, 35 en perte, ratio 10,3%.
 
 **KPI conditionnels agrégés** (narrés, n'apparaissent que si le seuil est
-franchi — Atelier uniquement, pas d'équivalent Magasin identifié à ce
-jour) :
+franchi) :
+
+Atelier :
 
 - **Efficience globale J-1** — à l'inverse de la cession interne, "plus
   haut mieux c'est" (comme Productivité). Alerte seulement si **trop
@@ -804,6 +805,18 @@ jour) :
   répartition des vieux encours par tranche d'ancienneté, nombre et
   valeur) ; **40j = critique** (précision maximale sur les encours,
   détail le plus complet possible).
+
+Magasin (2026-09-25, premier KPI conditionnel défini pour ce département,
+jusqu'ici toujours "RAS" par défaut faute de seuil) :
+
+- **Ratio pièces vendues à perte J-1** (`Analyse Globale` colonne AU,
+  §2) — **règle simple : affiché dès que > 0%**, pas de palier
+  surveillance/alerte/critique comme l'Atelier. Narré avec le volume de
+  contexte (nb pièces à perte / nb pièces vendues, cf. §12.4). Ce KPI
+  détermine aussi l'icône de vigilance Magasin : **Soleil/RAS
+  uniquement si le ratio est à 0%** ; dès que > 0%, l'icône passe à
+  Nuage (le mail ne doit plus afficher "RAS" par défaut sans avoir
+  vérifié ce ratio).
 
 ### 12.4 Listes détail OR/pièce : envoyées intégralement, narrées
 
