@@ -672,6 +672,22 @@ remonter dans le mail V1. Données réelles Renault/Nissan Mulhouse
 détail par marque (Renault, Dacia, Nissan, Alpine — Peugeot exclu, volume
 nul ce mois-ci).
 
+**Précision importante (2026-09-25, suite à une confusion côté Corentin)** :
+le **petit paragraphe narratif** au-dessus du tableau par marque (ex. "Les
+commandes VN reculent fortement : -50% par rapport à l'an dernier. Renault
+et Dacia sont les plus en retard...") n'est **pas une formule Sheet** —
+comme l'encart Synthèse en haut du mail, c'est du texte de **commentaire
+IA**, rédigé à partir des chiffres réels du `BLOC 2` (MTD, objectif,
+tendance, écart par marque), et soumis aux mêmes règles que la Synthèse
+(`CADRAGE.md` §3 : factuel, pas de jargon interne, langage simple). Seul
+le tableau MTD/Objectif/% par marque est une donnée pure, directement
+lue dans le Sheet. **Tant que l'étape de génération IA de l'orchestrateur
+n'est pas construite** (`CADRAGE.md` §3, toujours à l'état de conception),
+ce paragraphe ne peut pas être produit mécaniquement — un mail assemblé
+sans cette étape (comme un premier test manuel multi-concessions) aura
+normalement ce texte absent, ce n'est pas un bug de calcul. À ne pas
+confondre avec une case vide à corriger côté Sheet.
+
 **Tuiles KPI "Tendance Commande/Facturation" (2026-09-24, corrigé)** : la
 Tendance du Bloc 2 croise **2 comparaisons distinctes**, pas une seule
 (cf. formule §2) — niveau (mois à date vs même période l'an dernier, dates
