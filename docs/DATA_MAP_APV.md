@@ -26,9 +26,10 @@ l'en-tête réel avant d'écrire dans une colonne**, ne jamais supposer.
 
 | Donnée | Onglet | Colonnes clés | Notes |
 |---|---|---|---|
-| KPI CA/objectifs/efficience/productivité/encours (1 ligne/concession) | `Analyse Globale` | A=Plaque, B=Code concession canonique, C1=date de référence (ligne 1), ligne 2=en-têtes, ligne 3+=data | Toutes les formules SUMIFS/AVERAGEIFS pointent vers les onglets bruts ci-dessous |
+| KPI CA/objectifs/efficience/productivité/encours + volume Magasin (1 ligne/concession) | `Analyse Globale` | A=Plaque, B=Code concession canonique, C1=date de référence (ligne 1), ligne 2=en-têtes, ligne 3+=data. **AT**=Nb pièces magasins vendues J-1, **AU**=% pièces vendues à perte J-1 (ajoutés 2026-09-25) | Toutes les formules SUMIFS/AVERAGEIFS pointent vers les onglets bruts ci-dessous |
 | Top 5 encours les plus anciens par concession | `Encours prioritaires` | Code concession, N° OR, Immatriculation, Ancienneté (j), Montant MO/PR encours, Valeur totale OR, Dépréciation, Score | **Plafonné à 5/concession** — pas une liste exhaustive |
 | Ventes à perte pièces (J-1) | `Analyse pièces client J-1` (renommé, ex-"Analyse pièces J-1") | B=Code Concession, U=Plaque, J=Nom du client ⚠️ | ⚠️ Données personnelles |
+| Ventes à perte pièces Magasin, volume total (J-1) | `Détail facturation magasin journaliere` | B=Concession (brut), **C**=Date_document, T=Code concession (fixe, ajouté manuellement — ne bouge pas si la requête source change), **S**=Est à perte (`=IF(P<Q;1;0)`, ajouté 2026-09-25), H=Nom_Magasinier ⚠️, I=Nom_client ⚠️ | ⚠️ Données personnelles. Champ `Magasin` retiré de la requête le 25/09 → tout a décalé d'1 colonne **sauf** `Code concession` (fixe en T) |
 | OR en cession interne, efficience >105% | `Efficience OR CI trop élevé` | **2 tableaux côte à côte** : A:F (affichage %) et I:N (calcul décimal). A=Code concession, G=Plaque, C=Réceptionnaire ⚠️ | ⚠️ Ne pas confondre les deux tableaux ; Plaque en G, **pas** en O |
 | OR à taux de remise MO/PR interne élevé | `Taux remise MO/PR interne élevé` | A=Code concession, K=Plaque, C=Nom client ⚠️, D=Réceptionnaire ⚠️ | ⚠️ Données personnelles |
 | Seuils métier (productivité basse, encours surveillance/alerte/critique) | `Référentiel métier` | `$B$11` (productivité), `$B$15/16/17` (encours) | |
@@ -103,6 +104,7 @@ Colonnes contenant des noms de clients/salariés réels (à toujours anonymiser 
 tout commit git ou brouillon partagé) :
 
 - `Rapport quotidien APV` : `Analyse pièces client J-1` (Nom du client, Réceptionnaire),
+  `Détail facturation magasin journaliere` (Nom_client, Nom_Magasinier),
   `Efficience OR CI trop élevé` (Réceptionnaire/Mécanicien), `Taux remise MO/PR interne
   élevé` (Nom client, Réceptionnaire)
 - `Anomalies forfaits` : `Extrait J-1 - Marges<10%` (Nom_client, Receptionnaire)
@@ -131,3 +133,10 @@ pourquoi ce sont eux qu'on réimporte entre classeurs, jamais le détail brut.
 5. Une plage type `NomOnglet!A1:D100` contenant un `/` dans le nom d'onglet doit être
    URL-encodée si on y accède via l'API brute (le CLI `gws` ne le fait pas
    automatiquement).
+6. Retirer un champ d'une requête `DATA_SOURCE` décale toutes les colonnes de
+   l'extrait qui le suivent — **sauf** les colonnes ajoutées manuellement en dehors
+   de la requête (ex. `Code concession` sur `Détail facturation magasin
+   journaliere`, ancrée en position fixe) : elles restent où elles sont, ce qui
+   peut désynchroniser une formule qui référence une autre colonne par sa position
+   d'avant le changement (arrivé le 25/09 : `Date_document` glissée de D à C après
+   retrait du champ `Magasin`, formule `Analyse Globale` cassée jusqu'à correction).
