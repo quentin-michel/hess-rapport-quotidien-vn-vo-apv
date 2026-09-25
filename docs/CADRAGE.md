@@ -164,6 +164,27 @@ traîne dans le même dossier Drive, sans contenu.~~ **Supprimé (2026-09-08).**
        6), dans la limite des 2 phrases de la règle 5 — la règle 8 interdit
        de *forcer* un deuxième point faible, pas d'en garder un deuxième qui
        est légitimement fort.
+    9. **Ne jamais utiliser le vocabulaire de classification interne** ("à
+       vérifier", "à corriger", "à signaler"...) comme mot du texte, même en
+       tête de phrase pour donner le ton (décidé 2026-09-25, suite à un
+       "À corriger :" resté dans la Synthèse VN alors que la règle 4
+       l'interdit déjà pour les notes chiffrées) — ces libellés servent au
+       tri interne dans les Sheets (cf. `CADRAGE_VN.md` §5), jamais à
+       l'affichage destinataire. Décrire le fait/l'action directement
+       ("le dossier affiche une marge de -2 123€...") plutôt que de
+       préfixer par la catégorie qui l'a fait remonter. **Étendu le
+       2026-09-25** : la même règle vaut pour le vocabulaire du
+       classificateur Tendance (Bloc 2/9 Commandes & Facturations) — ne pas
+       écrire "hausse confirmée"/"baisse confirmée"/"sans que l'écart soit
+       confirmé" dans le texte, ce sont des états internes du calcul (cf.
+       `CADRAGE_VN.md` §2), pas des mots pour le lecteur. Dire le chiffre et
+       la comparaison directement ("22 commandes contre un rythme habituel
+       de 32 par semaine, léger retrait de 9,5% par rapport à l'an
+       dernier") plutôt que le résultat de la classification. Plus
+       généralement : **toute phrase de synthèse doit rester compréhensible
+       par quelqu'un qui ne connaît pas la mécanique de calcul** — un bon
+       test est de se relire en se demandant si un lecteur qui n'a jamais
+       vu les Sheets comprendrait la phrase du premier coup.
     Exemple qui a fonctionné (Mulhouse, 2026-09-10) : identifier que
     `FN-627-YH` était toujours sans prix/destination en stock alors qu'il
     avait déjà été signalé à l'achat pour des écarts de prix/km/date, plutôt

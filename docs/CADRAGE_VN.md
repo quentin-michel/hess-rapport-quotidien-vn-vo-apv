@@ -393,9 +393,12 @@ détention longue sur VD.
   `datamart_ventes.vehicules` cette fois — répond à la question ouverte du
   Bloc 4 sur la table à utiliser, au moins pour ce bloc).
 
-**Fenêtre** : **J-1 strict**, repassée depuis la fenêtre 7 jours glissants
-initiale le 2026-09-23 (le décalage de fraîcheur du datamart ventes qui
-justifiait l'élargissement est résolu).
+**Fenêtre** : **5 derniers jours** (`BETWEEN J-5 AND J-1`) — repassée de
+J-1 strict à 5 jours par Quentin le 2026-09-25 (le J-1 strict, lui-même
+un repassage depuis 7 jours glissants le 2026-09-23, s'est révélé trop
+étroit en pratique). Le commentaire en tête de la requête BigQuery est
+resté à "4 derniers jours" après ce changement — texte à corriger, la
+logique (`INTERVAL 5 DAY`) est correcte.
 
 **Calcul de la marge** : reproduit la logique déjà validée dans l'outil
 Tableau existant plutôt que d'inventer un calcul — notamment le **transfert
@@ -528,6 +531,52 @@ parasite qui réapparaît au milieu des résultats.
 jours glissants, réparties sur les 3 catégories, plusieurs marques
 (BMW, Renault, Nissan, Hyundai, Toyota, Lexus).
 
+### 5.1 Mises à jour du 2026-09-25
+
+- **Seuil "À vérifier" (marge positive faible)** : abaissé de 500€ à
+  **200€** (`$T2<200` dans la formule de la règle 5).
+- **Colonnes de `Extrait Vente VN VD` réordonnées** par Quentin — `% Marge
+  brute Véhicule` déplacée de `AA` à `U`, ce qui décale tout le reste
+  (`Code_concession, Code_Plaque, Durée de détention, Anomalie VD, Pas a
+  signaler` ↦ `V, W, X, Y, Z`) et place `A signaler` en `AA` (`A vérifier`
+  reste en `AB`, dernière colonne). **Toute référence de colonne
+  précédemment documentée dans ce fichier pour ce bloc est à revérifier sur
+  le Sheet avant réutilisation.**
+- **Bug corrigé — marges négatives VN non signalées quand une aide est
+  présente** : la règle "À corriger" ne testait le cas marge/dossier
+  négatifs que si `aide=0` — 16 dossiers réels trouvés avec une aide
+  substantielle (1 300€ à 9 681€) mais un dossier resté négatif malgré
+  elle, invisibles dans les 3 colonnes de classification. Corrigé en
+  retirant la condition `aide=0` de la règle et en adaptant le message
+  ("marge négative sans aide" vs "marge négative malgré aide, dossier
+  négatif") :
+  ```
+  =IF($E2="MINI"; "";
+    IF($E2="BMW";
+      IF(AND($U2<=-0,015; $T2<0);
+        IF($R2=0; "À corriger - marge négative sans aide, dossier négatif"; "À corriger - marge négative malgré aide, dossier négatif");
+        ""
+      );
+      IF(AND($S2<=$Z$1; $T2<0);
+        IF($R2=0; "À corriger - marge négative sans aide, dossier négatif"; "À corriger - marge négative malgré aide, dossier négatif");
+        ""
+      )
+    )
+  )
+  ```
+  **Bug encore ouvert** : `$Z$1` référence l'en-tête de sa propre colonne
+  ("Pas a signaler", texte) au lieu d'un seuil numérique — comparaison
+  nombre/texte toujours vraie côté Sheets (même piège que documenté dans
+  `CADRAGE_APV.md` §4 pt.4), donc le seuil générique hors BMW n'est pas
+  réellement appliqué. Emplacement du vrai seuil non identifié à ce jour —
+  question ouverte (§7).
+- **Règle de tri/troncature du listing final** : alignée sur la règle VO
+  (`CADRAGE_VO.md` §11, inversée le 2026-09-25) — **montant décroissant en
+  premier, date décroissante en cas d'égalité**, top 5 + "+N autres
+  anomalies" si le volume dépasse 5 dossiers pour une concession un jour
+  donné. Pas encore nécessaire en pratique (volumes observés faibles), mais
+  la règle est fixée pour quand ce sera le cas.
+
 ## 6. Maquette mail VN
 
 **Statut : structure validée (2026-09-23)**, maquette construite sur la
@@ -651,10 +700,15 @@ dur pour toutes les concessions.
 2. **Bloc 4, lignes non rattachées** : 39% des lignes stock/ventes brutes
    n'ont pas de `Code_concession` — mis de côté par Quentin, mais à garder en
    tête si des écarts de volumétrie inattendus apparaissent plus tard.
-3. **Bloc 6, seuil générique `AA1`** : "marge fortement négative" pour les
-   marques autres que BMW — valeur provisoire, non calibrée (calibration
-   marque par marque tentée et abandonnée le 2026-09-23, volume insuffisant ;
-   seule BMW a un seuil dédié à ce jour, MINI est exclu).
+3. **Bloc 6, seuil générique "marge fortement négative"** pour les marques
+   autres que BMW — non calibré (calibration marque par marque tentée et
+   abandonnée le 2026-09-23, volume insuffisant ; seule BMW a un seuil
+   dédié, en %, MINI est exclu). **Aggravé le 2026-09-25** : la cellule
+   actuellement référencée par la formule (`$Z$1`) contient l'en-tête de
+   sa propre colonne, pas un nombre — le seuil générique n'est donc pas
+   réellement appliqué en pratique (comparaison nombre/texte toujours
+   vraie). Emplacement du vrai seuil (s'il a existé) non retrouvé — à
+   confirmer avec Quentin avant de corriger la référence.
 4. **Existe-t-il une spec équivalente à `Spec_Mail_IA_ChefVentesVN`** —
    toujours pas, contrairement au VO qui a une spec dédiée.
 
