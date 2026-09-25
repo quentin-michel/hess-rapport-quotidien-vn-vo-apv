@@ -766,11 +766,29 @@ sections narrées plus bas (§12.4) et dans le fichier Excel joint (§12.5).
 | % Réalisation objectif MO | % Réalisation objectif PR externe |
 | CA PR interne Net HT J-1 | Marge PR Externe |
 | CA PR interne Net HT MTD | Taux marge % PR Externe |
-| Objectif PR interne mensuel | |
-| % Réalisation objectif PR interne | |
+| Objectif PR interne mensuel | Nb pièces vendues J-1 |
+| % Réalisation objectif PR interne | Ratio pièces vendues à perte J-1 |
 | Productivité J-1 | |
 
-Toutes disponibles dans `Analyse Globale` (onglet du classeur principal).
+Toutes disponibles dans `Analyse Globale` (onglet du classeur principal), sauf
+**Nb pièces vendues J-1** et **Ratio pièces vendues à perte J-1** (Magasin,
+ajoutés le 2026-09-25) — donne le contexte de volume à côté du détail nominatif
+des ventes à perte (§12.4), pour savoir si "1 ligne en perte" est anodin ou pas
+vu le volume du jour. Pas encore dans `Analyse Globale`, à requêter directement :
+
+```sql
+SELECT
+  COUNT(*) AS nb_pieces_vendues,
+  COUNTIF(l.Prix_net_ligne < l.PAMP) AS nb_pieces_a_perte,
+  SAFE_DIVIDE(COUNTIF(l.Prix_net_ligne < l.PAMP), COUNT(*)) AS ratio_a_perte
+FROM `hess-data.datamart_apres_vente.lignes_pieces` l
+JOIN `hess-data.datamart_apres_vente.entete_pieces` e
+  ON e.id_entete = l.id_entete AND e.NumIntMostrador = l.NumIntMostrador
+WHERE e.Concession IN (<valeurs brutes de la concession>)
+  AND DATE(e.Date_document) = <date J-1>
+```
+Vérifié sur données réelles (Renault Strasbourg, 24/09/2026) : 339 pièces
+vendues, 35 en perte, ratio 10,3%.
 
 **KPI conditionnels agrégés** (narrés, n'apparaissent que si le seuil est
 franchi — Atelier uniquement, pas d'équivalent Magasin identifié à ce
@@ -811,6 +829,13 @@ volume à résumer :
   destinataire a besoin de savoir qui est concerné pour agir. Voir
   `CADRAGE.md` §6 pour la règle noms réels (mail/brouillon Gmail) vs
   anonymisés (fichiers commités sur GitHub).
+  **Précision (2026-09-25)** : côté Magasin, la phrase d'intro du détail
+  doit citer le **volume de contexte** — nombre de pièces vendues à perte
+  sur le nombre total de pièces vendues J-1, et le ratio (ex. "35 pièces
+  vendues à perte sur 339 vendues, soit 10,3%") — pour que le lecteur sache
+  si le nombre de cas listés est anodin ou pas vu le volume du jour. KPI
+  sources : `Nb pièces magasins vendues J-1` et `Ratio pièces vendues à
+  perte J-1`, ajoutés dans `Analyse Globale` (§12.3).
 - **Prix/Remises forcées** (`Prix/Remises forcées`, classeur dédié,
   contact : Corentin) — **filtré sur `type = Magasin` dans un premier
   temps** (PR externe) ; le PR interne Atelier viendra dans un second
