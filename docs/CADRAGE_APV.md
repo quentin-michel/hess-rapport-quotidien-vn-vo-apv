@@ -127,6 +127,69 @@ collision). Attention : le `MATCH`/`VLOOKUP` Sheets ignore la casse mais
 **pas les accents** — la ligne de override doit reprendre l'orthographe exacte
 (accents compris) telle qu'elle apparaît dans la source réelle.
 
+### 2.2 Audit transco (2026-09-24/25) — bug `#REF!` trouvé, clé composée pas
+toujours nécessaire
+
+**Contexte** : le classeur `Référentiel Concession` de Quentin a été
+restructuré — l'onglet source y a été renommé `Mapping concession` →
+`Mapping_Sources`, et n'a **jamais eu** la colonne `Cle_recherche` (E) :
+cette colonne n'existe que dans la copie locale du classeur APV principal
+(§2 ci-dessus), ajoutée spécifiquement ici.
+
+**Bug de production trouvé en auditant toutes les formules référençant
+`Mapping concession`** (`Encours à date`, `Objectif APV`, et les 7 autres
+onglets en `VLOOKUP` simple) : les formules `Encours à date` et
+`Objectif APV` pointent en réalité vers **`#REF!`** au lieu de
+`'Mapping concession'!$E:$E` — la plage a dû être supprimée puis recréée à
+un moment, cassant la référence des formules qui la ciblaient (les
+formules qui recréent la colonne fonctionnent, mais celles qui la
+*consultent* depuis un autre onglet restent orphelines). Conséquence
+silencieuse : `Encours à date` retombe sur la valeur brute non transcodée
+sur **toutes** ses lignes (pas de repli `VLOOKUP`) ; `Objectif APV`
+fonctionne quand même grâce à son repli `VLOOKUP` imbriqué, mais pas via le
+chemin `Cle_recherche` prévu à l'origine. **Correctif** (répare le bug et
+simplifie, cf. raisonnement ci-dessous) :
+```
+=IFERROR(VLOOKUP($B2; 'Mapping concession'!$C:$D; 2; FALSE); $B2)   ' Encours à date, col. V
+=IFERROR(VLOOKUP($A2; 'Mapping concession'!$C:$D; 2; FALSE); $A2)   ' Objectif APV, col. J
+```
+Pas encore appliqué dans le Sheet au moment de la rédaction — à faire.
+
+**Clarification du principe (2026-09-25)** : la clé composée
+(`Source||Valeur`) ne sert qu'à distinguer une collision **entre le
+périmètre APV et le périmètre commerce/stock** (le cas Isuzu/Hyundai
+Châlons, §2.1). Elle n'a jamais été nécessaire pour distinguer Atelier de
+Magasin **à l'intérieur** de l'APV (`entete_or` vs `entete_pieces`) : les
+deux résolvent au même code pour un même site. Conséquence pratique : un
+onglet/classeur qui ne mélange que des sources 100% APV (comme
+`Anomalies forfaits` ou `Prix/Remises forcées`) peut se contenter d'un
+`RECHERCHEV` simple, sans clé composée — seuls les onglets qui touchent
+aussi une source commerce/stock (aucun cas identifié à ce jour en dehors
+d'`Encours à date`/`Objectif APV`, qui de toute façon n'en ont pas
+vraiment besoin comme démontré ci-dessus) en auraient l'utilité.
+
+**Import filtré aux sources APV** (au lieu d'importer tout
+`Mapping_Sources`, qui inclut aussi le commerce/stock `v_sf_*`) — utilisé
+pour les classeurs externes (`Anomalies forfaits`, `Prix/Remises forcées`) :
+```
+=QUERY(IMPORTRANGE("<url Référentiel Concession>";"Mapping_Sources!A:D");"select Col1, Col2, Col3, Col4 where Col1 = 'entete_or' or Col1 = 'entete_pieces'";1)
+```
+Pour le classeur APV principal lui-même, l'audit complet des 9 onglets
+dépendants a confirmé que **3 sources** sont réellement utilisées :
+`entete_or`, `entete_pieces` (via `Regroupement_Concession_APV`, pour le
+Magasin) et `v_sf_account` (pour `Encours à date`) — un filtre à ce
+classeur-là devrait inclure les 3, si jamais appliqué (pas fait à ce jour,
+ce classeur reste sur l'import complet non filtré).
+
+**`Prix/Remises forcées`** (classeur externe, mélange Atelier/Magasin dans
+une seule requête BigQuery) : la CTE `magasin` utilisait à tort
+`e.Concession` (champ brut, jamais mappé dans `Mapping concession`) au
+lieu de `e.Regroupement_Concession_APV` (le champ réellement mappé, même
+correctif que `docs/sql/magasin_detail_journalier.sql`) — à corriger dans
+la requête avant de brancher la transco (`RECHERCHEV` simple, onglet
+`Mapping` important `Mapping concession!A:E` du classeur APV principal,
+même source que pour `Anomalies forfaits`).
+
 ## 3. Onglets construits (2026-09-11)
 
 - **`Analyse Globale`** — 1 ligne par code concession canonique (liste
@@ -760,6 +823,11 @@ du mail.
    officiel (existe déjà dans `Prix/Remises forcées > Contact`, à
    reporter dans le Référentiel partagé).
 4. Générer le fichier Excel joint (§12.5) — pas commencé.
+5. Corriger le bug `#REF!` trouvé en production sur `Encours à date`
+   (colonne V) et `Objectif APV` (colonne J) — voir §2.2, formules de
+   correctif déjà données, pas encore appliquées dans le Sheet.
+6. Corriger la requête `Prix/Remises forcées` (champ Magasin, §2.2) et
+   brancher sa transco une fois fait.
 5. Trancher le sort du seuil `Ratio remises/CA` générique.
 6. Laisser tourner `Forfaits pièces suspectes` (détection n°3, §10) quelques
    semaines pour juger du volume réel et calibrer le seuil si besoin.
