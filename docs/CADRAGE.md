@@ -552,23 +552,23 @@ la première version) :
 6. **Suite du mail Plaque (§8) reprise par Corentin (2026-09-25)** — il va
    ajouter des analyses propres au niveau Plaque, au-delà de ce qui est
    décrit dans ce document à ce stade.
-7. **Réseau Speedy absent de `Concessions_Plaques`** (voir §4.1) — 10 sites
-   (14 chefs d'atelier/de magasin) présents dans la source destinataires
-   Service mais sans code concession, donc non exploitables par la formule
-   `Destinataire Service`. À trancher : Speedy est-il dans le périmètre du
-   projet ? Si oui, ajouter les sites au référentiel (+ récupérer les 6
-   emails manquants) ; si non, exclure explicitement le filtre.
+7. ~~Réseau Speedy absent de `Concessions_Plaques`~~ **tranché (2026-09-28,
+   Quentin) : Speedy est hors périmètre du projet.** Les 14 lignes
+   `MAPPING MANQUANT` produites par la formule `Destinataire Service`
+   (§4.1) pour ces 10 sites sont donc le comportement attendu, pas un bug
+   à corriger — aucune modification de `Concessions_Plaques` ni de
+   `Mapping_Sources` nécessaire. À garder en tête si Speedy entre un jour
+   dans le périmètre (il faudrait alors lever cette exclusion).
 8. ~~`Destinataires Concession` et `Destinataire Plaque` à cadrer~~ **fait
    (2026-09-28)** — les deux onglets étaient déjà remplis à la main par
    Quentin (pas de formule, listes statiques : ~30 lignes Concession, 11
    lignes Plaque, même convention `Code_Concession` multiple via `;` que
    l'ancienne table unique §4). Vérifié par Claude, structure conforme.
-   **Point à confirmer avec Quentin** : `PLQ_NISSAN` apparaît deux fois
-   dans `Destinataire Plaque` — une fois seul (Loïc Piriou) et une fois
-   combiné à `PLQ_RENAULT` (Thomas Metin, ligne `PLQ_RENAULT;PLQ_NISSAN`).
-   Si les deux lignes déclenchent un envoi, la Plaque Nissan recevra deux
-   mails Plaque — à valider que c'est voulu (deux destinataires légitimes)
-   plutôt qu'une ligne dupliquée par erreur.
+   Le doublon apparent `PLQ_NISSAN` dans `Destinataire Plaque` (une ligne
+   seule pour Loïc Piriou, une combinée à `PLQ_RENAULT` pour Thomas Metin)
+   **est confirmé volontaire (2026-09-28, Quentin)** : les deux sont
+   légitimement directeurs de cette plaque, la Plaque Nissan doit recevoir
+   les deux mails.
 
 Les questions ouvertes spécifiques à un service sont dans son fichier dédié.
 
