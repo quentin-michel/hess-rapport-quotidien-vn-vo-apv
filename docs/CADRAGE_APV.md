@@ -869,6 +869,94 @@ dans les Sheets sources**, filtré sur la concession destinataire — pour
 donner accès au détail complet à qui veut creuser, sans alourdir le corps
 du mail.
 
+### 12.6 Icône de vigilance Atelier — système de points (figé 2026-09-28)
+
+Suite à §13 pt.8 (icône choisie au jugé faute de règle formalisée). Principe :
+chaque signal déclenché apporte un nombre de points, la somme détermine
+l'icône. Reprend les signaux narrés existants (§12.3, §12.4) plus deux
+nouveaux ajoutés pour l'occasion (Alerte écart CA), et **exclut** les taux de
+remise MO/PR élevés (jugés pas assez pertinents comme signal de score, même
+s'ils restent dans la liste détail §12.4).
+
+**Dédoublonnage des paires corrélées** (2026-09-28, Corentin a jugé le score
+initial trop sévère — un simple jour un peu creux pouvait suffire à
+atteindre l'Orage) : deux paires de signaux mesurent en pratique la même
+cause (un jour d'activité plus faible impacte CA MO et CA PR interne
+ensemble ; efficience et productivité mesurent toutes les deux le rendement
+atelier du jour). Plutôt que de les additionner, on ne garde **que le plus
+fort des deux** :
+- **Alerte écart CA** — `MAX(Alerte CA MO, Alerte CA PR interne)`, 1pt max
+  (pas 2). La colonne AY (`Alerte écart CA PR interne`) reste calculée pour
+  la narration/détail, seul son usage dans le score change.
+- **Rendement atelier** — `Alerte productivité basse` retirée du score,
+  seule l'`Efficience globale J-1` compte (déjà plus complète : deux
+  paliers bas/trop bas contre un seul pour la productivité).
+
+| Signal | Points |
+|---|---|
+| Encours en j de CA — surveillance (20-29j) | 1 |
+| Encours en j de CA — alerte (30-39j) | 2 |
+| Encours en j de CA — critique (≥40j) | 4 |
+| Alerte écart CA (max CA MO / CA PR interne, seuil -30%, `Référentiel métier!$B$8`) | 1 |
+| Efficience globale — bas (80-90%) | 1 |
+| Efficience globale — trop bas (<80%) | 3 |
+| Efficience cession interne J-1 — élevée (110-150%) | 1 |
+| Efficience cession interne J-1 — trop élevée (>150%) | 2 |
+| Pièces vendues à perte — marge négative 100€ à 250€ | 1 |
+| Pièces vendues à perte — marge négative 250€ à 500€ | 2 |
+| Pièces vendues à perte — marge négative au-delà de 500€ | 3 |
+| Forfaits — marge négative -50€ à -200€ | 1 |
+| Forfaits — marge négative -200€ à -500€ | 2 |
+| Forfaits — marge négative au-delà de -500€ | 3 |
+
+Score → icône (paliers élargis 2026-09-28, même raison — passer de Soleil à
+Nuage sur un seul signal mineur isolé jugé trop dur) : **0-1 = ☀️ Soleil**,
+**2-4 = ☁️ Nuage**, **5-8 = 🌧️ Pluie**, **9+ = ⛈️ Orage**. Max théorique du
+barème ≈ 16 points (tous les signaux déclenchés à leur palier le plus haut,
+paire CA dédoublonnée) — l'Orage demande donc un vrai cumul de plusieurs
+problèmes distincts (ex. Encours critique 4 + Efficience globale trop bas 3
++ un troisième signal), pas un aléa isolé.
+
+**Efficience cession interne — jour entier plutôt que par OR** (changement
+de conception 2026-09-28) : le signal historique `Efficience OR CI trop
+élevé` compte des **cas** individuels (≥1 cas = 1pt, ≥5 cas = +1pt), ce qui
+reste utile pour la **liste détail envoyée intégralement** (§12.4, seuil
+105% par OR, inchangé). Mais pour le **score**, Corentin a jugé plus
+pertinent de regarder l'efficience cession interne **à l'échelle de la
+journée entière** de la concession plutôt qu'à l'échelle d'un seul OR —
+même logique que l'`Efficience J-1` globale (`Analyse Globale` colonne AF),
+appliquée aux colonnes cession interne de `Historique efficience/prod`
+(déjà utilisées en MTD colonne AH, ici recalculées en J-1) :
+
+```
+=IFERROR(SUMIFS('Historique efficience/prod'!$E:$E;'Historique efficience/prod'!$H:$H;$B3;'Historique efficience/prod'!$B:$B;$C$1)/SUMIFS('Historique efficience/prod'!$F:$F;'Historique efficience/prod'!$H:$H;$B3;'Historique efficience/prod'!$B:$B;$C$1);"")
+```
+
+Colonne **AX** (`Analyse Globale`) = `Efficience cession interne J-1`.
+Vérifié sur 90 jours glissants (BigQuery, `entete_or.Est_interne=1` joint à
+`temps_facture`) que le volume quotidien par concession n'est pas trop
+faible pour être fiable (88,5% des jours ont ≥1h de temps passé cession
+interne cumulé, médiane ~4,8h) — pas de piège d'instabilité comme sur le
+ratio pièces à perte (§2.6/§12.3). Distribution réelle du ratio
+journalier : P50=100%, P75=119%, P90=160%, P95=200% — paliers 110%/150%
+calés dessus.
+
+**Alerte écart CA PR interne** (nouvelle colonne, `Analyse Globale`) : le
+signal `Alerte écart CA` n'existait que pour le CA MO (colonne G, seuil
+`Référentiel métier!$B$8` = -30%). Ajout en miroir pour le CA PR interne,
+même seuil générique :
+
+```
+=IF(J3<'Référentiel métier'!$B$8;"ALERTE";"")
+```
+
+Colonne **AY** (`Analyse Globale`) = `Alerte écart CA PR interne`.
+
+**Pas encore fait** : le même système de points pour le Magasin (un seul
+signal défini à ce jour, §12.3) — à construire une fois qu'il y aura assez
+de signaux Magasin qualifiés pour justifier un barème à points plutôt que
+la règle binaire actuelle (>0% = Nuage).
+
 ## 13. Prochaines étapes
 
 1. Construire un premier mockup complet du mail APV selon les règles du
@@ -893,11 +981,8 @@ du mail.
    — pas commencée, référentiel Plaque ↔ code canonique toujours à
    vérifier (cf. §8 pt.5).
 8. **Paramétrer les icônes météo (Atelier et Magasin) en fonction de
-   seuils explicites** (demandé 2026-09-25) — aujourd'hui l'icône est
-   choisie au jugé à chaque génération de mail, sans règle formalisée
-   commune. Un seul seuil existe à ce jour (Magasin : ratio pièces
-   vendues à perte >0% → Nuage, §12.3). Il faut définir, pour Atelier et
-   Magasin, la liste complète des signaux qui font monter l'icône
-   (Soleil → Nuage → Pluie → Orage) et leurs seuils, pour que la
-   sélection soit reproductible d'un mail à l'autre plutôt que
-   discrétionnaire.
+   seuils explicites** (demandé 2026-09-25). **Atelier fait et figé
+   (2026-09-28)** — système de points complet, voir §12.6. **Magasin
+   restant à faire** — un seul seuil existe à ce jour (ratio pièces
+   vendues à perte >0% → Nuage, §12.3), pas encore assez de signaux
+   qualifiés pour justifier un barème à points.
