@@ -558,9 +558,17 @@ la première version) :
    `Destinataire Service`. À trancher : Speedy est-il dans le périmètre du
    projet ? Si oui, ajouter les sites au référentiel (+ récupérer les 6
    emails manquants) ; si non, exclure explicitement le filtre.
-8. **`Destinataires Concession` et `Destinataire Plaque`** (voir §4.1) —
-   les 2 autres onglets de la refonte à 3 onglets restent à cadrer avec
-   Quentin, seul l'onglet Service a été traité pour l'instant.
+8. ~~`Destinataires Concession` et `Destinataire Plaque` à cadrer~~ **fait
+   (2026-09-28)** — les deux onglets étaient déjà remplis à la main par
+   Quentin (pas de formule, listes statiques : ~30 lignes Concession, 11
+   lignes Plaque, même convention `Code_Concession` multiple via `;` que
+   l'ancienne table unique §4). Vérifié par Claude, structure conforme.
+   **Point à confirmer avec Quentin** : `PLQ_NISSAN` apparaît deux fois
+   dans `Destinataire Plaque` — une fois seul (Loïc Piriou) et une fois
+   combiné à `PLQ_RENAULT` (Thomas Metin, ligne `PLQ_RENAULT;PLQ_NISSAN`).
+   Si les deux lignes déclenchent un envoi, la Plaque Nissan recevra deux
+   mails Plaque — à valider que c'est voulu (deux destinataires légitimes)
+   plutôt qu'une ligne dupliquée par erreur.
 
 Les questions ouvertes spécifiques à un service sont dans son fichier dédié.
 
