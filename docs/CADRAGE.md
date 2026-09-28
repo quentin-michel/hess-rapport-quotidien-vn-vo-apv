@@ -250,6 +250,92 @@ les Sheets (déjà calculée + anomalie déjà qualifiée) :
 | `Stock_veille`, `Ventes_veille`, `Achats_veille` | Sheet du service, déjà calculé |
 | `Anomalie(s)` | Sheet du service, déjà qualifiée par les formules |
 
+### 4.1 Refonte en 3 onglets par niveau de diffusion (2026-09-28)
+
+**Décidé par Quentin** : la table unique ci-dessus est remplacée par **3
+onglets séparés** dans le Référentiel Concession, un par niveau de diffusion
+(cohérent avec les 3 niveaux déjà construits — Service §CADRAGE_VN/VO/APV.md,
+Directeur de concession §7, Plaque §8) : `Destinataire Service`,
+`Destinataires Concession`, `Destinataire Plaque`. Ce document couvre
+uniquement l'onglet **Service**, construit avec l'aide de Claude ci-dessous —
+les 2 autres restent à cadrer.
+
+**Source** : `Extrait_Destinatire` (onglet grille, alimenté chaque matin par
+une requête BigQuery de Quentin sur la liste des chefs de service — colonnes
+`nom, prenom, fonction_categorie, fonction_lucca, societe, concession,
+activite_service, email`). Le champ `concession` est en texte libre (ex.
+"PEUGEOT HIRSON", "Fiat Belfort"), pas le code canonique — la table de
+transco déjà existante `Mapping_Sources` (filtrée `Source_BigQuery =
+"liste_collaborateur"`, `Champ_Source = "concession"`) couvre déjà cette
+source, pas de nouvelle table à créer.
+
+**Onglet cible `Destinataire Service`** — colonnes `Code_Concession | Prénom
+Nom | Email | Service | Niveau de diffusion` (la colonne `Service` a dû être
+ajoutée, absente de l'onglet vide initial — indispensable pour que le
+pipeline sache quel mail envoyer à qui).
+
+**Décisions prises avec Quentin (2026-09-28)** :
+- **Nom affiché : Prénom puis Nom** (pas l'inverse).
+- **"Responsable Magasin"/"Chef de Magasin" routés vers `Service = Atelier`**
+  — pas de 5ᵉ valeur "Magasin" créée, car le mail APV envoyé est déjà
+  **unique** (Atelier + Magasin fusionnés dans un seul mail, décision
+  antérieure) : ces deux rôles doivent donc recevoir le même mail que les
+  chefs d'atelier, pas un mail à part.
+- **`Service` dérivé de `fonction_lucca`** (colonne D de la source), pas de
+  `activite_service` (colonne G) — ce dernier est incohérent dans la donnée
+  réelle ("APV", "Atelier", "Service APV", ou vide selon les lignes), alors
+  que `fonction_lucca` n'a que 5 valeurs stables : "Chef des Ventes VO/VN/
+  VNVO", "Chef d'Atelier", "Chef de Magasin".
+
+**Formules proposées** (ligne 2, à tirer vers le bas) :
+```
+A2 (Code_Concession) :
+=IFERROR(
+  XLOOKUP(
+    Extrait_Destinatire!F2;
+    FILTER(Mapping_Sources!C:C; Mapping_Sources!A:A="liste_collaborateur"; Mapping_Sources!B:B="concession");
+    FILTER(Mapping_Sources!D:D; Mapping_Sources!A:A="liste_collaborateur"; Mapping_Sources!B:B="concession")
+  );
+  "MAPPING MANQUANT : "&Extrait_Destinatire!F2
+)
+
+B2 (Prénom Nom) :
+=PROPER(Extrait_Destinatire!B2) & " " & PROPER(Extrait_Destinatire!A2)
+
+C2 (Email) :
+=Extrait_Destinatire!H2
+
+D2 (Service) :
+=IF(AND(REGEXMATCH(Extrait_Destinatire!D2;"(?i)VN"); REGEXMATCH(Extrait_Destinatire!D2;"(?i)VO")); "VN_VO";
+ IF(REGEXMATCH(Extrait_Destinatire!D2;"(?i)VO"); "VO";
+ IF(REGEXMATCH(Extrait_Destinatire!D2;"(?i)VN"); "VN";
+ IF(OR(Extrait_Destinatire!D2="Chef d'Atelier"; Extrait_Destinatire!D2="Chef de Magasin"); "Atelier";
+ "À vérifier : "&Extrait_Destinatire!D2))))
+
+E2 (Niveau de diffusion) : valeur fixe "Service" (texte, pas une formule).
+```
+Le fallback `MAPPING MANQUANT` reprend le principe déjà mis en place par
+Corentin sur `Prix/Remises forcées` (`CADRAGE_APV.md` §2.2) : rendre visible
+un mapping manquant plutôt qu'un blanc silencieux.
+
+**Vérifié par Claude avant documentation** (relecture des 196 lignes réelles
+de `Extrait_Destinatire`, en dehors du Sheet — lecture seule, aucune formule
+posée par Claude) :
+- Les 5 valeurs réelles de `fonction_lucca` sont toutes couvertes par la
+  formule `Service` ci-dessus (aucune ligne ne tombe dans "À vérifier").
+- **181 lignes sur 195** avec une valeur `concession` ont un mapping qui
+  fonctionne dans `Mapping_Sources`.
+- **0 email en doublon**.
+- **Gap identifié (non corrigé par la formule, à trancher)** : **14 lignes
+  (10 sites du réseau Speedy — Forbach, Laxou, Metz Sud/Nord, Nancy 20e
+  Corps, Schiltigheim, Strasbourg, Vandœuvre, Charleville, Lunéville) sont
+  absentes de `Concessions_Plaques`**, donc `MAPPING MANQUANT` pour ces
+  lignes. 6 d'entre elles n'ont même pas d'email renseigné dans la source.
+  Question ouverte (voir §9) : Speedy est-il dans le périmètre du projet ?
+  Si oui, ces 10 sites doivent être ajoutés à `Concessions_Plaques` et
+  `Mapping_Sources` ; si non, à exclure explicitement plutôt que laisser le
+  fallback les signaler indéfiniment.
+
 ## 5. Architecture générale
 
 ```
@@ -466,6 +552,23 @@ la première version) :
 6. **Suite du mail Plaque (§8) reprise par Corentin (2026-09-25)** — il va
    ajouter des analyses propres au niveau Plaque, au-delà de ce qui est
    décrit dans ce document à ce stade.
+7. ~~Réseau Speedy absent de `Concessions_Plaques`~~ **tranché (2026-09-28,
+   Quentin) : Speedy est hors périmètre du projet.** Les 14 lignes
+   `MAPPING MANQUANT` produites par la formule `Destinataire Service`
+   (§4.1) pour ces 10 sites sont donc le comportement attendu, pas un bug
+   à corriger — aucune modification de `Concessions_Plaques` ni de
+   `Mapping_Sources` nécessaire. À garder en tête si Speedy entre un jour
+   dans le périmètre (il faudrait alors lever cette exclusion).
+8. ~~`Destinataires Concession` et `Destinataire Plaque` à cadrer~~ **fait
+   (2026-09-28)** — les deux onglets étaient déjà remplis à la main par
+   Quentin (pas de formule, listes statiques : ~30 lignes Concession, 11
+   lignes Plaque, même convention `Code_Concession` multiple via `;` que
+   l'ancienne table unique §4). Vérifié par Claude, structure conforme.
+   Le doublon apparent `PLQ_NISSAN` dans `Destinataire Plaque` (une ligne
+   seule pour Loïc Piriou, une combinée à `PLQ_RENAULT` pour Thomas Metin)
+   **est confirmé volontaire (2026-09-28, Quentin)** : les deux sont
+   légitimement directeurs de cette plaque, la Plaque Nissan doit recevoir
+   les deux mails.
 
 Les questions ouvertes spécifiques à un service sont dans son fichier dédié.
 
