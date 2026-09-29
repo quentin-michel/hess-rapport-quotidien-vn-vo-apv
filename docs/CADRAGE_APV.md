@@ -636,29 +636,54 @@ resynchronisation faite ici a posteriori (2026-09-23).
 `(id_ligne_entete, Identifiant_groupe_forfait)`, jamais
 `Identifiant_groupe_forfait` seul (§9).
 
-**Architecture** : connecteur BigQuery `Forfaits pièces suspectes`
-(DATA_SOURCE) → extrait natif Sheets `Forfaits suspects` (GRID) → historisé
-par une fonction Apps Script **séparée** (`historiserForfaitsSuspects`,
-[`docs/apps-script/historique_forfaits_append.gs`](../apps-script/historique_forfaits_append.gs)),
-avec son propre déclencheur temporel indépendant de celui du flux marges
-(pour ne pas risquer de casser un flux qui tournait déjà). **Différence de
-clé de dédoublonnage** par rapport au flux marges : inclut
-`Reference_ecran` en plus de `(date_doc, id_ligne_entete,
-Identifiant_groupe_forfait)` — plusieurs pièces suspectes peuvent coexister
-sur un même forfait, sinon la 2ᵉ serait prise pour un doublon de la 1ʳᵉ.
+**Architecture simplifiée (2026-09-29)** : connecteur BigQuery `Forfaits
+pièces suspectes` (DATA_SOURCE) → extrait natif Sheets `Forfaits suspects`
+(GRID). **Plus d'étape Apps Script/historisation** pour ce flux (voir
+"Bug et simplification" ci-dessous) — l'extrait natif est directement la
+liste à jour et complète.
 
-**Statut (2026-09-23)** : en observation, aucune ligne historisée pour
-l'instant — **normal, pas un bug** : le filtre (rareté ≤ 2 + coût ≥ 150€)
-est volontairement strict, la plupart des jours ne remontent aucun cas.
-Pas encore de recul sur le volume réel pour juger si le seuil doit être
+**Statut (2026-09-23)** : filtre volontairement strict (rareté ≤ 2 + coût
+≥ 150€), la plupart des jours ne remontent aucun cas — **normal, pas un
+bug**. Pas encore de recul long terme pour juger si le seuil doit être
 ajusté.
 
-**Point technique à surveiller** : contrairement au flux marges (extrait
-natif intercalé), `historiserForfaitsSuspects` lit **directement** l'onglet
-DATA_SOURCE `Forfaits pièces suspectes` sans extrait intermédiaire. Ça
-fonctionne à ce jour (pas d'erreur remontée), mais si des erreurs de
-lecture apparaissent un jour dans *Exécutions* (Apps Script), appliquer le
-même correctif que pour `Extrait J-1` (extrait natif ou `QUERY`).
+**Bug trouvé et simplification décidée (2026-09-29)** : en diagnostiquant
+un plantage (`historiserForfaitsSuspects` lisait directement l'onglet
+DATA_SOURCE au lieu de son extrait natif → `Error: The action is not
+supported for DATASOURCE sheet.`, confirmé sur l'échec du 2026-09-27
+11h55 — et aurait de toute façon écrasé l'historique à chaque
+actualisation, `source` et `historique` pointant tous les deux vers le
+même onglet `Forfaits suspects`), Corentin a proposé une solution plus
+simple que corriger le script : vu le **faible volume** de pièces
+suspectes, plutôt qu'une fenêtre glissante J-3 historisée jour après
+jour, la requête BigQuery couvre maintenant **l'année entière**
+(`fenetre_debut = DATE_TRUNC(CURRENT_DATE(), YEAR)`, voir
+[`docs/sql/forfaits_pieces_suspectes.sql`](sql/forfaits_pieces_suspectes.sql)) —
+l'extrait natif `Forfaits suspects` est donc déjà, à chaque actualisation,
+la liste complète et à jour depuis le 1er janvier. Plus besoin
+d'accumuler via Apps Script : la fonction `historiserForfaitsSuspects` et
+son déclencheur temporel ont été **retirés**
+([`docs/apps-script/historique_forfaits_append.gs`](../apps-script/historique_forfaits_append.gs)
+ne contient plus que le flux marges). Le déclencheur existant pour
+`historiserForfaitsSuspects` doit être supprimé côté Sheet (Déclencheurs >
+poubelle sur la ligne correspondante) — Claude n'a pas d'accès Apps
+Script/Drive pour le faire (scope `gws` limité à `spreadsheets.readonly`).
+
+**Bug flux marges corrigé au passage (2026-09-29)** : en diagnostiquant
+celui des pièces suspectes, `appendHistoriqueForfaits` (§9) s'est avéré
+lui aussi en échec — `SOURCE_SHEET` pointait vers un nom d'onglet obsolète
+(`Extrait J-1`) après un ou plusieurs renommages de l'onglet réel
+(aujourd'hui `Extrait J-1 - Marges<10%`, une extraction native Sheets, pas
+la formule `QUERY` documentée à l'origine). Le statut "en production, sans
+erreur signalée" (2026-09-23) était donc devenu faux entre-temps, sans
+alerte. Corrigé dans le même fichier
+(`SOURCE_SHEET = 'Extrait J-1 - Marges<10%'`).
+
+**Reste à faire côté Sheet** : recoller le script corrigé (flux marges
+uniquement) dans Apps Script, supprimer le déclencheur
+`historiserForfaitsSuspects`, vérifier que le connecteur `Forfaits pièces
+suspectes` a bien été republié avec la requête mise à jour, relancer
+`appendHistoriqueForfaits` manuellement pour confirmer.
 
 ## 11. Analyse pièces J-1 — refonte (2026-09-23)
 

@@ -26,8 +26,18 @@
 --
 -- Meme piege deja documente pour le flux marges : Identifiant_groupe_forfait
 -- n'est pas unique seul, toujours (id_ligne_entete, Identifiant_groupe_forfait).
+--
+-- Modifie le 2026-09-29 (Corentin) : fenetre d'analyse elargie de J-3 a
+-- "depuis le debut de l'annee en cours", vu le faible volume de lignes
+-- suspectes. L'extrait natif Sheets ("Forfaits suspects") redevient donc
+-- lui-meme la liste complete et a jour a chaque actualisation - plus
+-- besoin d'accumuler jour apres jour via Apps Script (l'ancien flux
+-- historiserForfaitsSuspects/onglet "Historique forfaits suspects" est
+-- abandonne, cf. CADRAGE_APV.md §10). DATE_TRUNC(CURRENT_DATE(), YEAR)
+-- plutot qu'une date en dur, pour rester valable au changement d'annee
+-- (meme regle que Objectif APV, CADRAGE_APV.md §2.2).
 
-DECLARE fenetre_debut DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY);
+DECLARE fenetre_debut DATE DEFAULT DATE_TRUNC(CURRENT_DATE(), YEAR);
 
 WITH forfaits AS (
   SELECT id_ligne_entete, Identifiant_groupe_forfait, ANY_VALUE(Id_date_document) AS date_doc,
