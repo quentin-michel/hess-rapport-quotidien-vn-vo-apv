@@ -603,6 +603,63 @@ affiché sur la facture est non nul. Confirmé sur données réelles le
 sert la colonne `Taux_remise_forfait_pct` : elle rend ce cas visible dans
 le Sheet plutôt que de le laisser passer pour une anomalie de calcul.
 
+### 9.1 Diffusion dédiée forfaits marge faible — hors rapport quotidien (2026-09-29)
+
+**Hors périmètre du rapport quotidien APV de Corentin** — demande séparée :
+envoyer chaque jour la liste des forfaits à marge faible (J-1, groupe
+entier) à **Jean Tomei, Jérôme Petit et Thierry Oudin**. Décisions prises :
+- **Fréquence** : quotidien.
+- **Mécanisme** : automatique, Apps Script (`GmailApp.sendEmail`), pas un
+  brouillon à valider comme les mails APV.
+- **Périmètre** : groupe entier (pas de filtre concession/plaque).
+- **Jours sans cas** : **rien n'est envoyé** s'il n'y a aucun forfait à
+  marge faible ce jour-là (silence = RAS, éviter de spammer des mails
+  vides).
+- **Pièce jointe Excel** : le mail joint un fichier `.xlsx` avec
+  l'ensemble des colonnes brutes (pas juste le résumé du corps du mail).
+- **Mode simulation** : fonction séparée pour tester sans rien envoyer
+  avant de brancher le déclencheur automatique.
+
+**Source** : lit directement `Extrait J-1 - Marges<10%` (déjà filtré J-1
+strict + marge<10% par la requête du connecteur, §9 ci-dessus) — aucun
+filtrage supplémentaire nécessaire, contrairement au flux pièces
+suspectes (§10) qui doit filtrer sur J-1 au moment de la narration.
+
+**Script** : [`docs/apps-script/envoi_forfaits_marge_faible.gs`](../apps-script/envoi_forfaits_marge_faible.gs)
+(nouveau fichier, à installer dans le même projet Apps Script que
+`historique_forfaits_append.gs`, avec son propre déclencheur temporel
+indépendant — même précaution que pour `historiserForfaitsSuspects` en
+son temps, ne pas risquer de casser un flux qui tourne déjà). Deux
+fonctions, contenu partagé pour rester synchronisées :
+- `envoyerForfaitsMargeFaible()` — envoi réel, celle à brancher sur le
+  déclencheur quotidien. N'envoie rien si 0 ligne ce jour-là.
+- `simulerForfaitsMargeFaible()` — crée un **brouillon Gmail** au lieu
+  d'envoyer, pour relecture avant mise en production. Contrairement à
+  l'envoi réel, crée toujours un brouillon même à 0 ligne (pour vérifier
+  le rendu du cas "aucun cas"), préfixé `[SIMULATION]`.
+
+**Pièce jointe Excel** : export de l'onglet `Extrait J-1 - Marges<10%`
+lui-même (toutes colonnes brutes) via l'URL d'export Google Sheets
+(`.../export?format=xlsx&gid=...`). **Nécessite d'ajouter manuellement un
+scope OAuth Drive** dans le manifeste `appsscript.json` du projet
+(instructions détaillées en tête du fichier `.gs`) — un simple
+`UrlFetchApp` vers une URL en dur n'est pas détecté automatiquement par
+Apps Script comme nécessitant l'accès Drive, contrairement aux appels
+`SpreadsheetApp`/`GmailApp` ; sans ce scope, l'export échoue
+silencieusement (page de connexion au lieu du fichier).
+
+**Destinataires non codés en dur** : lus depuis un nouvel onglet
+`Destinataires marge faible` (colonne A, sous l'en-tête `Email`) — les
+adresses réelles restent dans le Sheet, jamais commitées dans le script
+(règle anonymisation du projet, `CADRAGE.md` §6).
+
+**Reste à faire côté Sheet** : créer l'onglet `Destinataires marge
+faible` avec les 3 adresses, installer le script, ajouter le scope Drive
+au manifeste, tester plusieurs fois avec `simulerForfaitsMargeFaible()`,
+puis seulement ajouter le déclencheur quotidien sur
+`envoyerForfaitsMargeFaible` (~11h35, après l'actualisation du connecteur
+à 11h00).
+
 ## 10. Forfaits pièces suspectes — détection n°3 (2026-09-2x, en pause depuis le 2026-09-23)
 
 **Contexte** : reprend la détection n°3 identifiée en §8 pt.5 ("pièces
@@ -1092,3 +1149,13 @@ anormalement optimiste sur une concession à fort volume export.
    appliquer les formules dans le Sheet (colonnes listées §12.6/§12.7,
    pas encore collées) et à vérifier si les paliers résistent à l'usage
    réel une fois en production.
+9. **Taux de marge PR interne (Atelier) — référence pas encore fixée**
+   (2026-09-29) : calibration proposée sur données réelles (P50≈28%,
+   seuils 15%/20% envisagés), mais **mise en pause** — Corentin fait
+   remarquer que la marge PR interne dépend beaucoup du **mix de canal de
+   vente** du jour (garantie / cession interne / client), donc un seuil
+   unique pourrait être trompeur si la journée est atypique en mix plutôt
+   qu'en pricing. Avant de figer un seuil, **construire la répartition
+   des ventes journalières par canal** (comme pour l'Efficience cession
+   interne, §12.6) pour pouvoir distinguer "mix inhabituel" de "vraie
+   dérive de marge". À reprendre une autre fois.
