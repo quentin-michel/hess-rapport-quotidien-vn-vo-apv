@@ -642,6 +642,21 @@ pièces suspectes` (DATA_SOURCE) → extrait natif Sheets `Forfaits suspects`
 "Bug et simplification" ci-dessous) — l'extrait natif est directement la
 liste à jour et complète.
 
+**Point à ne pas oublier pour la narration du mail (2026-09-29)** :
+contrairement au flux marges (§9), qui a déjà une section "Anomalies
+forfaits" fonctionnelle dans les brouillons générés (vérifié sur le
+brouillon Renault Strasbourg — gère déjà bien le cas "pas de J-1", cf.
+note plus bas), le flux **pièces suspectes n'a jamais été ajouté à un
+mail**. Point à respecter le jour où on l'ajoutera : `Forfaits suspects`
+contient tout le cumul **depuis le 1er janvier** (utile comme référentiel
+complet / source de l'onglet Excel joint, §12.5), mais le mail quotidien
+doit uniquement raconter les **nouveaux cas de J-1**, pas relister tout
+le cumul chaque jour. Filtrer sur la colonne `date_doc = J-1` au moment
+de construire cette section du mail — la requête BigQuery elle-même
+reste à l'année (ne pas la repasser en J-1 strict, ça casserait la
+stabilité de la baseline de rareté, cf.
+ci-dessous).
+
 **Statut (2026-09-23)** : filtre volontairement strict (rareté ≤ 2 + coût
 ≥ 150€), la plupart des jours ne remontent aucun cas — **normal, pas un
 bug**. Pas encore de recul long terme pour juger si le seuil doit être
