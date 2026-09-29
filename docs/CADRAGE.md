@@ -97,17 +97,37 @@ traîne dans le même dossier Drive, sans contenu.~~ **Supprimé (2026-09-08).**
   (`cd tools/gws && python -m pip install -e .` puis `gws auth login
   --readonly --services sheets`) — l'ancien token de Corentin n'est pas
   réutilisable par un autre compte/machine.
-- **Orchestrateur : tâche planifiée Claude Code**, pas GitHub Actions. Choix
-  assumé malgré la recommandation inverse (GitHub Actions aurait tourné
-  indépendamment de tout compte Claude Code, avec code versionné/review-able à
-  deux). Conséquences acceptées :
-  - L'automatisation dépend d'un **compte Claude Code qui reste actif** dans la
-    durée (celui qui héberge la tâche planifiée) — pas un cron autonome.
-  - Le **repo GitHub sert de documentation et de mémoire du projet**, mais
-    n'exécute rien lui-même.
-  - **Expéditeur des mails : boîte Gmail HESS dédiée**, pas un compte personnel
-    — à créer et connecter à la session qui porte la tâche planifiée (action non
-    faite à ce jour, voir §6).
+- ~~**Orchestrateur : tâche planifiée Claude Code**, pas GitHub Actions~~
+  **Décision inversée (2026-09-29)** : l'orchestrateur sera un **workflow
+  GitHub Actions déclenché par cron**, pas une tâche planifiée Claude Code.
+  Raison du changement : le choix initial du 2026-09-08 écartait GitHub
+  Actions par prudence (fonctionnement non éprouvé sur ce dépôt) ; c'est
+  maintenant testé et validé — la Claude Code GitHub App et les workflows
+  `claude.yml`/`claude-code-review.yml` tournent de façon autonome, sans
+  session Claude Code active (voir installation du 2026-09-29 ci-dessous).
+  Ancienne analyse (pour mémoire, plus d'actualité) : *"GitHub Actions
+  aurait tourné indépendamment de tout compte Claude Code, avec code
+  versionné/review-able à deux"* — c'était déjà l'argument en faveur de ce
+  choix, seule la prudence sur la fiabilité a changé.
+  - **Repo GitHub Actions = infrastructure d'exécution**, plus seulement
+    documentation/mémoire — un cron autonome, indépendant de toute session
+    Claude Code active.
+  - **Prérequis restant à régler avant un vrai run en production** (aucun
+    des deux n'est fait à ce jour) :
+    1. **Identifiants `gws` pour l'environnement CI** — actuellement
+       `gws` s'authentifie via un token OAuth local
+       (`~/.config/gws`, lié au compte `quentinmichel@hessautomobile.com`,
+       voir plus bas). Un job GitHub Actions n'a pas accès à ce token local
+       — il faut soit le stocker en secret GitHub (risque : expiration/
+       révocation du refresh token, à surveiller), soit passer à un compte
+       de service Google avec délégation domaine (plus robuste, demande du
+       travail admin Google Workspace).
+    2. **Expéditeur des mails : boîte Gmail HESS dédiée**, toujours pas
+       créée (voir §9 point 1). Le connecteur Gmail utilisé pour tous les
+       envois de test de ce projet est lié à la session interactive
+       actuelle, pas accessible depuis un job cron GitHub Actions — il
+       faudra soit cette boîte dédiée avec des identifiants API stockés en
+       secret GitHub, soit un mécanisme équivalent.
   - **Commentaire IA natif** (pas de clé API Anthropic séparée à gérer), format
     **court et factuel (2-3 phrases)**.
   - **Principe de lisibilité et pertinence du mail (validé 2026-09-10, affiné
@@ -533,9 +553,18 @@ la première version) :
 ## 9. Questions ouvertes transverses
 
 1. **Création de la boîte Gmail HESS dédiée** — qui la crée (IT ?), quel nom
-   d'adresse, et comment la connecter à la session qui porte la tâche planifiée ?
-   Le test du 2026-09-25 (§6) a été envoyé depuis un compte Gmail connecté à
-   la session en attendant, pas la boîte dédiée.
+   d'adresse, et comment lui donner des identifiants API utilisables depuis
+   un job GitHub Actions (voir §3, décision d'architecture du 2026-09-29) ?
+   Les tests de ce projet ont été envoyés depuis un compte Gmail connecté à
+   une session interactive en attendant, pas la boîte dédiée — ça ne
+   fonctionnera plus une fois le cron GitHub Actions en place, cette
+   session n'existera pas pour porter la connexion.
+1bis. **Identifiants `gws` pour GitHub Actions** (voir §3) — comment donner
+   à un job cron l'accès en lecture aux Sheets sans dépendre du token OAuth
+   local de la session actuelle ? Compte de service Google avec délégation
+   domaine recommandé, mais demande un arbitrage/accès admin Google
+   Workspace côté Quentin/IT — pas une décision que Claude peut prendre ou
+   exécuter seul.
 2. **Correction à prévoir (non bloquante V1)** : les lignes `Code_Concession = "*"`
    dans le Référentiel devront passer de `Niveau de diffusion = Concession` à
    `Siège` quand le multi-niveaux sera construit — voir §4.
