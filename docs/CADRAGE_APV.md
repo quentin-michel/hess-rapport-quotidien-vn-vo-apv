@@ -952,10 +952,76 @@ même seuil générique :
 
 Colonne **AY** (`Analyse Globale`) = `Alerte écart CA PR interne`.
 
-**Pas encore fait** : le même système de points pour le Magasin (un seul
-signal défini à ce jour, §12.3) — à construire une fois qu'il y aura assez
-de signaux Magasin qualifiés pour justifier un barème à points plutôt que
-la règle binaire actuelle (>0% = Nuage).
+### 12.7 Icône de vigilance Magasin — système de points (figé 2026-09-29)
+
+Même principe qu'Atelier (§12.6), remplace la règle binaire précédente
+(>0% de pertes = Nuage, §12.3). Seulement 2 catégories de signaux
+disponibles côté Magasin à ce jour (pas d'équivalent encours/efficience/
+productivité, qui sont des notions Atelier) :
+
+| Signal | Points |
+|---|---|
+| Pièces vendues à perte — 50€ à 100€ | 1 |
+| Pièces vendues à perte — 100€ à 200€ | 2 |
+| Pièces vendues à perte — au-delà de 200€ | 3 |
+| Alerte écart CA PR Externe (vs moy. mobile 4 sem., seuil -30%) | 1 |
+| Taux de marge PR Externe — bas (10-15%) | 1 |
+| Taux de marge PR Externe — trop bas (<10%) | 2 |
+
+Score → icône : **0 = ☀️ Soleil**, **1-2 = ☁️ Nuage**, **3-4 = 🌧️ Pluie**,
+**5+ = ⛈️ Orage** (échelle forcément plus resserrée qu'Atelier, max
+théorique = 6).
+
+**Pièces vendues à perte — passage en valeur € plutôt qu'en ratio**
+(cohérent avec le choix Atelier, §12.3/§2.6) : calibré sur données réelles
+90 jours glissants (même filtre que `Analyse pièces J-1`, cf. ci-dessous) :
+P50=15€, P75=58€, P90=165€, P95=291€, P99=839€ — distribution bien plus
+petite que côté Atelier (100/250/500€), d'où des paliers dédiés.
+
+Nouvelle colonne **U** (`Détail facturation magasin journaliere`) =
+`Valeur perte (hors intragroupe/Export)`, à droite de S (`Est à perte`) :
+```
+=IF(AND($S2=1;$G2<>"Cessions internes - interservices";$G2<>"Intra-Groupe Renault";$G2<>"Inter sites";$G2<>"Intra-groupe sauf Primocar";$G2<>"Export");$Q2-$P2;0)
+```
+Nouvelle colonne **AZ** (`Analyse Globale`) = `Valeur pièces magasin
+vendues à perte J-1` :
+```
+=SUMIFS('Détail facturation magasin journaliere'!$U:$U;'Détail facturation magasin journaliere'!$T:$T;$B3;'Détail facturation magasin journaliere'!$C:$C;$C$1)
+```
+
+**Exclusion "Export"** (2026-09-29, Corentin) : ajoutée aux exclusions
+intragroupe existantes (Cessions internes, Intra-Groupe Renault, Inter
+sites, Intra-groupe sauf Primocar) — sur échantillon réel 90 jours, les
+lignes `Categorie_client="Export"` (61 lignes, 370K€ de CA) ressortent à
+**98,5% de marge** (PAMP quasi non renseigné, ~5,5K€ de coût pour 370K€ de
+CA) — artefact de données, pas une vraie marge. Appliquée à la formule
+`Analyse pièces client J-1` (voir `docs/sheets-formulas/analyse_pieces_j1.txt`,
+mis à jour) et à la colonne U ci-dessus.
+
+**Alerte écart CA PR Externe** — même logique que CA MO/PR interne
+(§12.3/§12.6), pas encore de colonne Écart%/Alerte pour le PR Externe
+(seulement CA J-1 et moyenne mobile, colonnes T/U). Nouvelle colonne
+**BA** (`Analyse Globale`) = `Écart % CA PR Externe journalier` :
+```
+=IFERROR((T3-U3)/U3;"")
+```
+Nouvelle colonne **BB** = `Alerte écart CA PR Externe` :
+```
+=IF(BA3<'Référentiel métier'!$B$8;"ALERTE";"")
+```
+
+**Taux de marge PR Externe — limite connue sur l'Export** (2026-09-29) :
+contrairement à la détection de pertes ci-dessus, le signal `Taux de
+marge PR Externe` (`Analyse Globale` colonne X, déjà existante) est basé
+sur `Historique CA par Magasin` (CA/Coût **déjà agrégés** par
+jour/concession, pas ligne à ligne) — pas de colonne Catégorie client
+disponible à ce niveau pour exclure l'Export après coup. Correction
+possible uniquement en amont, dans l'extraction qui alimente `Historique
+CA Magasin` (§1) — **décision de Corentin : on laisse tel quel pour
+l'instant**, l'Export reste inclus dans ce signal (contrairement à la
+détection de pertes qui l'exclut). Impact limité (volume Export faible,
+61 lignes/90j groupe entier) mais à garder en tête si le signal semble
+anormalement optimiste sur une concession à fort volume export.
 
 ## 13. Prochaines étapes
 
@@ -980,9 +1046,9 @@ la règle binaire actuelle (>0% = Nuage).
 7. Détection n°2 (écarts de tarification entre ateliers d'une même Plaque)
    — pas commencée, référentiel Plaque ↔ code canonique toujours à
    vérifier (cf. §8 pt.5).
-8. **Paramétrer les icônes météo (Atelier et Magasin) en fonction de
-   seuils explicites** (demandé 2026-09-25). **Atelier fait et figé
-   (2026-09-28)** — système de points complet, voir §12.6. **Magasin
-   restant à faire** — un seul seuil existe à ce jour (ratio pièces
-   vendues à perte >0% → Nuage, §12.3), pas encore assez de signaux
-   qualifiés pour justifier un barème à points.
+8. ~~**Paramétrer les icônes météo (Atelier et Magasin) en fonction de
+   seuils explicites**~~ (demandé 2026-09-25). **Fait** — Atelier figé le
+   2026-09-28 (§12.6), Magasin figé le 2026-09-29 (§12.7). Reste à
+   appliquer les formules dans le Sheet (colonnes listées §12.6/§12.7,
+   pas encore collées) et à vérifier si les paliers résistent à l'usage
+   réel une fois en production.
