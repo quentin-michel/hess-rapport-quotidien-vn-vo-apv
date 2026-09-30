@@ -365,7 +365,9 @@ cette section a été reconstruite et étendue depuis (§1-3).
    Globale` est désormais jugé stable (objectifs branchés, seuils recalibrés),
    donc ce point peut être attaqué. Un mockup HTML illustratif a été construit
    et testé avec de vraies données (`Renault/Nissan Mulhouse`, 2026-09-09,
-   voir `docs/mockup_email_apv.html`) pour discuter de la structure, mais la
+   voir `docs/mockup_email_apv.html`, retiré du dépôt le 2026-09-30 — voir
+   l'historique git ; maquette APV de référence :
+   `docs/mockup_email_apv_v2_safe.html`) pour discuter de la structure, mais la
    maquette/config finale du mail reste à trancher (icône de vigilance façon
    VO ? mail unique Atelier+Magasin ou séparé par destinataire ? sections à
    garder/retirer ?).

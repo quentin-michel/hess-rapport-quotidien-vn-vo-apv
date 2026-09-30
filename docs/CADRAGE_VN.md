@@ -659,7 +659,8 @@ fait, maquette non modifiée à ce stade).
 Objectifs" ajoutée entre Anomalies ventes et Leads VN (pacing d'objectif,
 plus directement actionnable qu'un simple compteur d'activité, mais moins
 urgent qu'une anomalie déjà constatée). Format compact inspiré de la
-maquette APV de Corentin (`docs/mockup_email_apv.html`, relue avant de
+maquette APV de Corentin (`docs/mockup_email_apv.html`, retirée du dépôt le
+2026-09-30 et remplacée par `docs/mockup_email_apv_v2_safe.html` ; relue avant de
 construire cette section) : ligne de synthèse "valeur MTD / objectif (%,
 tendance)" plutôt qu'un tableau à 10 colonnes par flux — le `BLOC 2` Sheet
 a beaucoup plus de colonnes (J-1, 7j, moy. hebdo, MTD, MTD N-1, objectif,

@@ -433,6 +433,18 @@ l'instant. Ces 3 fichiers email-safe sont désormais **la base à partir de
 laquelle continuer** (structure de layout en tableaux, à conserver pour
 toute évolution future du contenu).
 
+**Ménage des maquettes (2026-09-30, décision Quentin)** : `docs/` ne garde
+plus qu'**une maquette par mail**, la plus aboutie et email-safe —
+[`mockup_email_vn.html`](mockup_email_vn.html),
+[`mockup_email_vo.html`](mockup_email_vo.html),
+[`mockup_email_apv_v2_safe.html`](mockup_email_apv_v2_safe.html),
+[`mockup_email_directeur.html`](mockup_email_directeur.html) et
+[`mockup_email_plaque.html`](mockup_email_plaque.html). Les 12 autres
+(versions non email-safe `mockup_email_apv.html`/`apv_v2`/`vn_exemple2`/
+`vo_v2`, déclinaisons Colmar et Dijon) ont été retirées du dépôt ; elles
+restent consultables dans l'historique git. Les mentions de ces fichiers
+plus bas et dans les autres CADRAGE sont conservées comme historique.
+
 **Validé (2026-09-25)** : les 3 mails reconvertis (avant anonymisation
 côté APV) ont été envoyés réellement (via un compte Gmail connecté à la
 session, pas encore la boîte HESS dédiée — voir question ouverte
