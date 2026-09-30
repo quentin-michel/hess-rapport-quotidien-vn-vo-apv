@@ -1005,14 +1005,26 @@ fort des deux** :
 | Forfaits — marge négative -50€ à -200€ | 1 |
 | Forfaits — marge négative -200€ à -500€ | 2 |
 | Forfaits — marge négative au-delà de -500€ | 3 |
+| Écart marge PR interne vs mix — bas (-10 à -5 pts) | 1 |
+| Écart marge PR interne vs mix — trop bas (< -10 pts) | 2 |
 
 Score → icône (paliers élargis 2026-09-28, même raison — passer de Soleil à
 Nuage sur un seul signal mineur isolé jugé trop dur) : **0-1 = ☀️ Soleil**,
 **2-4 = ☁️ Nuage**, **5-8 = 🌧️ Pluie**, **9+ = ⛈️ Orage**. Max théorique du
-barème ≈ 16 points (tous les signaux déclenchés à leur palier le plus haut,
+barème ≈ 18 points (tous les signaux déclenchés à leur palier le plus haut,
 paire CA dédoublonnée) — l'Orage demande donc un vrai cumul de plusieurs
 problèmes distincts (ex. Encours critique 4 + Efficience globale trop bas 3
 + un troisième signal), pas un aléa isolé.
+
+**Écart marge PR interne vs mix** (ajouté 2026-09-30, voir §14) :
+contrairement aux autres signaux, ne compare pas la marge du jour à un
+seuil fixe mais à une **marge attendue calculée à partir du mix de canal
+réel du jour** (CLIENT/GARANTIE/CESSION, colonnes `Analyse Globale`
+BA-BC), pondérée par les taux de marge de référence de chaque canal
+(`Référentiel métier` B18:B20). Évite qu'un simple jour avec plus de
+garantie/cession (marge structurellement plus basse, rien d'anormal)
+déclenche le signal à tort — voir §14 pour le détail complet et la
+calibration.
 
 **Efficience cession interne — jour entier plutôt que par OR** (changement
 de conception 2026-09-28) : le signal historique `Efficience OR CI trop
@@ -1149,13 +1161,105 @@ anormalement optimiste sur une concession à fort volume export.
    appliquer les formules dans le Sheet (colonnes listées §12.6/§12.7,
    pas encore collées) et à vérifier si les paliers résistent à l'usage
    réel une fois en production.
-9. **Taux de marge PR interne (Atelier) — référence pas encore fixée**
-   (2026-09-29) : calibration proposée sur données réelles (P50≈28%,
-   seuils 15%/20% envisagés), mais **mise en pause** — Corentin fait
-   remarquer que la marge PR interne dépend beaucoup du **mix de canal de
-   vente** du jour (garantie / cession interne / client), donc un seuil
-   unique pourrait être trompeur si la journée est atypique en mix plutôt
-   qu'en pricing. Avant de figer un seuil, **construire la répartition
-   des ventes journalières par canal** (comme pour l'Efficience cession
-   interne, §12.6) pour pouvoir distinguer "mix inhabituel" de "vraie
-   dérive de marge". À reprendre une autre fois.
+9. ~~**Taux de marge PR interne (Atelier) — référence pas fixée**~~
+   (2026-09-29). **Fait (2026-09-30)** — signal "Écart marge PR interne
+   vs mix" ajouté au barème Atelier (§12.6/§14), mix-adjusted plutôt
+   qu'un seuil fixe.
+   Calibration déjà disponible si besoin (P10=23%, P25=30%, P50=39%,
+   P75=49% sur le canal CLIENT seul, 90j glissants) — voir §14. À
+   reprendre une autre fois si Corentin veut effectivement fixer un
+   seuil.
+
+## 14. Bug `Est_ferme` et répartition du CA par canal (2026-09-30)
+
+**Signalé par Corentin** : écart entre le CA MO J-1 affiché dans
+`Analyse Globale` et celui de sa "quotidienne" Tableau — exemple réel,
+Peugeot Reims au 28/09/2026 : **9 668€ dans le Sheet contre 11 380€ dans
+Tableau**.
+
+**Cause trouvée** : la requête du connecteur `Historique CA Atelier`
+(et 4 autres connecteurs du même classeur) filtrait `e.Est_ferme = 1` —
+ne comptait que les lignes des OR **déjà clôturés au moment du
+rafraîchissement**. Or `Est_ferme` est le statut *actuel* de l'OR, pas
+son statut au moment de la facturation : une partie du CA facturé J-1
+dort sur des OR pas encore administrativement clôturés, et n'apparaît
+dans le Sheet que plus tard, au fil des jours, quand ces OR finissent
+par se clôturer. **Ce n'était pas un bug de calcul mais un biais
+structurel** : le CA MO/PR interne J-1 était donc systématiquement
+sous-évalué le jour J, avant de converger vers le vrai total (celui de
+Tableau, qui ne filtre pas sur la clôture) au fil des jours suivants.
+Vérifié : `Est_ferme=1` seul sur Peugeot Reims 28/09 (interrogé le
+30/09) = 11 051€ ; `Est_ferme` toutes valeurs confondues = 11 380,08€ =
+Tableau au centime près.
+
+**Risque identifié en aval** : le signal **"Alerte écart CA MO"** du
+barème Atelier (§12.6, seuil -30% vs moyenne mobile) pouvait se
+déclencher à tort à cause de ce décalage de clôture, sans rapport avec
+un vrai problème de CA.
+
+**Connecteurs corrigés** (retrait de `Est_ferme = 1` — et `Est_annule =
+0`, qui est de toute façon un no-op, 0 ligne annulée sur tout le
+périmètre facturé, cf. skill `hess-apv-facturation-bigquery`) :
+- `Historique CA Atelier` (bloc `facturation` uniquement — `or_clotures`
+  garde `Est_ferme=1`, légitime là où on compte vraiment des clôtures)
+- `Facturation détaillée Atelier`
+- `Temps facturés journaliers`
+- `Historique Efficience + Productivité` (bloc `efficience` uniquement —
+  `productivite`, sur `temps_passe`, n'avait déjà que `Est_annule=0`,
+  retiré aussi par cohérence)
+- `Historique CA mensuel par atelier`
+
+**Non concernés** (vérifiés, pas de biais) : `Temps passés journaliers`
+(pas de filtre `Est_ferme`), `Magasin`/`Historique CA Magasin` (pas de
+notion de clôture d'OR côté `entete_pieces`), `Encours` (connecteur
+Salesforce filtré sur `Statut != Cloture` — c'est justement son rôle,
+ne pas toucher).
+
+**Répartition du CA par canal (`Affectation`)** — demandée en parallèle
+pour éclairer le chantier §13 pt.9 : `Historique CA Atelier` et
+`Historique CA mensuel par atelier` ont chacun reçu **7 nouveaux champs
+BigQuery** (CA MO CLIENT/GARANTIE/CESSION, CA PR interne
+CLIENT/GARANTIE/CESSION + coût PR interne CLIENT — ce dernier posé en
+prévision d'un futur calcul de marge CLIENT-only, pas encore exploité
+côté Sheet). Vérifié sur 90 jours glissants, le mix change tout : marge
+PR interne CLIENT seul = **34,6%** (90j, tous canaux confondus) contre
+GARANTIE 5,7% et CESSION 7,0% — un jour avec plus de garantie/cession
+fait mécaniquement chuter la marge blend, sans rapport avec un problème
+de tarification. Day-level CLIENT seul (90j, concession×jour,
+CA>100€) : P10=23%, P25=30%, P50=39%, P75=49%.
+
+**Piège colonnes ajoutées manuellement** (déjà documenté ailleurs dans
+ce fichier, revu ici) : les extractions natives `Historique CA par
+atelier` et `Historique CA mensuel ateliers` ont des colonnes
+manuelles (`Code concession`, et `Plaque` pour la mensuelle) qui ne se
+décalent pas toutes seules quand la requête change — les nouveaux champs
+ont été ajoutés **après** les colonnes existantes dans le `SELECT`
+plutôt qu'au milieu, pour minimiser le nombre de colonnes à redéplacer.
+
+**Résultat côté Sheet** : Corentin n'a finalement demandé que les
+**parts de CA en %** (pas les montants bruts, pas de marge par canal).
+Nouvelles colonnes `Analyse Globale`, en J-1 (**AX-BC**) et en MTD
+(**BD-BI**) :
+- AX/BD `% CA MO CLIENT`, AY/BE `% CA MO GARANTIE`, AZ/BF `% CA MO
+  CESSION`
+- BA/BG `% CA PR interne CLIENT`, BB/BH `% CA PR interne GARANTIE`,
+  BC/BI `% CA PR interne CESSION`
+
+Formule type (J-1, exemple CLIENT MO) :
+```
+=IFERROR(SUMIFS('Historique CA par atelier'!$G:$G;'Historique CA par atelier'!$N:$N;$B3;'Historique CA par atelier'!$B:$B;$C$1)/D3;"")
+```
+(MTD : même `SUMIFS` avec une plage de dates `>=` 1er du mois `<=`
+$C$1, dénominateur = colonne MTD existante correspondante — même motif
+que `AH3` Efficience cessions internes MTD, §1.2.)
+
+**Statut (2026-09-30)** : corrigé et collé, vérifié par Corentin.
+
+**Règle de rédaction pour la narration du mail** (2026-09-30) : quand la
+synthèse du jour commente une marge PR interne basse ou en baisse,
+**croiser avec les colonnes `% CA MO/PR interne CLIENT/GARANTIE/CESSION`**
+(J-1 et MTD, ci-dessus) avant de le présenter comme un signal
+d'alerte — si la part GARANTIE/CESSION est nettement au-dessus de sa
+normale ce jour-là, c'est un effet de mix (rien d'anormal en soi, à
+nuancer dans le texte), pas forcément une dérive de tarification côté
+CLIENT. Ne pas commenter une marge blend brute sans ce contexte.

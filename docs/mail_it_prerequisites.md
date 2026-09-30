@@ -7,13 +7,15 @@ prérequis techniques bloquent le passage en production (`CADRAGE.md` §9,
 points 1 et 1bis), nécessitant l'IT/l'admin Google Workspace — pas
 exécutables par Claude ni par Quentin/Corentin seuls.
 
-**Statut (2026-09-30)** : le point 2 est réglé sans ce mail — la boîte
+**Envoyé (2026-09-30).**
+
+**Statut (2026-09-30, après retour IT)** : le point 2 est réglé — la boîte
 `rapport-quotidien@hessautomobile.com` existe, l'IT lui a accordé le rôle
 IAM sur le projet GCP `controlegestion`, et un envoi de test via l'API
 Gmail (token OAuth de la boîte, scope `gmail.send`) a réussi. Reste le
-point 1 (compte de service / délégation domaine) si on choisit cette voie
-plutôt qu'un token OAuth stocké en secret GitHub pour le cron — le mail
-ci-dessous n'est à envoyer que dans ce cas, en retirant le point 2.
+point 1 (compte de service / délégation domaine), à relancer auprès de
+l'IT seulement si on choisit cette voie plutôt qu'un token OAuth stocké
+en secret GitHub pour le cron.
 
 ---
 
