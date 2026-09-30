@@ -26,7 +26,7 @@ Le workflow doit pouvoir lire des Google Sheets (scope `spreadsheets.readonly` u
 
 **2. Boîte Gmail HESS dédiée pour l'envoi des rapports**
 Les mails quotidiens (VN/VO/APV par concession, synthèses direction/plaque) doivent partir d'une adresse HESS dédiée, pas d'un compte personnel. Il nous faut :
-- Une boîte Gmail créée (ex. `rapports-automatiques@hessautomobile.com` ou équivalent — libre à vous de choisir le nom)
+- La boîte Gmail **`rapport-quotidien@hessautomobile.com`** créée (adresse actée le 2026-09-30)
 - Des identifiants API (OAuth ou compte de service avec délégation) permettant l'envoi automatisé (scope `gmail.send`), utilisables depuis GitHub Actions
 
 Ces deux éléments bloquent le passage en production de l'automatisation. Disponibles pour en discuter si besoin.
