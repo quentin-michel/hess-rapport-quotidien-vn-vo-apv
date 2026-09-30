@@ -7,7 +7,8 @@ prérequis techniques bloquent le passage en production (`CADRAGE.md` §9,
 points 1 et 1bis), nécessitant l'IT/l'admin Google Workspace — pas
 exécutables par Claude ni par Quentin/Corentin seuls.
 
-Pas encore envoyé — en attente de l'adresse du contact IT.
+**Envoyé (2026-09-30)** — en attente de la création de la boîte Gmail
+dédiée et du compte de service Google par l'IT.
 
 ---
 
