@@ -552,11 +552,14 @@ la première version) :
 
 ## 9. Questions ouvertes transverses
 
-1. **Création de la boîte Gmail HESS dédiée** — qui la crée (IT ?), quel nom
-   d'adresse, et comment lui donner des identifiants API utilisables depuis
-   un job GitHub Actions (voir §3, décision d'architecture du 2026-09-29) ?
-   Les tests de ce projet ont été envoyés depuis un compte Gmail connecté à
-   une session interactive en attendant, pas la boîte dédiée — ça ne
+1. **Création de la boîte Gmail HESS dédiée** — adresse actée
+   (2026-09-30) : **`rapport-quotidien@hessautomobile.com`**. Reste à
+   trancher : qui la crée (IT ?) et comment lui donner des identifiants
+   API utilisables depuis un job GitHub Actions (voir §3, décision
+   d'architecture du 2026-09-29) — demande envoyée à l'IT, voir
+   [`docs/mail_it_prerequisites.md`](mail_it_prerequisites.md). Les tests
+   de ce projet ont été envoyés depuis un compte Gmail connecté à une
+   session interactive en attendant, pas la boîte dédiée — ça ne
    fonctionnera plus une fois le cron GitHub Actions en place, cette
    session n'existera pas pour porter la connexion.
 1bis. **Identifiants `gws` pour GitHub Actions** (voir §3) — comment donner
