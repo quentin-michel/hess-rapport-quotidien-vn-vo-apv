@@ -403,6 +403,15 @@ cette section a été reconstruite et étendue depuis (§1-3).
      `Mapping concession` / `Analyse Globale` (qui ne portent que le code
      canonique par site) ; à vérifier si un référentiel plaque ↔ code
      canonique existe déjà ailleurs avant d'en recréer un.
+     **Mise à jour (constatée le 2026-09-30)** : le rattachement existe
+     désormais côté `Rapport quotidien APV` — colonne `Code plaque` dans
+     `Analyse Globale`, onglet `Concession-plaques`, et onglet `Plaque APV`
+     (une ligne par plaque : efficience, productivité, OR en encours +90j,
+     encours en jours de CA, pièces à perte, forfaits <10%, remises
+     élevées, cas cession interne). Totaux par concession recoupés avec
+     `Plaque APV` pour `PLQ_FIATOPEL` (encours +90j 870, pièces 23, remises
+     14, CI 5). Utilisé pour le premier vrai bloc APV du mail Plaque
+     (`CADRAGE.md` §8). Reste à exploiter pour la détection n°2.
    - **Pièces incohérentes avec le type de forfait** dans lequel elles sont
      intégrées (ex. une pièce hors-sujet facturée dans un forfait donné) —
      pas commencé.
@@ -1153,8 +1162,9 @@ anormalement optimiste sur une concession à fort volume export.
 6. Laisser tourner `Forfaits pièces suspectes` (détection n°3, §10) quelques
    semaines pour juger du volume réel et calibrer le seuil si besoin.
 7. Détection n°2 (écarts de tarification entre ateliers d'une même Plaque)
-   — pas commencée, référentiel Plaque ↔ code canonique toujours à
-   vérifier (cf. §8 pt.5).
+   — pas commencée ; le référentiel Plaque ↔ code canonique existe
+   désormais (`Code plaque` dans `Analyse Globale`, onglet `Plaque APV`,
+   cf. §8 pt.5).
 8. ~~**Paramétrer les icônes météo (Atelier et Magasin) en fonction de
    seuils explicites**~~ (demandé 2026-09-25). **Fait** — Atelier figé le
    2026-09-28 (§12.6), Magasin figé le 2026-09-29 (§12.7). Reste à

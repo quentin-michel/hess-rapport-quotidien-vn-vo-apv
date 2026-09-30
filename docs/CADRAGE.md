@@ -556,6 +556,17 @@ le bloc affiche une note explicite ("pas encore disponible") plutôt qu'un
 contenu construit. Le bloc sera rempli dès que Quentin/Corentin auront
 construit ce rattachement côté Sheet — pas une tâche pour Claude (limite
 technique rappelée en §3 : Claude ne construit rien dans les Sheets).
+**Levé (constaté le 2026-09-30)** : le rattachement existe maintenant dans
+`Rapport quotidien APV` (colonne `Code plaque` dans `Analyse Globale`,
+onglet `Plaque APV` — voir `CADRAGE_APV.md` §8 pt.5). Le mail Plaque
+Fiat/Opel du 30/09 contient un vrai bloc APV : tableau par concession
+(efficience, productivité, encours +90j, encours en jours de CA, pièces à
+perte, forfaits <10%) avec une ligne Total Plaque pondérée, et les signaux
+croisés (ex. pièces à perte et remises élevées sur les mêmes OR).
+
+**Test complet Plaque Fiat/Opel (2026-09-30)** — deuxième plaque après
+Renault, même structure que [`docs/mockup_email_plaque.html`](mockup_email_plaque.html)
+(voir §10 pour le test d'ensemble).
 
 Maquette (données réelles Plaque Renault, 23-25/09/2026, email-safe dès
 la première version) :
@@ -585,9 +596,9 @@ la première version) :
    (voir §7) — le mockup Renault Strasbourg a les 3 services actifs, donc
    la logique d'omission de bloc n'a encore jamais été vérifiée en
    pratique.
-5. **Rattachement concession → plaque côté APV** (voir §8) — bloque le
-   bloc APV du mail Plaque tant qu'il n'existe que côté `Objectif APV`,
-   pas dans `Analyse Globale`. À construire côté Sheet (pas par Claude).
+5. ~~Rattachement concession → plaque côté APV~~ **fait (constaté le
+   2026-09-30)** — colonne `Code plaque` dans `Analyse Globale` et onglet
+   `Plaque APV`, exploités dans le mail Plaque Fiat/Opel (voir §8).
 6. **Suite du mail Plaque (§8) reprise par Corentin (2026-09-25)** — il va
    ajouter des analyses propres au niveau Plaque, au-delà de ce qui est
    décrit dans ce document à ce stade.
@@ -608,14 +619,63 @@ la première version) :
    **est confirmé volontaire (2026-09-28, Quentin)** : les deux sont
    légitimement directeurs de cette plaque, la Plaque Nissan doit recevoir
    les deux mails.
+9. **Écarts relevés dans les Sheets lors du test Dijon du 2026-09-30**
+   (à corriger côté Sheet par Quentin/Corentin, pas par Claude) :
+   - **Score météo VN et VO non calculé dans les Sheets** — estimé à la
+     main à chaque génération ; à poser en formule comme l'APV (§12.6 de
+     `CADRAGE_APV.md`) pour que le pipeline le lise au lieu de l'inventer.
+   - **VN Bloc 6** : l'onglet sélectionne encore les anciennes lettres de
+     colonnes depuis la réorganisation du 25/09 (colonnes décalées). Les
+     dossiers VN sans véhicule rattaché (ex. 8806, 8807 à Dijon, VIN et
+     modèle vides) ne sont pas signalés alors que `CADRAGE_VN.md` les
+     classe en anomalie.
+   - **VO Bloc 4 `Stock_P2`** : la liste nominative des CL en retard
+     (colonnes Y à AC attendues) est absente — reconstituée depuis
+     `Extrait_Stock_VO` pour le test.
+   - **VO Bloc 8** : le filtre « à partir de J-1 » laisse passer des
+     ventes datées du jour même (vente du 30/09 remontée le 30/09).
+   - **VO Bloc 2 vs Bloc 9** : les commandes de la veille ne sont pas
+     comptées pareil (1 d'un côté, 2 de l'autre pour Dijon au 29/09).
+   - **APV** : productivité J-1 incohérente avec l'efficience (Dijon
+     125,9 % pour 57,5 % d'efficience — 63,2 h rappelées contre 28,9 h
+     pointées) ; colonne « % pièces atelier client vendues à perte »
+     incohérente (43,75 % pour une seule ligne à Dijon, valeurs >100 %
+     ailleurs sur la plaque) ; plus de colonne « Efficience cession
+     interne J-1 » dans `Analyse Globale` (AX réaffectée), recalculée
+     depuis `Historique efficience/prod`.
 
 Les questions ouvertes spécifiques à un service sont dans son fichier dédié.
 
 ## 10. Prochaines étapes
 
-Le développement priorise **VO** — voir `CADRAGE_VO.md` pour le détail. APV et VN
-suivront une fois VO validé en pilote.
+**Test d'ensemble validé (2026-09-30)** : les 5 mails d'une même
+concession — VN, VO, APV, Directeur de concession (Opel/Fiat Dijon) et
+Plaque (Fiat/Opel) — générés avec les données du jour **entièrement depuis
+les Google Sheets** (aucun repli BigQuery, contrairement aux maquettes
+Dijon du 25/09), puis envoyés depuis `rapport-quotidien@hessautomobile.com`
+à Quentin seul. Rendu et contenu validés par Quentin. Par rapport aux
+maquettes du 25/09 : VO complet (excès de stock, CL en retard nominatifs,
+comparaison Plaque, tendance), APV avec les 5 encours prioritaires
+détaillés et le bloc remises forcées Magasin branché, mail Plaque avec un
+vrai bloc APV (§8). Le contenu a encore été produit en session Claude
+interactive — c'est la dernière dépendance à un PC allumé.
 
-1. Construire la suite du projet (contenu, blocs restants, intégration
-   Gmail dédiée) **à partir des 3 maquettes email-safe** (§6) plutôt que
-   des anciennes versions à variables CSS/flex/grid.
+Plan validé pour la suite :
+1. **Consolider ce test** : documentation (fait), maquettes anonymisées
+   des 5 mails à commiter comme nouvelles références.
+2. **Industrialiser la génération dans le dépôt** : scripts Python qui
+   lisent les Sheets et remplissent les gabarits HTML (partie
+   déterministe : chiffres, tableaux, badges), en commençant par Dijon.
+3. **Synthèses IA dans le workflow** via `anthropics/claude-code-action`
+   et le secret `CLAUDE_CODE_OAUTH_TOKEN` déjà en place (pas de clé API
+   Anthropic séparée, cohérent avec §3), à partir des chiffres produits en
+   2 et des règles de rédaction §3.
+4. **Workflow GitHub Actions** : lancement manuel puis cron, mode test
+   (tout vers Quentin), historique des envois, alerte en cas d'échec ;
+   ouverture aux vrais destinataires (onglets Destinataire, §4.1) une fois
+   le contenu stable, puis extension à la Plaque Fiat/Opel entière.
+
+Le développement priorisait **VO** (`CADRAGE_VO.md`) ; le test du
+2026-09-30 montre que les 3 services sont prêts côté Sheets, l'étape 2 les
+couvre donc ensemble. Toute évolution de contenu part des maquettes
+email-safe (§6).
