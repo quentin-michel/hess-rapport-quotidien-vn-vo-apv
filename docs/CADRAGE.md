@@ -85,6 +85,14 @@ traîne dans le même dossier Drive, sans contenu.~~ **Supprimé (2026-09-08).**
   `quentinmichel@hessautomobile.com`. L'API Google Sheets doit être activée sur
   le projet GCP utilisé, et le compte doit avoir le rôle IAM "Service Usage
   Consumer" dessus.
+  **Mise à jour (2026-09-30)** : côté Quentin, `gws` est désormais connecté
+  avec le compte **`rapport-quotidien@hessautomobile.com`** (et non plus
+  `quentinmichel@...`), scopes `spreadsheets.readonly` + `gmail.send` +
+  `gmail.settings.basic` (`gws auth login --scopes ...`). L'IT a accordé à
+  ce compte le rôle IAM sur `controlegestion` le même jour. `gws` ne gère
+  qu'un compte à la fois : la lecture des Sheets passe donc par ce compte,
+  qui doit avoir un accès en lecture aux classeurs sources (partage fait
+  par Quentin le 2026-09-30).
   **Incident (2026-09-18)** : le binaire `gws` original a été perdu suite à un
   crash/réinstallation de l'appli Claude côté Corentin — il vivait dans un
   espace propre à une session de l'appli, pas dans le profil Windows normal
@@ -112,22 +120,25 @@ traîne dans le même dossier Drive, sans contenu.~~ **Supprimé (2026-09-08).**
   - **Repo GitHub Actions = infrastructure d'exécution**, plus seulement
     documentation/mémoire — un cron autonome, indépendant de toute session
     Claude Code active.
-  - **Prérequis restant à régler avant un vrai run en production** (aucun
-    des deux n'est fait à ce jour) :
+  - **Prérequis restant à régler avant un vrai run en production** :
     1. **Identifiants `gws` pour l'environnement CI** — actuellement
        `gws` s'authentifie via un token OAuth local
-       (`~/.config/gws`, lié au compte `quentinmichel@hessautomobile.com`,
-       voir plus bas). Un job GitHub Actions n'a pas accès à ce token local
-       — il faut soit le stocker en secret GitHub (risque : expiration/
-       révocation du refresh token, à surveiller), soit passer à un compte
-       de service Google avec délégation domaine (plus robuste, demande du
-       travail admin Google Workspace).
-    2. **Expéditeur des mails : boîte Gmail HESS dédiée**, toujours pas
-       créée (voir §9 point 1). Le connecteur Gmail utilisé pour tous les
-       envois de test de ce projet est lié à la session interactive
-       actuelle, pas accessible depuis un job cron GitHub Actions — il
-       faudra soit cette boîte dédiée avec des identifiants API stockés en
-       secret GitHub, soit un mécanisme équivalent.
+       (`~/.config/gws`, lié depuis le 2026-09-30 au compte
+       `rapport-quotidien@hessautomobile.com`, voir plus haut). Un job
+       GitHub Actions n'a pas accès à ce token local — il faut soit le
+       stocker en secret GitHub (risque : expiration/révocation du refresh
+       token, à surveiller), soit passer à un compte de service Google avec
+       délégation domaine (plus robuste, demande du travail admin Google
+       Workspace). **Toujours à trancher.**
+    2. **Expéditeur des mails : boîte Gmail HESS dédiée** — **fait
+       (2026-09-30)** : la boîte `rapport-quotidien@hessautomobile.com`
+       existe, l'IT lui a accordé le rôle IAM sur `controlegestion`, et un
+       premier envoi de test via l'API Gmail (`gws gmail users messages
+       send`, expéditeur « Rapport quotidien HESS ») a été reçu par Quentin.
+       L'envoi part directement de la boîte dédiée (pas d'alias
+       « Envoyer en tant que » sur un compte personnel). Reste le même
+       sujet qu'au point 1 : rendre ces identifiants utilisables depuis le
+       cron GitHub Actions.
   - **Commentaire IA natif** (pas de clé API Anthropic séparée à gérer), format
     **court et factuel (2-3 phrases)**.
   - **Principe de lisibilité et pertinence du mail (validé 2026-09-10, affiné
@@ -552,16 +563,12 @@ la première version) :
 
 ## 9. Questions ouvertes transverses
 
-1. **Création de la boîte Gmail HESS dédiée** — adresse actée
-   (2026-09-30) : **`rapport-quotidien@hessautomobile.com`**. Reste à
-   trancher : qui la crée (IT ?) et comment lui donner des identifiants
-   API utilisables depuis un job GitHub Actions (voir §3, décision
-   d'architecture du 2026-09-29) — demande envoyée à l'IT, voir
-   [`docs/mail_it_prerequisites.md`](mail_it_prerequisites.md). Les tests
-   de ce projet ont été envoyés depuis un compte Gmail connecté à une
-   session interactive en attendant, pas la boîte dédiée — ça ne
-   fonctionnera plus une fois le cron GitHub Actions en place, cette
-   session n'existera pas pour porter la connexion.
+1. ~~Création de la boîte Gmail HESS dédiée~~ **fait (2026-09-30)** —
+   **`rapport-quotidien@hessautomobile.com`** existe, rôle IAM accordé
+   par l'IT sur `controlegestion`, envoi de test via l'API Gmail réussi
+   (voir §3). Reste ouvert : rendre ses identifiants OAuth utilisables
+   depuis un job GitHub Actions (secret GitHub ou compte de service) —
+   même question que le point 1bis.
 1bis. **Identifiants `gws` pour GitHub Actions** (voir §3) — comment donner
    à un job cron l'accès en lecture aux Sheets sans dépendre du token OAuth
    local de la session actuelle ? Compte de service Google avec délégation
