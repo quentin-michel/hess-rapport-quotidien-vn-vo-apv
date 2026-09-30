@@ -1,0 +1,32 @@
+name: Test envoi mail (manuel)
+
+# Lancement manuel uniquement (onglet Actions > Run workflow).
+# Verifie que GitHub Actions peut lire les Sheets et envoyer un mail
+# depuis rapport-quotidien@hessautomobile.com sans aucun PC allume.
+on:
+  workflow_dispatch:
+    inputs:
+      destinataire:
+        description: "Adresse qui recoit le mail de test"
+        required: true
+        default: "quentinmichel@hessautomobile.com"
+
+permissions:
+  contents: read
+
+jobs:
+  test-envoi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Lecture Sheets + envoi du mail de test
+        env:
+          GWS_CLIENT_ID: ${{ secrets.GWS_CLIENT_ID }}
+          GWS_CLIENT_SECRET: ${{ secrets.GWS_CLIENT_SECRET }}
+          GWS_REFRESH_TOKEN: ${{ secrets.GWS_REFRESH_TOKEN }}
+          TEST_TO: ${{ inputs.destinataire }}
+        run: python .github/scripts/test_envoi.py
