@@ -12,9 +12,15 @@
 -- l'onglet GRID) SEULEMENT si le nombre total de colonnes change. Ici le
 -- compte reste identique (Famille_technique retiree, Nom_client ajoutee),
 -- donc "Code concession" reste a sa position habituelle.
+--
+-- Modifiee le 2026-09-25 : retire e.Magasin. Toutes les colonnes du connecteur
+-- ont glisse d'un cran vers la gauche (A..R), "Est à perte" (formule Sheet)
+-- est en S et "Code concession" reste en T. Les formules qui lisaient cet
+-- onglet par lettre ont du etre realignees (Analyse pièces client J-1 corrigee
+-- le 2026-10-02, cf. docs/sheets-formulas/analyse_pieces_j1.txt).
 
 SELECT
-  l.id_ligne, e.Regroupement_Concession_APV AS Concession, e.Magasin, e.Date_document,
+  l.id_ligne, e.Regroupement_Concession_APV AS Concession, e.Date_document,
   e.Numero_document, e.Avoir, e.Categorie_client, e.Nom_Magasinier,
   c.Nom_prenom AS Nom_client,
   l.Reference, l.Libelle_piece,
