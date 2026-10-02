@@ -86,6 +86,14 @@ rapport/
 
 `build/` (faits, mails, récapitulatif) n'est jamais commité : il contient des noms réels.
 
+**Essai du 2026-10-02 (run GitHub n°37009365804, déclenché par push sur la branche)** :
+26 onglets lus sans alerte, 5 mails composés par Claude et envoyés à Quentin et Corentin
+(rapport-quotidien@ en copie), récapitulatif reçu. Le contrôle des chiffres signalait
+surtout des faux positifs (cellules de tableau collées, durées « 90 jours »), corrigés ;
+restent signalés les calculs légitimes prévus par les cadrages (ex. stock total VN+VD
+de la rotation), à relire dans le récapitulatif. Prérequis découvert : le secret
+`CLAUDE_CODE_OAUTH_TOKEN` n'existait pas, créé le 2026-10-02 (`claude setup-token`).
+
 **Lancer à la main** : onglet Actions → « Rapport quotidien » → *Run workflow*, en
 choisissant les mails (`vn,vo,apv,directeur,plaque` par défaut). En local, pour la mise
 au point : `python -m rapport.collecte --mails vo --sortie build` puis

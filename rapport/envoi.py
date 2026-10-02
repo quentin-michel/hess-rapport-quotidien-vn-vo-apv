@@ -21,7 +21,10 @@ import sys
 from . import config
 from .sheets import envoyer_mail
 
-NOMBRE = re.compile(r"(?<![\w-])-?\d[\d   .]*(?:,\d+)?\s?%?(?![\w-])")
+# un nombre = chiffres, éventuellement groupés par 3 avec une espace (« 136 795,90 »)
+NOMBRE = re.compile(r"(?<![\w-])-?(?:\d{1,3}(?:[   ]\d{3})+|\d+)(?:[.,]\d+)?\s?%?(?![\w-])")
+# durées de référence écrites en toutes lettres dans les mails (« sur 90 jours », tranche 180-365 j)
+DUREES_STANDARD = {30, 60, 90, 180, 365}
 BALISE = re.compile(r"<[^>]+>")
 
 
@@ -60,15 +63,15 @@ def _proche(c, f):
 
 
 def nombres_non_retrouves(html_mail, vals):
-    texte = html.unescape(BALISE.sub(" ", re.sub(r"(?is)<(style|head).*?</\1>", " ", html_mail)))
+    texte = html.unescape(BALISE.sub(" | ", re.sub(r"(?is)<(style|head).*?</\1>", " ", html_mail)))
     texte = re.sub(r"\b\d{1,2}/\d{1,2}(/\d{2,4})?\b", " ", texte)  # dates
     absents = []
     for tok in NOMBRE.findall(texte):
         v, pct = _valeur(tok)
         if v is None or (not pct and float(v).is_integer() and abs(v) < 10):
             continue  # petits entiers (rangs, « 7 jours », « top 5 ») : trop ambigus
-        if 2020 <= v <= 2030 and not pct:
-            continue  # années
+        if not pct and (2020 <= v <= 2030 or v in DUREES_STANDARD):
+            continue  # années, durées de référence
         ok = any(_proche(c, f) for c in (v, -v) for f in vals)
         if pct and not ok:  # « 47 % » peut venir d'une fraction 0,47 dans les faits
             ok = any(abs(c - f) <= 0.0051 for c in (v / 100, -v / 100) for f in vals)
