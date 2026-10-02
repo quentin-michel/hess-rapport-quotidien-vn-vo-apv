@@ -27,7 +27,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 concurrency:
   group: rapport-quotidien
@@ -61,15 +60,16 @@ jobs:
           python -c "import json; p=json.load(open('build/plan.json')); print('a_traiter=' + ('oui' if p['mails'] or p['non_construits'] else 'non'))" >> "$GITHUB_OUTPUT"
 
       - name: 3-4. Synthèse et mise en page (Claude)
+        # Claude Code en ligne de commande (claude-code-action refuse certains
+        # déclencheurs, dont push). La sortie de Claude reste dans build/ : elle peut
+        # contenir des noms réels, elle n'est pas affichée dans le journal du run.
         if: steps.collecte.outputs.a_composer == 'oui'
-        uses: anthropics/claude-code-action@v1
-        with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          prompt: |
-            Lis le fichier rapport/consignes_composition.md et applique-le intégralement :
-            compose les mails listés dans build/plan.json à partir de build/faits/,
-            et écris les résultats dans build/mails/. Ne modifie aucun autre fichier.
-          claude_args: '--allowedTools "Read,Write,Glob,Grep" --max-turns 120'
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          npm install -g @anthropic-ai/claude-code > /dev/null 2>&1
+          claude -p "Lis le fichier rapport/consignes_composition.md et applique-le intégralement : compose les mails listés dans build/plan.json à partir de build/faits/, et écris les résultats dans build/mails/. Ne modifie aucun autre fichier."             --allowedTools "Read,Write,Glob,Grep" --max-turns 150 > build/claude_sortie.txt 2>&1 || { echo "Claude a terminé en erreur :"; tail -5 build/claude_sortie.txt; }
+          echo "Mails composés :"; ls -1 build/mails/ 2>/dev/null || echo "aucun"
 
       - name: 5-6. Envoi (test) et récapitulatif
         # always() : même si une étape précédente a échoué, on prévient Quentin et

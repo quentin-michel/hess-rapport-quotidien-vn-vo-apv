@@ -151,6 +151,7 @@ def main():
         open(os.path.join(args.sortie, "recap.html"), "w", encoding="utf-8").write(corps)
     else:
         envoyer_mail(config.ALERTES, objet_recap, corps)
+        print(f"OK  récapitulatif envoyé : {objet_recap}")
     if non_envoyes:
         sys.exit(1)  # le run apparaît en échec dans GitHub : notification native en plus du mail
 
