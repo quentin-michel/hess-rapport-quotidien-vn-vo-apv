@@ -14,6 +14,10 @@ on:
     - cron: "30 6 * * *"   # 7h30 heure d'hiver
     - cron: "45 9 * * *"   # 11h45 heure d'été
     - cron: "45 10 * * *"  # 11h45 heure d'hiver
+  # TEMPORAIRE (essai avant fusion) : un push sur la branche workflow-dijon lance les
+  # 5 mails en mode test. À retirer avant de fusionner dans main.
+  push:
+    branches: [workflow-dijon]
   workflow_dispatch:
     inputs:
       mails:
@@ -48,6 +52,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             python -m rapport.collecte --mails "${{ inputs.mails }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            python -m rapport.collecte --mails "vn,vo,apv,directeur,plaque"
           else
             python -m rapport.collecte --passage auto
           fi
