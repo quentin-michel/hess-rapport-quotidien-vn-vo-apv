@@ -1,0 +1,63 @@
+# Consignes de composition des mails (étape 3 du workflow)
+
+Tu es exécuté dans GitHub Actions, sans humain pour te répondre. Ta seule tâche :
+composer les mails HTML listés dans `build/plan.json` (clé `mails`), à partir des
+données déjà extraites et contrôlées. Ne modifie aucun autre fichier du dépôt.
+
+## Entrées
+
+- `build/plan.json` : liste des mails à composer, date attendue (J-1).
+- `build/faits/<mail>.json` : pour chaque mail, l'extrait des onglets utiles. Chaque
+  source contient `entetes` (les 2 premières lignes de l'onglet : lis les colonnes
+  **par leur nom**, jamais par position supposée) et `lignes` (uniquement les lignes du
+  périmètre). Une source sans ligne = rien pour ce périmètre ce jour-là.
+  `date_donnees` = date réelle des données (la plus ancienne trouvée).
+- La maquette du mail (`maquette` dans le fichier de faits) : modèle de structure, de
+  mise en page et de style. Reproduis sa structure et son HTML, avec les données du jour.
+- Les règles métier, à lire avant de composer :
+  - Toujours : `docs/CADRAGE.md` §3 (règles de rédaction de la synthèse) et §6 (HTML
+    « email-safe » : tableaux et styles en ligne uniquement, pas de flex/grid, pas de
+    variables CSS, pas de police web).
+  - Mail `vn` : `docs/CADRAGE_VN.md` §6 (maquette mail VN) et les blocs §1-5.
+  - Mail `vo` : `docs/CADRAGE_VO.md` §14 (format du mail), §15 (icône météo), blocs §3-11.
+  - Mail `apv` : `docs/CADRAGE_APV.md` §12 (formalisation du mail, icônes §12.6/§12.7)
+    et §14 (règle de l'effet de mix sur la marge PR interne).
+  - Mail `directeur` : `docs/CADRAGE.md` §7.
+  - Mail `plaque` : `docs/CADRAGE.md` §8. Au niveau Plaque, le bloc APV remonte des
+    compteurs de problèmes (encours, pièces à perte, forfaits, remises…), pas du CA ni
+    des objectifs.
+  - Dictionnaire des colonnes : `docs/DATA_MAP_VN.md`, `docs/DATA_MAP_VO.md`,
+    `docs/DATA_MAP_APV.md`.
+
+## Règles impératives
+
+1. **Aucun chiffre inventé.** Chaque nombre du mail doit venir des faits. Tu peux
+   arrondir, et faire les seuls calculs simples que les cadrages prévoient (somme,
+   ratio, total Plaque pondéré). Une donnée absente s'écrit « non disponible ». Un
+   contrôle automatique compare ensuite les nombres du mail aux faits et signale aux
+   porteurs du projet ceux qu'il ne retrouve pas.
+2. **Date des données dans l'en-tête** de chaque mail : « Données du JJ/MM/AAAA »,
+   à partir de `date_donnees` du fichier de faits (pas de la date du jour).
+3. **Noms réels** : les mails sont réels, n'anonymise rien (immatriculations, n° OR,
+   noms de clients ou de réceptionnaires tels qu'ils figurent dans les faits).
+4. **Blocs sans signal** : au niveau Service (vn, vo, apv), garder le bloc avec la
+   mention « Rien à signaler » en italique ; au niveau Directeur et Plaque, omettre
+   complètement le bloc (CADRAGE.md §7).
+5. **Signaler le positif comme le négatif** quand c'est significatif.
+6. **Icônes météo** : appliquer le barème du cadrage du service quand il existe
+   (APV §12.6/§12.7, VO §15). Ne jamais présenter un score comme calculé par le
+   Sheet s'il ne l'est pas.
+7. Synthèse courte et factuelle, dossiers concrets cités, pas de jargon interne
+   (noms d'onglets, codes de colonnes, « J-1 » en clair : « hier »).
+
+## Sorties (pour chaque mail de la liste)
+
+- `build/mails/<mail>.html` : document HTML complet, email-safe, prêt à envoyer.
+- `build/mails/<mail>.json` : `{"objet": "..."}` avec l'objet du mail :
+  - vn / vo / apv : `Rapport quotidien VN — Opel/Fiat Dijon — JJ/MM/AAAA` (VO, APV de même)
+  - directeur : `Synthèse du jour — Opel/Fiat Dijon — JJ/MM/AAAA`
+  - plaque : `Synthèse Plaque Fiat/Opel — JJ/MM/AAAA`
+  (JJ/MM/AAAA = date des données.)
+
+Si un mail ne peut vraiment pas être composé (faits incohérents ou vides), n'écris pas
+ses fichiers : l'étape d'envoi le signalera comme non envoyé.

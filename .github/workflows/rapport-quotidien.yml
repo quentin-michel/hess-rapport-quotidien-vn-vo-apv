@@ -1,0 +1,72 @@
+name: Rapport quotidien (Opel/Fiat Dijon — test)
+
+# Voir docs/WORKFLOW.md. Mode test uniquement : les mails partent vers Quentin et
+# Corentin, avec rapport-quotidien@ en copie. Le mode prod n'est pas construit.
+#
+# Deux passages par jour (heure de Paris) : ~7h30 (VN, VO) et ~11h45 (APV, Directeur,
+# Plaque). Le cron GitHub est en UTC et ignore le changement d'heure : chaque passage
+# est planifié sur ses deux horaires UTC possibles, et rapport.collecte ne garde que
+# celui qui tombe à la bonne heure de Paris (l'autre s'arrête sans rien faire).
+# Les déclencheurs planifiés ne s'activent qu'une fois ce fichier sur la branche main.
+on:
+  schedule:
+    - cron: "30 5 * * *"   # 7h30 heure d'été
+    - cron: "30 6 * * *"   # 7h30 heure d'hiver
+    - cron: "45 9 * * *"   # 11h45 heure d'été
+    - cron: "45 10 * * *"  # 11h45 heure d'hiver
+  workflow_dispatch:
+    inputs:
+      mails:
+        description: "Mails à générer (vn, vo, apv, directeur, plaque)"
+        required: true
+        default: "vn,vo,apv,directeur,plaque"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: rapport-quotidien
+  cancel-in-progress: false
+
+jobs:
+  rapport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GWS_CLIENT_ID: ${{ secrets.GWS_CLIENT_ID }}
+      GWS_CLIENT_SECRET: ${{ secrets.GWS_CLIENT_SECRET }}
+      GWS_REFRESH_TOKEN: ${{ secrets.GWS_REFRESH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 1-2. Contrôle et lecture des Sheets
+        id: collecte
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python -m rapport.collecte --mails "${{ inputs.mails }}"
+          else
+            python -m rapport.collecte --passage auto
+          fi
+          python -c "import json; p=json.load(open('build/plan.json')); print('a_composer=' + ('oui' if p['mails'] else 'non'))" >> "$GITHUB_OUTPUT"
+          python -c "import json; p=json.load(open('build/plan.json')); print('a_traiter=' + ('oui' if p['mails'] or p['non_construits'] else 'non'))" >> "$GITHUB_OUTPUT"
+
+      - name: 3-4. Synthèse et mise en page (Claude)
+        if: steps.collecte.outputs.a_composer == 'oui'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Lis le fichier rapport/consignes_composition.md et applique-le intégralement :
+            compose les mails listés dans build/plan.json à partir de build/faits/,
+            et écris les résultats dans build/mails/. Ne modifie aucun autre fichier.
+          claude_args: '--allowedTools "Read,Write,Glob,Grep" --max-turns 120'
+
+      - name: 5-6. Envoi (test) et récapitulatif
+        # always() : même si une étape précédente a échoué, on prévient Quentin et
+        # Corentin par mail (sauf hors créneau, où il n'y a rien à traiter)
+        if: always() && steps.collecte.outputs.a_traiter != 'non'
+        run: python -m rapport.envoi --mode test

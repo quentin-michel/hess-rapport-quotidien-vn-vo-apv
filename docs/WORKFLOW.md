@@ -18,11 +18,11 @@ Déclencheur : cron (planifié) ou lancement manuel
         │            (une entrée par concession × service, + Directeur et Plaque)
         │            onglet illisible / en-tête disparu → ce mail-là ne part pas (signalé dans l'alerte)
         ▼
-   3. SYNTHÈSE ── Claude rédige les commentaires (2-3 phrases) → syntheses.json
-        │            contrôle : chaque chiffre cité doit exister dans faits.json, sinon mail sans commentaire
-        ▼
-   4. MISE EN PAGE ─ gabarits HTML tirés des maquettes email-safe
+   3-4. SYNTHÈSE + MISE EN PAGE ── Claude compose chaque mail HTML complet à partir de
+        │            faits.json, de la maquette email-safe du mail et des règles des cadrages
         │            date réelle des données dans l'en-tête de chaque mail (« Données du 30/09 »)
+        │            contrôle : chaque nombre du mail est recherché dans faits.json ;
+        │            ceux qu'on ne retrouve pas sont listés dans le récapitulatif
         ▼
    5. ENVOI ───── API Gmail depuis rapport-quotidien@hessautomobile.com
         │            mode test → tout vers Quentin + Corentin
@@ -54,10 +54,16 @@ Déclencheur : cron (planifié) ou lancement manuel
 - **Contrôles de cohérence**, pas seulement de fraîcheur : un compteur doit être confronté
   à sa liste source (`Plaque APV!G` est resté à 0 sans que rien ne le signale, cf.
   `DATA_MAP_APV.md` §8 pt.7).
-- **Synthèse IA** via `anthropics/claude-code-action` (secret `CLAUDE_CODE_OAUTH_TOKEN`
-  déjà en place). Claude ne reçoit que `faits.json` et les règles de rédaction
-  (`CADRAGE.md` §3, règle effet de mix marge PR interne `CADRAGE_APV.md` §14,
-  compteurs plutôt que CA au niveau Plaque).
+- **Composition par Claude** via `anthropics/claude-code-action` (secret
+  `CLAUDE_CODE_OAUTH_TOKEN` déjà en place), avec les consignes de
+  `rapport/consignes_composition.md` : Claude lit `faits.json`, la maquette du mail et
+  les règles des cadrages (`CADRAGE.md` §3/§6/§7/§8, règle effet de mix
+  `CADRAGE_APV.md` §14, compteurs plutôt que CA au niveau Plaque), et écrit le HTML
+  complet. **Choix de la V1 (2026-10-02)** : Claude compose tout le mail plutôt que de
+  remplir des gabarits Python figés — c'est ce qui a produit les mails validés du
+  30/09, et les règles de sélection (top 5, omission de bloc, icônes) restent dans les
+  cadrages au lieu d'être recodées. Des gabarits déterministes pourront remplacer cette
+  étape bloc par bloc si le contrôle des chiffres signale trop d'écarts.
 - **Modes** : `test` (tout vers Quentin + Corentin, défaut du cron au début) et `prod`
   (vrais destinataires). Lancement manuel : choix du mode, du périmètre (concession,
   plaque) et de la date.
@@ -66,18 +72,24 @@ Déclencheur : cron (planifié) ou lancement manuel
 - **Échec d'un run** : la notification native de GitHub (mail automatique au propriétaire
   du workflow) sert de filet de sécurité si le workflow plante avant d'envoyer l'alerte.
 
-## 4. Organisation du dépôt
+## 4. Organisation du dépôt (construite le 2026-10-02, branche `workflow-dijon`)
 
 ```
-.github/workflows/rapport-quotidien.yml   ← cron + lancement manuel, les 6 étapes
+.github/workflows/rapport-quotidien.yml   ← cron (2 passages) + lancement manuel
 rapport/
-  lecture.py        ← lit les Sheets par en-tête, construit faits.json
-  controles.py      ← fraîcheur, erreurs #, cohérence → alertes
-  rendu.py          ← remplit les gabarits HTML (avec la date des données)
-  envoi.py          ← Gmail, modes, Cc rapport-quotidien@
-  gabarits/         ← vn.html, vo.html, apv.html, directeur.html, plaque.html
-  regles_ia.md      ← consignes de rédaction données à Claude
+  config.py                  ← sources (classeur/onglet), mails, périmètre Dijon, destinataires de test
+  sheets.py                  ← lecture Sheets + envoi Gmail (token GitHub ; en local : CLI gws, sans envoi)
+  collecte.py                ← étapes 1-2 : contrôles + extraits filtrés → build/faits/<mail>.json
+  consignes_composition.md   ← étapes 3-4 : consignes données à Claude
+  envoi.py                   ← étapes 5-6 : contrôle des chiffres, envoi test, récapitulatif
 ```
+
+`build/` (faits, mails, récapitulatif) n'est jamais commité : il contient des noms réels.
+
+**Lancer à la main** : onglet Actions → « Rapport quotidien » → *Run workflow*, en
+choisissant les mails (`vn,vo,apv,directeur,plaque` par défaut). En local, pour la mise
+au point : `python -m rapport.collecte --mails vo --sortie build` puis
+`python -m rapport.envoi --sec` (n'envoie rien).
 
 ## 5. Ordre de construction
 
