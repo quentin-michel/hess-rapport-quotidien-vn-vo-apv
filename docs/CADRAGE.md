@@ -11,6 +11,13 @@ de l'éditer en parallèle sans se marcher dessus :
 - [`CADRAGE_VO.md`](CADRAGE_VO.md) — Véhicules d'Occasion
 - [`CADRAGE_APV.md`](CADRAGE_APV.md) — Après-Vente
 
+Pour l'accès direct *classeur → onglet → colonne* (où lire chaque donnée du
+mail, sans refouiller les cadrages), une carte des données par service :
+
+- [`DATA_MAP_VN.md`](DATA_MAP_VN.md) — Véhicules Neufs
+- [`DATA_MAP_VO.md`](DATA_MAP_VO.md) — Véhicules d'Occasion
+- [`DATA_MAP_APV.md`](DATA_MAP_APV.md) — Après-Vente
+
 ## 1. Objectif
 
 Chaque matin, envoyer aux responsables de service **VN**, **VO** et **APV** de chaque
