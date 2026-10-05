@@ -49,6 +49,14 @@ données déjà extraites et contrôlées. Ne modifie aucun autre fichier du dé
    Sheet s'il ne l'est pas.
 7. Synthèse courte et factuelle, dossiers concrets cités, pas de jargon interne
    (noms d'onglets, codes de colonnes, « J-1 » en clair : « hier »).
+8. **Largeur du mail (décidé le 2026-10-05, prime sur la maquette)** : les maquettes ont
+   une largeur fixe de 600 à 660 px, trop étroite. Le tableau conteneur principal doit
+   être fluide jusqu'à 900 px : `<table role="presentation" width="100%" cellpadding="0"
+   cellspacing="0" style="width:100%;max-width:900px;margin:0 auto;">`, entouré pour
+   Outlook PC d'un tableau fixe en commentaire conditionnel
+   (`<!--[if mso]><table role="presentation" width="900" align="center"><tr><td><![endif]-->`
+   avant, `<!--[if mso]></td></tr></table><![endif]-->` après). Les tableaux internes
+   passent en `width="100%"` (pas de largeur fixe en pixels) pour profiter de la place.
 
 ## Sorties (pour chaque mail de la liste)
 
