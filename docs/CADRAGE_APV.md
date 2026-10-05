@@ -1021,7 +1021,7 @@ fort des deux** :
 | Malfaçons et gestes co. J-1 — 150 € à 500 € | 1 |
 | Malfaçons et gestes co. J-1 — 500 € à 1 500 € | 2 |
 | Malfaçons et gestes co. J-1 — au-delà de 1 500 € | 3 |
-| Malfaçons et gestes co. MTD > 3 % du CA MO (à partir du 10 du mois) | 1 |
+| Malfaçons et gestes co. MTD > 4 % du CA MO (à partir du 10 du mois) | 1 |
 | Malfaçons et gestes co. MTD > 7 % du CA MO (à partir du 10 du mois) | 2 |
 | Malfaçons et gestes co. MTD > 10 % du CA MO (à partir du 10 du mois) | 3 |
 
@@ -1329,7 +1329,8 @@ peu pour lister chaque OR dans le mail.
 
 **Barème météo Atelier** (§12.6, choix de Corentin : les deux mesures,
 **cumulées**) : points du montant J-1 (150-500 € = 1, 500-1 500 € = 2,
-> 1 500 € = 3) **+** points du % MTD (> 3 % = 1, > 7 % = 2, > 10 % = 3), soit
+> 1 500 € = 3) **+** points du % MTD (> 4 % = 1, > 7 % = 2, > 10 % = 3 ; premier palier relevé de 3 % à
+4 % par Corentin le 2026-10-05, juste au-dessus du P75 de 3,1 %), soit
 jusqu'à 6 pts. Contrairement aux paires dédoublonnées de §12.6 (on y garde le
 plus fort), Corentin a choisi d'additionner : la malfaçon du jour et
 l'accumulation du mois sont deux signaux distincts. Le % MTD ne compte **qu'à
