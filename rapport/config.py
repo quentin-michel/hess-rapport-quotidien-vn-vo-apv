@@ -74,6 +74,8 @@ SOURCES = {
                               onglet="Efficience OR CI trop élevé"),
     "apv_remises_elevees": dict(service="APV", classeur="1MtgVOe17uB4gjb88Dgx-AgRbp3SMr44Rr8kdw0qumYw",
                                 onglet="Taux remise MO/PR interne élevé"),
+    "apv_malfacons_j1": dict(service="APV", classeur="1MtgVOe17uB4gjb88Dgx-AgRbp3SMr44Rr8kdw0qumYw",
+                             onglet="Malfaçons J-1"),
     "apv_plaque": dict(service="APV", classeur="1MtgVOe17uB4gjb88Dgx-AgRbp3SMr44Rr8kdw0qumYw",
                        onglet="Plaque APV", fraicheur="cellule:B1"),
     "apv_forfaits_marge_faible": dict(service="APV", classeur="1T_BKjedX0yH7ENq4Z_88OWlGnBUu6RSez5ohLb0YscU",

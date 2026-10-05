@@ -20,8 +20,9 @@ données déjà extraites et contrôlées. Ne modifie aucun autre fichier du dé
     variables CSS, pas de police web).
   - Mail `vn` : `docs/CADRAGE_VN.md` §6 (maquette mail VN) et les blocs §1-5.
   - Mail `vo` : `docs/CADRAGE_VO.md` §14 (format du mail), §15 (icône météo), blocs §3-11.
-  - Mail `apv` : `docs/CADRAGE_APV.md` §12 (formalisation du mail, icônes §12.6/§12.7)
-    et §14 (règle de l'effet de mix sur la marge PR interne).
+  - Mail `apv` : `docs/CADRAGE_APV.md` §12 (formalisation du mail, icônes §12.6/§12.7),
+    §14 (règle de l'effet de mix sur la marge PR interne) et §15 (malfaçons et gestes
+    commerciaux : bloc du mail et points météo).
   - Mail `directeur` : `docs/CADRAGE.md` §7.
   - Mail `plaque` : `docs/CADRAGE.md` §8. Au niveau Plaque, le bloc APV remonte des
     compteurs de problèmes (encours, pièces à perte, forfaits, remises…), pas du CA ni

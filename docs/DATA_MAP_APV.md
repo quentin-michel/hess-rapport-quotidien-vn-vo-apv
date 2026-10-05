@@ -1,7 +1,7 @@
 # Carte des données APV — où trouver quoi
 
 **Statut : vivant, à tenir à jour à chaque fois qu'un onglet est renommé/déplacé.**
-Dernière mise à jour : 2026-10-02.
+Dernière mise à jour : 2026-10-05 (bloc malfaçons et gestes commerciaux).
 
 Ce document répond à une seule question : **pour générer le mail APV (niveau Service,
 Directeur ou Plaque), où va-t-on chercher chaque donnée ?** Il complète
@@ -26,7 +26,7 @@ l'en-tête réel avant d'écrire dans une colonne**, ne jamais supposer.
 
 | Donnée | Onglet | Colonnes clés | Notes |
 |---|---|---|---|
-| KPI CA/objectifs/efficience/productivité/encours + volume Magasin (1 ligne/concession) | `Analyse Globale` | A=Code plaque, B=Code concession canonique, **B1**=date de référence (A1 = libellé ; déplacée de C1 le 2026-10-02), ligne 1 à partir de C = bandeaux de blocs, ligne 2=en-têtes, ligne 3+=data. Détail des 63 colonnes (A→BK) en §2.1 | Toutes les formules SUMIFS/AVERAGEIFS pointent vers les onglets bruts ci-dessous. **Lire par nom d'en-tête, pas par lettre** (colonnes réagencées le 2026-10-02) |
+| KPI CA/objectifs/efficience/productivité/encours + volume Magasin (1 ligne/concession) | `Analyse Globale` | A=Code plaque, B=Code concession canonique, **B1**=date de référence (A1 = libellé ; déplacée de C1 le 2026-10-02), ligne 1 à partir de C = bandeaux de blocs, ligne 2=en-têtes, ligne 3+=data. Détail des 66 colonnes (A→BN) en §2.1 | Toutes les formules SUMIFS/AVERAGEIFS pointent vers les onglets bruts ci-dessous. **Lire par nom d'en-tête, pas par lettre** (colonnes réagencées le 2026-10-02, 3 colonnes malfaçons insérées le 2026-10-05) |
 | Top 5 encours les plus anciens par concession | `Encours prioritaires` | Code concession, N° OR, Immatriculation, Ancienneté (j), Montant MO/PR encours, Valeur totale OR, Dépréciation, Score | **Plafonné à 5/concession** — pas une liste exhaustive |
 | Ventes à perte pièces (J-1) | `Analyse pièces client J-1` (renommé, ex-"Analyse pièces J-1") | 22 colonnes (mise en page du 2026-10-02) : A=Canal (Atelier/Magasin), **B=Concession (nom)**, C=N° OR (n° de document côté Magasin), D=Date (format Date), G=Réceptionnaire/Nom_Magasinier ⚠️, J=Nom du client ⚠️, Q=Marge € (tri croissant), **U=Code concession**, **V=Plaque** | ⚠️ Données personnelles. Formule unique en A2 : `docs/sheets-formulas/analyse_pieces_j1.txt`. Était en `#VALUE!` jusqu'au 2026-10-02 (cf. §8 pt.6) |
 | Ventes à perte pièces Magasin, volume total (J-1) | `Détail facturation magasin journaliere` | Revalidé le 2026-10-02 : B=Concession (brut), C=Date_document, D=Numero_document, E=Avoir, F=Categorie_client, G=Nom_Magasinier ⚠️, H=Nom_client ⚠️, I=Reference, J=Libelle_piece, K=Qte_servie, L=Prix_unitaire_net, M=Prix_brut_ligne, N=Remise_ligne, O=Prix_net_ligne, P=PAMP, Q=Prix_force, R=Remise_forcee, **S**=Est à perte (formule Sheet), **T**=Code concession (formule Sheet, fixe) | ⚠️ Données personnelles. Requête : `docs/sql/magasin_detail_journalier.sql`. Champ `Magasin` retiré le 25/09 → tout a décalé d'1 colonne **sauf** S et T |
@@ -34,9 +34,11 @@ l'en-tête réel avant d'écrire dans une colonne**, ne jamais supposer.
 | CA PR externe (Magasin) J-1 / MTD | `Historique CA par Magasin` (extraction du connecteur `Historique CA Magasin`) | Concession, Date, CA_PR_Externe_Net_HT, Cout_PR_Externe, Code concession | Périmètre vérifié le 2026-10-02 (53/53 concessions à l'euro près) : **intersite exclu** (codes mouvement SIS/EIS = catégorie « Inter sites »), mais **intragroupe et cessions au service commercial inclus**. Requête du connecteur pas encore dans le dépôt |
 | OR en cession interne, efficience >105% | `Efficience OR CI trop élevé` | **2 tableaux côte à côte** : A:F (affichage %) et I:N (calcul décimal). A=Code concession, G=Plaque, C=Réceptionnaire ⚠️ | ⚠️ Ne pas confondre les deux tableaux ; Plaque en G, **pas** en O |
 | OR à taux de remise MO/PR interne élevé | `Taux remise MO/PR interne élevé` | A=Code concession, K=Plaque, C=Nom client ⚠️, D=Réceptionnaire ⚠️ | ⚠️ Données personnelles |
+| Malfaçons et gestes commerciaux du mois (1er du mois de J-1 → J-1) | `Malfaçons du mois` (extrait du connecteur BigQuery, sans onglet d'aperçu) | A=Concession, B=Date_document, C=Activite (Mécanique/Carrosserie), D=Fiche_imputee, E=Libelle_detail_intervention, F=Categorie_OR, G=Receptionnaire ⚠️, H=Nom_client ⚠️ (propriétaire), I=Immatriculation, J=Type_document (Facture/Avoir), K=Numero_OR_DMS, L=Numero_document, M=Montant_MO, N=Montant_PR, O=Montant_autres, P=Montant_total, **Q=Code concession** (formule Sheet, tirée jusqu'à la ligne 2000) | Requête : `docs/sql/malfacons_gestes_commerciaux.sql` (10 fiches de cession interne, définition `CADRAGE_APV.md` §15). Montants nets HT (`Prix_vente_net`, avoirs déduits). 1 ligne = 1 OR × fiche × date × document. Retirer un champ de la requête décale Q (cf. §8 pt.6) |
+| Malfaçons et gestes commerciaux du jour (J-1) | `Malfaçons J-1` | Mêmes 17 colonnes A:Q que `Malfaçons du mois` + **R=Plaque**. Formules : `docs/sheets-formulas/malfacons.txt` (A1 en-têtes, A2 `SORT(FILTER(...))` sur la date `Analyse Globale!B1`, tri par montant décroissant ; R2 via `Concession-plaques`) | ⚠️ Données personnelles. Vide sous l'en-tête un jour sans malfaçon |
 | Seuils métier (productivité basse, encours surveillance/alerte/critique) | `Référentiel métier` | `$B$11` (productivité), `$B$15/16/17` (encours) | |
 
-### 2.1 `Analyse Globale` — colonnes (réagencées le 2026-10-02)
+### 2.1 `Analyse Globale` — colonnes (réagencées le 2026-10-02, malfaçons ajoutées le 2026-10-05)
 
 Rangées par activité (Atelier puis Magasin), puis par indicateur : chaque
 indicateur regroupe J-1, moyenne mobile, écart, alerte, MTD, objectif et mix
@@ -45,19 +47,25 @@ par canal. Bandeaux de blocs en ligne 1 (repris tels quels ci-dessous).
 | Colonnes | Bandeau ligne 1 | Contenu |
 |---|---|---|
 | A-B | — | Code plaque, Code concession canonique |
-| C-J | ATELIER - CA MO J-1 | C Nb OR clôturés J-1, D CA MO J-1, E moy. mobile 4 sem., F écart %, G **Alerte écart CA**, H-J % CA MO CLIENT/GARANTIE/CESSION J-1 |
-| K-P | ATELIER - CA MO MTD | K CA MO MTD, L-N % CA MO CLIENT/GARANTIE/CESSION MTD, O objectif MO mensuel, P % réalisation |
-| Q-AA | ATELIER - CA & Marge PR Interne J-1 | Q CA PR interne J-1, R moy. mobile, S écart %, T-V % CA PR interne CLIENT/GARANTIE/CESSION J-1, W coût, X marge, Y taux marge J-1, Z marge attendue (mix), AA écart vs mix |
-| AB-AG | ATELIER - CA & Marge PR Interne MTD | AB CA PR interne MTD, AC-AE % CLIENT/GARANTIE/CESSION MTD, AF objectif PR interne mensuel, AG % réalisation |
-| AH-AN | ATELIER - Prod/Efficience | AH productivité J-1, AI moy. mobile, AJ écart %, AK **Alerte productivité basse**, AL efficience J-1, AM moy. mobile, AN efficience cessions internes MTD |
-| AO-AY | ATELIER - Encours | AO nb OR en cours, AP valeur, AQ-AS vieux encours 90-180j/180-365j/+365j (nb), AT-AV idem (valeur), AW dépréciation, AX encours en j de CA, AY **Alerte encours** |
-| AZ-BG | MAGASIN | AZ CA PR externe J-1, BA moy. mobile, BB coût, BC marge, BD taux marge J-1, BE CA PR externe MTD, BF objectif, BG % réalisation |
-| BH-BI | *(sous le bandeau MAGASIN)* | BH nb pièces magasin vendues J-1, BI % vendues à perte J-1 |
-| BJ-BK | *(sous le bandeau MAGASIN, mais données Atelier)* | BJ nb pièces atelier client vendues hors forfaits (Quantité>0), BK % vendues à perte (format %) |
+| C-K | ATELIER - CA MO J-1 | C Nb OR clôturés J-1, D CA MO J-1, E moy. mobile 4 sem., F écart %, G **Alerte écart CA**, H-J % CA MO CLIENT/GARANTIE/CESSION J-1, **K Malfaçons J-1** (€) |
+| L-S | ATELIER - CA MO MTD | L CA MO MTD, M-O % CA MO CLIENT/GARANTIE/CESSION MTD, P objectif MO mensuel, Q % réalisation, **R Malfaçons MTD** (€), **S % Malfaçons MTD** (= R/L, coût total malfaçons rapporté au seul CA MO) |
+| T-AD | ATELIER - CA & Marge PR Interne J-1 | T CA PR interne J-1, U moy. mobile, V écart %, W-Y % CA PR interne CLIENT/GARANTIE/CESSION J-1, Z coût, AA marge, AB taux marge J-1, AC marge attendue (mix), AD écart vs mix |
+| AE-AJ | ATELIER - CA & Marge PR Interne MTD | AE CA PR interne MTD, AF-AH % CLIENT/GARANTIE/CESSION MTD, AI objectif PR interne mensuel, AJ % réalisation |
+| AK-AQ | ATELIER - Prod/Efficience | AK productivité J-1, AL moy. mobile, AM écart %, AN **Alerte productivité basse**, AO efficience J-1, AP moy. mobile, AQ efficience cessions internes MTD |
+| AR-BB | ATELIER - Encours | AR nb OR en cours, AS valeur, AT-AV vieux encours 90-180j/180-365j/+365j (nb), AW-AY idem (valeur), AZ dépréciation, BA encours en j de CA, BB **Alerte encours** |
+| BC-BJ | MAGASIN | BC CA PR externe J-1, BD moy. mobile, BE coût, BF marge, BG taux marge J-1, BH CA PR externe MTD, BI objectif, BJ % réalisation |
+| BK-BL | *(sous le bandeau MAGASIN)* | BK nb pièces magasin vendues J-1, BL % vendues à perte J-1 |
+| BM-BN | *(sous le bandeau MAGASIN, mais données Atelier)* | BM nb pièces atelier client vendues hors forfaits (Quantité>0), BN % vendues à perte (format %) |
 
-Contrôles de cohérence passés le 2026-10-02 sur les 67 concessions (P=K/O,
-AG=AB/AF, BG=BE/BF, F=D/E-1, S=Q/R-1, AJ=AH/AI-1, X=Q-W, Y=X/Q, AA=Y-Z,
-BC=AZ-BB, BD=BC/AZ) : 0 incohérence. Seule anomalie de données :
+Colonnes malfaçons (2026-10-05) : K = `SUMIFS` de `Malfaçons du mois!P` par code
+concession (Q) à la date B1 ; R = même somme du 1er du mois à B1 ; S = R/L.
+Formules exactes : `docs/sheets-formulas/malfacons.txt`. Vérifié le 2026-10-05 sur
+OPELFIAT_DIJON : K = 0 € (dimanche 04/10), R = 2 507,91 € (2 OR du 01/10), S = 57,9 %
+(début de mois : ratio très volatil, cf. `CADRAGE_APV.md` §15).
+
+Contrôles de cohérence passés le 2026-10-02 sur les 67 concessions (lettres
+actuelles, après l'insertion du 2026-10-05 : Q=L/P, AJ=AE/AI, BJ=BH/BI, F=D/E-1,
+V=T/U-1, AM=AK/AL-1, AA=T-Z, AB=AA/T, AD=AB-AC, BF=BC-BE, BG=BF/BC) : 0 incohérence. Seule anomalie de données :
 FIAT_MULHOUSE, mix MO/PR ≠ 100 % (lignes à `Affectation` = `0`/`NC`/`1`).
 
 ## 3. Transco concession/plaque — `Rapport quotidien APV`
@@ -132,7 +140,8 @@ tout commit git ou brouillon partagé) :
 - `Rapport quotidien APV` : `Analyse pièces client J-1` (Nom du client, Réceptionnaire),
   `Détail facturation magasin journaliere` (Nom_client, Nom_Magasinier),
   `Efficience OR CI trop élevé` (Réceptionnaire/Mécanicien), `Taux remise MO/PR interne
-  élevé` (Nom client, Réceptionnaire)
+  élevé` (Nom client, Réceptionnaire), `Malfaçons du mois` et `Malfaçons J-1`
+  (Nom_client, Receptionnaire, Immatriculation)
 - `Anomalies forfaits` : `Extrait J-1 - Marges<10%` (Nom_client, Receptionnaire)
 - `Prix/Remises forcés` : `Prix/Remises forcés` (nom_client, receptionnaire),
   `Contact` (Nom complet, Email)

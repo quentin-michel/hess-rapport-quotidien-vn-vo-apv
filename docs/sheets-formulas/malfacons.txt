@@ -1,0 +1,42 @@
+Formules du bloc "Malfaçons et gestes commerciaux" (Sheet "Rapport quotidien APV"),
+ajoute le 2026-10-05 - voir CADRAGE_APV.md pour la definition (10 fiches de cession
+interne) et docs/sql/malfacons_gestes_commerciaux.sql pour la requete.
+
+Source : onglet 'Malfaçons du mois' = extrait du connecteur BigQuery (16 colonnes
+A:P, du 1er du mois de J-1 jusqu'a J-1) + Q = Code concession (formule) :
+  A=Concession, B=Date_document, C=Activite, D=Fiche_imputee,
+  E=Libelle_detail_intervention, F=Categorie_OR, G=Receptionnaire, H=Nom_client,
+  I=Immatriculation, J=Type_document, K=Numero_OR_DMS, L=Numero_document,
+  M=Montant_MO, N=Montant_PR, O=Montant_autres, P=Montant_total, Q=Code concession
+  Q2 (tiree jusqu'a la ligne 2000) :
+  =IFERROR(VLOOKUP($A2; 'Mapping concession'!$C:$D; 2; FALSE); "")
+
+
+1) Onglet 'Malfaçons J-1' (detail du jour, trie du plus gros montant au plus petit)
+-----------------------------------------------------------------------------------
+A1 : =ARRAYFORMULA('Malfaçons du mois'!A1:Q1)
+R1 : Plaque   (saisi en dur)
+A2 : =IFERROR(SORT(FILTER('Malfaçons du mois'!A2:Q; 'Malfaçons du mois'!B2:B='Analyse Globale'!$B$1); 16; FALSE); "")
+R2 : =ARRAYFORMULA(IF(Q2:Q=""; ""; IFERROR(VLOOKUP(Q2:Q; 'Concession-plaques'!$A:$C; 3; FALSE); "")))
+
+Un jour sans malfacon, l'onglet est vide sous l'en-tete (meme principe que
+'Analyse pièces client J-1'). La date de reference est celle d'Analyse Globale
+(B1), pour que le detail et les montants restent alignes.
+
+
+2) Onglet 'Analyse Globale' - 3 colonnes inserees par Corentin le 2026-10-05
+----------------------------------------------------------------------------
+K = Malfaçons J-1 (fin du bloc "ATELIER - CA MO J-1")
+R = Malfaçons MTD et S = % Malfaçons MTD / CA MO MTD (fin du bloc
+"ATELIER - CA MO MTD") ; toutes les colonnes suivantes ont glisse vers la droite.
+Ligne 3, a tirer sur toutes les lignes de concession :
+
+K3 : =SUMIFS('Malfaçons du mois'!$P:$P; 'Malfaçons du mois'!$Q:$Q; $B3; 'Malfaçons du mois'!$B:$B; $B$1)
+R3 : =SUMIFS('Malfaçons du mois'!$P:$P; 'Malfaçons du mois'!$Q:$Q; $B3; 'Malfaçons du mois'!$B:$B; ">="&DATE(YEAR($B$1);MONTH($B$1);1); 'Malfaçons du mois'!$B:$B; "<="&$B$1)
+S3 : =IFERROR(R3/L3; "")      (L = CA MO Net HT MTD)
+
+Montants nets (avoirs deduits), en Prix_vente_net HT, MO + PR + autres. Le ratio
+rapporte ce cout total au seul CA MO du mois (choix de Corentin), cessions incluses
+dans le CA MO. Le 1er du mois, le connecteur renvoie tout le mois precedent et
+B1 = dernier jour de ce mois : le MTD reste coherent.
+Le rapport lit ces colonnes par leur nom d'en-tete, pas par lettre.

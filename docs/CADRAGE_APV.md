@@ -1018,11 +1018,18 @@ fort des deux** :
 | Forfaits — marge négative au-delà de -500€ | 3 |
 | Écart marge PR interne vs mix — bas (-10 à -5 pts) | 1 |
 | Écart marge PR interne vs mix — trop bas (< -10 pts) | 2 |
+| Malfaçons et gestes co. J-1 — 150 € à 500 € | 1 |
+| Malfaçons et gestes co. J-1 — 500 € à 1 500 € | 2 |
+| Malfaçons et gestes co. J-1 — au-delà de 1 500 € | 3 |
+| Malfaçons et gestes co. MTD > 3 % du CA MO (à partir du 10 du mois) | 1 |
+| Malfaçons et gestes co. MTD > 7 % du CA MO (à partir du 10 du mois) | 2 |
+| Malfaçons et gestes co. MTD > 10 % du CA MO (à partir du 10 du mois) | 3 |
 
 Score → icône (paliers élargis 2026-09-28, même raison — passer de Soleil à
 Nuage sur un seul signal mineur isolé jugé trop dur) : **0-1 = ☀️ Soleil**,
 **2-4 = ☁️ Nuage**, **5-8 = 🌧️ Pluie**, **9+ = ⛈️ Orage**. Max théorique du
-barème ≈ 18 points (tous les signaux déclenchés à leur palier le plus haut,
+barème ≈ 24 points depuis l'ajout des malfaçons (2026-10-05, jusqu'à 3 pts
+J-1 + 3 pts MTD cumulés, §15 ; ≈ 18 avant) (tous les signaux déclenchés à leur palier le plus haut,
 paire CA dédoublonnée) — l'Orage demande donc un vrai cumul de plusieurs
 problèmes distincts (ex. Encours critique 4 + Efficience globale trop bas 3
 + un troisième signal), pas un aléa isolé.
@@ -1275,3 +1282,70 @@ d'alerte — si la part GARANTIE/CESSION est nettement au-dessus de sa
 normale ce jour-là, c'est un effet de mix (rien d'anormal en soi, à
 nuancer dans le texte), pas forcément une dérive de tarification côté
 CLIENT. Ne pas commenter une marge blend brute sans ce contexte.
+
+## 15. Malfaçons et gestes commerciaux (2026-10-05)
+
+**Demande de Corentin** : sujet oublié jusque-là, à envoyer chaque jour. Le coût
+de non-qualité de l'atelier = lignes de **cession interne** (`Affectation =
+'CESSION'`) imputées sur l'une des **10 fiches** cochées dans son filtre Tableau
+`Fiche_imputee` (CI Service = ATELIER) :
+
+- `CI MALFACON CARR` / `CI MALFACON MECA`
+- `CI GESTE COMMERCIAL CARR` / `CI GESTE COMMERCIAL MECA`
+- `CI REPARATION A CHARGE DE L'ATELIER CARR` / `... MECA`
+- `CI TEMPS PASSE NON FACTURE` / `CI TEMPS PASSE NON FACTURE CARR`
+- `CI OPERATION SPECIALES APV` / `CI OPERATIONS SPECIALES APV CARR`
+
+Même liste que la recette R7 du skill `hess-apv-facturation-bigquery`, validée
+au centime contre Tableau (mai 2026 = 89 758,02 €, retrouvé avec la requête du
+projet). **Ne pas élargir** aux variantes `MAG`, `FG`, `VN`, `VO`, `VD` (gestes
+commerciaux magasin/commerce, hors définition, environ +30 %). Montants nets HT
+(`Prix_vente_net`, avoirs déduits), MO + PR + autres.
+
+**Chaîne de données** (détail colonne par colonne : `DATA_MAP_APV.md` §2/§2.1) :
+- requête `docs/sql/malfacons_gestes_commerciaux.sql` → connecteur BigQuery →
+  extrait `Malfaçons du mois` (du 1er du mois de J-1 à J-1) + `Code concession` ;
+- onglet `Malfaçons J-1` : détail du jour (date `Analyse Globale!B1`) + Plaque ;
+- `Analyse Globale` : K `Malfaçons J-1`, R `Malfaçons MTD`, S `% Malfaçons MTD`
+  (= R / CA MO MTD — coût total rapporté au seul CA MO, choix de Corentin).
+  Formules : `docs/sheets-formulas/malfacons.txt`.
+
+Colonnes de la requête retenues par Corentin : immatriculation, fiche imputée et
+libellé d'intervention (texte libre de l'atelier, plusieurs interventions d'un
+même OR regroupées avec « | ») ajoutés ; n° OR technique, type, marque et coût
+PR retirés — seul le n° OR DMS est gardé.
+
+**Volume** (septembre 2026) : Opel/Fiat Dijon ≈ 1 à 3 OR les jours où il y en a
+(Fiat Dijon 26 OR / 4 916 €, Opel Dijon 10 OR / 1 585 € sur le mois) — assez
+peu pour lister chaque OR dans le mail.
+
+**Calibration** (BigQuery, avril → septembre 2026, concession × jour avec CA MO
+> 500 €, 7 956 jours) :
+- jour : 31 % des jours ont au moins une malfaçon ; montant J-1 P90 = 163 €,
+  P95 = 359 €, P99 = 1 364 € (jours avec malfaçon seuls : P50 = 69 €,
+  P90 = 539 €) ;
+- mois complet (326 concession × mois, CA MO > 20 k€) : malfaçons / CA MO
+  P50 = 1,5 %, P75 = 3,1 %, P90 = 7,1 %, P95 = 9,9 %.
+
+**Barème météo Atelier** (§12.6, choix de Corentin : les deux mesures,
+**cumulées**) : points du montant J-1 (150-500 € = 1, 500-1 500 € = 2,
+> 1 500 € = 3) **+** points du % MTD (> 3 % = 1, > 7 % = 2, > 10 % = 3), soit
+jusqu'à 6 pts. Contrairement aux paires dédoublonnées de §12.6 (on y garde le
+plus fort), Corentin a choisi d'additionner : la malfaçon du jour et
+l'accumulation du mois sont deux signaux distincts. Le % MTD ne compte **qu'à
+partir du 10 du mois** (jour de `Analyse Globale!B1`) : avant, un seul gros
+dossier sur quelques jours de CA fait exploser le ratio (Opel/Fiat Dijon au
+04/10 : 2 507,91 € / 4 332,39 € = 57,9 %) ; du 1er au 9, seul le montant J-1
+compte.
+
+**Dans le mail APV (Service)** : bloc Atelier « Malfaçons et gestes
+commerciaux » — détail de tous les OR d'hier (n° OR DMS, immatriculation,
+fiche, libellé d'intervention raccourci si besoin, réceptionnaire, client,
+montant), puis le cumul du mois et son % du CA MO (avec la réserve de début de
+mois). Liste complète, sans plancher en € (même principe que §12.4). Jour sans
+cas : « Rien à signaler ».
+
+**À trancher** : au niveau Directeur/Plaque, compteur (nombre d'OR) seul ou
+montant aussi — la règle générale est « compteurs plutôt que CA » (§12, mémoire
+Plaque). `Plaque APV` n'a pas encore de colonne malfaçons.
+
