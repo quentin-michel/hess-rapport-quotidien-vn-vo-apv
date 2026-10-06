@@ -75,7 +75,8 @@ durable), puis cocher le point ici.
 
 ## APV — `rapport/regles/apv.md` (Corentin)
 
-- [ ] **Signaux du barème Atelier sans colonne actuelle dans `Analyse Globale`** :
+- [x] **Signaux du barème Atelier sans colonne actuelle dans `Analyse Globale`** — réglé le
+  2026-10-06 : colonnes ajoutées par Corentin (`DATA_MAP_APV.md` §2.1), fiche mise à jour :
   - efficience cession interne J-1 sur la journée entière (ancienne AX) —
     *provisoire : 0 pt* ;
   - alerte écart CA PR interne (ancienne AY) — *provisoire : écart % PR interne (V)
@@ -84,9 +85,10 @@ durable), puis cocher le point ici.
     < −30 %* ;
   - valeur des pièces magasin vendues à perte J-1 (ancienne AZ) — *provisoire : somme
     des marges négatives des lignes Magasin de la liste des ventes à perte.*
-- [ ] **Paliers « pièces à perte 100-250 € » et « forfaits −50 à −200 € »** : par ligne ou
-  total du jour ? *Provisoire : total du jour.*
-- [ ] **Unité de l'écart marge PR interne vs mix (AD)** : fraction ou points ?
+- [x] **Paliers « pièces à perte 100-250 € » et « forfaits −50 à −200 € »** : **total du
+  jour** (Corentin, 2026-10-06).
+- [x] **Unité de l'écart marge PR interne vs mix** (AE) : affiché en %, « −6 % » = −6 points
+  (vérifié le 2026-10-06).
 - [ ] **Encours sous 20 j de CA** : §12.3 dit « Rien à signaler », le mail du 30/09
   montrait quand même le top 5. *Provisoire : §12.3.*
 - [ ] **Maquette APV à aligner sur la fiche** : n° OR cité dans la synthèse, ventes à perte

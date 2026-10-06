@@ -97,12 +97,12 @@ commerciaux en **montant** (hier, cumul du mois) et en **% du CA MO du mois**.
 
 | Colonne mail | Par concession | Total Plaque (`Plaque APV`) |
 |---|---|---|
-| Effic. | `Analyse Globale` « Efficience J-1 » (AO) | « Efficience J-1 » (B) |
-| Prod. | « Productivité J-1 » (AK) | « Productivité J-1 » (C) |
+| Effic. | `Analyse Globale` « Efficience J-1 » (AP) | « Efficience J-1 » (B) |
+| Prod. | « Productivité J-1 » (AL) | « Productivité J-1 » (C) |
 | Pièces- | nb lignes `apv_pieces_a_perte` (Atelier + Magasin) par « Code concession » | « Pièces client en marge négative » (G) |
 | Forf.- | nb lignes `apv_forfaits_marge_faible` par « Code concession » | « Forfaits marge <10% » (H) |
-| Enc.+90j | Σ des 3 tranches de vieux encours en nombre (90-180 j, 180-365 j, +365 j ; AT-AV) | « Encours +90j » (E) |
-| Enc. jCA | « Encours en j de CA » (BA) + « Alerte encours » (BB) | « Encours en j de CA » (F) |
+| Enc.+90j | Σ des 3 tranches de vieux encours en nombre (90-180 j, 180-365 j, +365 j ; AV-AX) | « Encours +90j » (E) |
+| Enc. jCA | « Encours en j de CA » (BC) + « Alerte encours » (BD) | « Encours en j de CA » (F) |
 | Malf. hier | « Malfaçons J-1 » (K, €) | « Malfaçons J-1 » (K) |
 | Malf. mois | « Malfaçons MTD » (R, €) | « Malfaçons MTD » (L) |
 | % CA MO | « % Malfaçons MTD » (S) | « % Malfaçons MTD » (M, pondéré) |

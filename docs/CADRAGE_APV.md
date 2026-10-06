@@ -1025,6 +1025,14 @@ fort des deux** :
 | Malfaçons et gestes co. MTD > 7 % du CA MO (à partir du 10 du mois) | 2 |
 | Malfaçons et gestes co. MTD > 10 % du CA MO (à partir du 10 du mois) | 3 |
 
+**Mise en œuvre (2026-10-06)** : les colonnes de signaux prévues ci-dessous n'avaient
+jamais été collées ; elles existent désormais dans `Analyse Globale` sous leur nom
+(`Alerte écart CA PR interne`, `Efficience cessions internes J-1`, `Alerte écart CA PR
+externe`, `Valeur pièces atelier/magasin à perte J-1` — lettres actuelles :
+`DATA_MAP_APV.md` §2.1 ; les lettres citées plus bas dans cette section sont obsolètes).
+**Paliers en € (pièces à perte, forfaits) = total de la journée**, pas ligne par ligne
+(décision de Corentin, 2026-10-06).
+
 Score → icône (paliers élargis 2026-09-28, même raison — passer de Soleil à
 Nuage sur un seul signal mineur isolé jugé trop dur) : **0-1 = ☀️ Soleil**,
 **2-4 = ☁️ Nuage**, **5-8 = 🌧️ Pluie**, **9+ = ⛈️ Orage**. Max théorique du
