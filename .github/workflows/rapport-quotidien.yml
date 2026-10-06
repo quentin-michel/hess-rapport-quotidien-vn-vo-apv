@@ -1,7 +1,11 @@
-name: Rapport quotidien (Opel/Fiat Dijon — test)
+name: Rapport quotidien (test)
 
 # Voir docs/WORKFLOW.md. Mode test uniquement : les mails partent vers Quentin et
-# Corentin, avec rapport-quotidien@ en copie. Le mode prod n'est pas construit.
+# Corentin. Le mode prod n'est pas construit.
+#
+# Périmètre : une plaque et ses concessions. Les passages planifiés utilisent
+# config.PERIMETRE_CRON ; un lancement manuel choisit la plaque et les concessions.
+# C'est le même code dans les deux cas : le déploiement se fera plaque par plaque.
 #
 # Deux passages par jour (heure de Paris) : ~7h30 (VN, VO) et ~11h45 (APV, Directeur,
 # Plaque). Le cron GitHub est en UTC et ignore le changement d'heure : chaque passage
@@ -24,6 +28,14 @@ on:
         description: "Mails à générer (vn, vo, apv, directeur, plaque)"
         required: true
         default: "vn,vo,apv,directeur,plaque"
+      plaque:
+        description: "Code plaque (vide = périmètre des passages planifiés)"
+        required: false
+        default: ""
+      concessions:
+        description: "« toutes » ou codes concession séparés par des virgules (vide = toutes si une plaque est choisie)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -35,7 +47,7 @@ concurrency:
 jobs:
   rapport:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
     env:
       GWS_CLIENT_ID: ${{ secrets.GWS_CLIENT_ID }}
       GWS_CLIENT_SECRET: ${{ secrets.GWS_CLIENT_SECRET }}
@@ -50,7 +62,7 @@ jobs:
         id: collecte
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            python -m rapport.collecte --mails "${{ inputs.mails }}"
+            python -m rapport.collecte --mails "${{ inputs.mails }}" --plaque "${{ inputs.plaque }}" --concessions "${{ inputs.concessions }}"
           elif [ "${{ github.event_name }}" = "push" ]; then
             python -m rapport.collecte --mails "vn,vo,apv,directeur,plaque"
           else
@@ -61,15 +73,24 @@ jobs:
 
       - name: 3-4. Synthèse et mise en page (Claude)
         # Claude Code en ligne de commande (claude-code-action refuse certains
-        # déclencheurs, dont push). La sortie de Claude reste dans build/ : elle peut
-        # contenir des noms réels, elle n'est pas affichée dans le journal du run.
+        # déclencheurs, dont push). Un appel par mail (une plaque = jusqu'à ~30 mails),
+        # 4 en parallèle. La sortie de Claude reste dans build/ : elle peut contenir
+        # des noms réels, elle n'est pas affichée dans le journal du run.
         if: steps.collecte.outputs.a_composer == 'oui'
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
           npm install -g @anthropic-ai/claude-code > /dev/null 2>&1
-          claude -p "Lis le fichier rapport/consignes_composition.md et applique-le intégralement : compose les mails listés dans build/plan.json à partir de build/faits/, et écris les résultats dans build/mails/. Ne modifie aucun autre fichier."             --allowedTools "Read,Write,Glob,Grep" --max-turns 150 > build/claude_sortie.txt 2>&1 || { echo "Claude a terminé en erreur :"; tail -5 build/claude_sortie.txt; }
-          echo "Mails composés :"; ls -1 build/mails/ 2>/dev/null || echo "aucun"
+          mkdir -p build/mails build/claude
+          python -c "import json; print('\n'.join(json.load(open('build/plan.json'))['mails']))" > build/a_composer.txt
+          composer() {
+            claude -p "Lis le fichier rapport/consignes_composition.md et applique-le intégralement pour composer uniquement le mail $1 (faits : build/faits/$1.json). Écris le résultat dans build/mails/. Ne modifie aucun autre fichier." \
+              --allowedTools "Read,Write,Glob,Grep" --max-turns 60 > "build/claude/$1.txt" 2>&1 \
+              || echo "Claude a terminé en erreur sur $1"
+          }
+          export -f composer
+          xargs -P 4 -I{} bash -c 'composer "$1"' _ {} < build/a_composer.txt
+          echo "Mails composés : $(ls -1 build/mails/*.html 2>/dev/null | wc -l) sur $(wc -l < build/a_composer.txt)"
 
       - name: 5-6. Envoi (test) et récapitulatif
         # always() : même si une étape précédente a échoué, on prévient Quentin et

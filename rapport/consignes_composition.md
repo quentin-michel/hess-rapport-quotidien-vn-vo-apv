@@ -1,13 +1,21 @@
 # Consignes de composition des mails (étape 3 du workflow)
 
 Tu es exécuté dans GitHub Actions, sans humain pour te répondre. Ta seule tâche :
-composer les mails HTML listés dans `build/plan.json` (clé `mails`), à partir des
-données déjà extraites et contrôlées. Ne modifie aucun autre fichier du dépôt.
+composer **le mail dont l'identifiant t'est donné dans la commande** (un seul mail par
+appel ; si aucun identifiant n'est donné, compose tous ceux de `build/plan.json`, clé
+`mails`), à partir des données déjà extraites et contrôlées. Ne modifie aucun autre
+fichier du dépôt.
 
 ## Entrées
 
-- `build/plan.json` : liste des mails à composer, date attendue (J-1).
-- `build/faits/<mail>.json` : pour chaque mail, l'extrait des onglets utiles. Chaque
+- Identifiant d'un mail : `<type>__<code>`, ex. `apv__HYU_COLMAR` (un mail par
+  concession pour vn, vo, apv, directeur) ou `plaque__PLQ_HYUNDAI` (un mail par plaque).
+- `build/plan.json` : liste des mails à composer, date attendue (J-1), périmètre.
+- `build/faits/<identifiant>.json` : l'extrait des onglets utiles au mail. Champs de
+  contexte : `type` (vn, vo, apv, directeur ou plaque — c'est lui qui fixe les règles
+  ci-dessous), `concession` et `nom_concession` (mails de concession), `plaque`,
+  `nom_plaque`, `concessions_plaque` (mail plaque : code → nom). Les noms viennent du
+  Référentiel : utilise-les tels quels dans le mail, n'en invente pas. Chaque
   source contient `entetes` (les 2 premières lignes de l'onglet : lis les colonnes
   **par leur nom**, jamais par position supposée) et `lignes` (uniquement les lignes du
   périmètre). Une source sans ligne = rien pour ce périmètre ce jour-là.
@@ -62,14 +70,16 @@ données déjà extraites et contrôlées. Ne modifie aucun autre fichier du dé
    avant, `<!--[if mso]></td></tr></table><![endif]-->` après). Les tableaux internes
    passent en `width="100%"` (pas de largeur fixe en pixels) pour profiter de la place.
 
-## Sorties (pour chaque mail de la liste)
+## Sorties (pour chaque mail composé)
 
-- `build/mails/<mail>.html` : document HTML complet, email-safe, prêt à envoyer.
-- `build/mails/<mail>.json` : `{"objet": "..."}` avec l'objet du mail :
-  - vn / vo / apv : `Rapport quotidien VN — Opel/Fiat Dijon — JJ/MM/AAAA` (VO, APV de même)
-  - directeur : `Synthèse du jour — Opel/Fiat Dijon — JJ/MM/AAAA`
-  - plaque : `Synthèse Plaque Fiat/Opel — JJ/MM/AAAA`
+- `build/mails/<identifiant>.html` : document HTML complet, email-safe, prêt à envoyer.
+- `build/mails/<identifiant>.json` : `{"objet": "..."}` avec l'objet du mail :
+  - vn / vo / apv : `Rapport quotidien VN — <nom_concession> — JJ/MM/AAAA` (VO, APV de même)
+  - directeur : `Synthèse du jour — <nom_concession> — JJ/MM/AAAA`
+  - plaque : `Synthèse <nom_plaque> — JJ/MM/AAAA` (ex. « Synthèse Plaque Hyundai »)
   (JJ/MM/AAAA = date des données.)
+- La maquette illustre une autre concession (Renault Strasbourg) : reprends sa
+  structure, jamais ses noms, chiffres ou dossiers.
 
 Si un mail ne peut vraiment pas être composé (faits incohérents ou vides), n'écris pas
 ses fichiers : l'étape d'envoi le signalera comme non envoyé.

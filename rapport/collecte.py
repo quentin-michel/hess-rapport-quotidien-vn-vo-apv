@@ -3,12 +3,17 @@
 Produit :
 - build/plan.json       : passage, date attendue, mails à composer, mails non constructibles
 - build/controles.json  : alertes (fraîcheur, erreurs #, cohérence, onglets illisibles)
-- build/faits/<mail>.json : extrait filtré de chaque onglet utile au mail
+- build/faits/<id>.json  : extrait filtré de chaque onglet utile au mail, où
+                          <id> = "<type>__<code concession>" ou "plaque__<code plaque>"
 
 Règle (WORKFLOW.md §2) : un contrôle en échec n'empêche pas l'envoi, il génère une
 alerte. Seule exception : un onglet illisible → le mail qui en dépend ne part pas.
 
-Usage : python -m rapport.collecte --passage auto|matin|midi [--mails vn,apv] [--sortie build]
+Périmètre : une plaque et ses concessions. Par défaut config.PERIMETRE_CRON ; un
+lancement manuel peut en choisir un autre (même code, c'est le procédé du déploiement).
+
+Usage : python -m rapport.collecte --passage auto|matin|midi [--mails vn,apv]
+        [--plaque PLQ_HYUNDAI] [--concessions toutes|CODE1,CODE2] [--sortie build]
 """
 
 import argparse
@@ -50,11 +55,18 @@ def cellule(lignes, a1):
         return ""
 
 
-def codes_plaque(plaque):
+def referentiel_plaque(plaque):
+    """Concessions de la plaque {code: nom} et nom de la plaque, lus dans le Référentiel."""
     lignes = lire_onglet(config.REFERENTIEL, "Concessions_Plaques", "A1:D500")
     entete = lignes[0]
-    i_code, i_plaque = entete.index("Code_Concession"), entete.index("Code_Plaque")
-    return sorted({l[i_code] for l in lignes[1:] if len(l) > i_plaque and l[i_plaque] == plaque})
+    i_code, i_nom = entete.index("Code_Concession"), entete.index("Nom_Concession")
+    i_plaque, i_nom_plaque = entete.index("Code_Plaque"), entete.index("Nom_Plaque")
+    concessions, nom_plaque = {}, plaque
+    for l in lignes[1:]:
+        if len(l) > i_nom_plaque and l[i_plaque] == plaque:
+            concessions[l[i_code]] = l[i_nom]
+            nom_plaque = l[i_nom_plaque]
+    return dict(sorted(concessions.items())), nom_plaque
 
 
 def filtrer(lignes, codes):
@@ -122,7 +134,10 @@ def controler_coherence_plaque_apv(cache, plaque, alertes):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--passage", default="auto", choices=["auto", "matin", "midi"])
-    ap.add_argument("--mails", default="", help="liste imposée, ex. vn,apv (ignore le passage)")
+    ap.add_argument("--mails", default="", help="types imposés, ex. vn,apv (ignore le passage)")
+    ap.add_argument("--plaque", default="", help="code plaque (défaut : config.PERIMETRE_CRON)")
+    ap.add_argument("--concessions", default="",
+                    help="« toutes » ou codes séparés par des virgules (défaut : config.PERIMETRE_CRON)")
     ap.add_argument("--sortie", default="build")
     args = ap.parse_args()
 
@@ -132,28 +147,51 @@ def main():
     if passage == "auto":
         passage = next((p for p, h in config.HEURE_PASSAGE.items() if h == now.hour), None)
     if args.mails:
-        mails = [m.strip() for m in args.mails.split(",") if m.strip()]
+        types = [m.strip() for m in args.mails.split(",") if m.strip()]
     elif passage:
-        mails = [m for m, c in config.MAILS.items() if c["passage"] == passage]
+        types = [m for m, c in config.MAILS.items() if c["passage"] == passage]
     else:
-        mails = []
+        types = []
 
     os.makedirs(os.path.join(args.sortie, "faits"), exist_ok=True)
     plan = dict(passage=passage, date_attendue=attendue.isoformat(),
                 genere_le=now.isoformat(timespec="minutes"), mails=[], non_construits=[])
     alertes = []
-    if not mails:
+    if not types:
         print(f"Hors créneau ({now:%H:%M} à Paris) : rien à faire.")
         json.dump(plan, open(os.path.join(args.sortie, "plan.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         json.dump(alertes, open(os.path.join(args.sortie, "controles.json"), "w", encoding="utf-8"))
         return
 
-    perimetres = {"concession": {config.CONCESSION}}
-    if any(config.MAILS[m]["perimetre"] == "plaque" for m in mails):
-        perimetres["plaque"] = {config.PLAQUE, *codes_plaque(config.PLAQUE)}
+    plaque = args.plaque or config.PERIMETRE_CRON["plaque"]
+    toutes, nom_plaque = referentiel_plaque(plaque)
+    if not toutes:
+        sys.exit(f"Plaque {plaque} inconnue du Référentiel (onglet Concessions_Plaques).")
+    choix = args.concessions or ("" if args.plaque else ",".join(config.PERIMETRE_CRON["concessions"]))
+    if not choix or choix.strip().lower() == "toutes":
+        concessions = toutes
+    else:
+        codes = [c.strip() for c in choix.split(",") if c.strip()]
+        inconnues = [c for c in codes if c not in toutes]
+        if inconnues:
+            sys.exit(f"Concession(s) hors de la plaque {plaque} : {', '.join(inconnues)}")
+        concessions = {c: toutes[c] for c in codes}
+    plan["perimetre"] = dict(plaque=plaque, nom_plaque=nom_plaque, concessions=concessions)
+    print(f"Périmètre : {nom_plaque} — {len(concessions)} concession(s) : {', '.join(concessions)}")
+
+    # instances de mail : (id, type, codes du périmètre, contexte)
+    instances = []
+    for t in types:
+        if config.MAILS[t]["perimetre"] == "plaque":
+            instances.append((f"{t}__{plaque}", t, {plaque, *toutes},
+                              dict(plaque=plaque, nom_plaque=nom_plaque, concessions_plaque=toutes)))
+        else:
+            for code, nom in concessions.items():
+                instances.append((f"{t}__{code}", t, {code},
+                                  dict(concession=code, nom_concession=nom, plaque=plaque, nom_plaque=nom_plaque)))
 
     cache, illisibles = {}, {}
-    for source_id in sorted({s for m in mails for s in config.MAILS[m]["sources"]}):
+    for source_id in sorted({s for t in types for s in config.MAILS[t]["sources"]}):
         conf = config.SOURCES[source_id]
         try:
             cache[source_id] = lire_onglet(conf["classeur"], conf["onglet"], conf.get("plage", "A1:CZ5000"))
@@ -164,44 +202,47 @@ def main():
             print(f"ERR {source_id} : {e}", file=sys.stderr)
 
     deja_controle = set()
-    for mail in mails:
-        conf_mail = config.MAILS[mail]
+    for mail_id, t, codes, contexte in instances:
+        conf_mail = config.MAILS[t]
         manquantes = [s for s in conf_mail["sources"] if s in illisibles]
         if manquantes:
-            plan["non_construits"].append(dict(mail=mail, raison="onglet(s) illisible(s) : " + ", ".join(manquantes)))
+            plan["non_construits"].append(dict(mail=mail_id, raison="onglet(s) illisible(s) : " + ", ".join(manquantes)))
             continue
-        codes = perimetres[conf_mail["perimetre"]]
-        faits = dict(mail=mail, titre=conf_mail["titre"], maquette=conf_mail["maquette"],
-                     date_attendue=attendue.isoformat(), perimetre=sorted(codes), sources={})
+        nom = contexte.get("nom_concession") or nom_plaque
+        faits = dict(mail=mail_id, type=t, titre=f"{conf_mail['libelle']} — {nom}", maquette=conf_mail["maquette"],
+                     date_attendue=attendue.isoformat(), perimetre=sorted(codes), **contexte, sources={})
         dates = []
         for source_id in conf_mail["sources"]:
             conf = config.SOURCES[source_id]
             lignes = cache[source_id]
             entetes, corps = filtrer(lignes, codes)
-            cle = (source_id, conf_mail["perimetre"])
-            date_trouvee = None
+            # alertes de contrôle une seule fois par (source, périmètre), préfixées du périmètre
+            cle = (source_id, tuple(sorted(codes)))
+            alertes_mail = []
+            date_trouvee = controler_fraicheur(source_id, conf, lignes, entetes, corps, attendue, alertes_mail)
+            controler_erreurs(source_id, entetes, corps, alertes_mail)
             if cle not in deja_controle:
-                date_trouvee = controler_fraicheur(source_id, conf, lignes, entetes, corps, attendue, alertes)
-                controler_erreurs(source_id, entetes, corps, alertes)
                 deja_controle.add(cle)
-            elif conf.get("fraicheur"):
-                date_trouvee = controler_fraicheur(source_id, conf, lignes, entetes, corps, attendue, [])
+                for a in alertes_mail:
+                    a["message"] = f"[{contexte.get('concession', plaque)}] {a['message']}"
+                    alertes.append(a)
             if date_trouvee:
                 dates.append(date_trouvee)
             faits["sources"][source_id] = dict(service=conf["service"], onglet=conf["onglet"],
                                                date_donnees=date_trouvee, entetes=entetes, lignes=corps)
         # date affichée dans le mail : la plus ancienne date trouvée (le lecteur doit voir le retard)
         faits["date_donnees"] = min(dates) if dates else None
-        json.dump(faits, open(os.path.join(args.sortie, "faits", f"{mail}.json"), "w", encoding="utf-8"),
+        json.dump(faits, open(os.path.join(args.sortie, "faits", f"{mail_id}.json"), "w", encoding="utf-8"),
                   ensure_ascii=False, indent=1)
-        plan["mails"].append(mail)
+        plan["mails"].append(mail_id)
 
-    if "plaque" in mails or "apv" in mails:
-        controler_coherence_plaque_apv(cache, config.PLAQUE, alertes)
+    if "plaque" in types or "apv" in types:
+        controler_coherence_plaque_apv(cache, plaque, alertes)
 
     json.dump(plan, open(os.path.join(args.sortie, "plan.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     json.dump(alertes, open(os.path.join(args.sortie, "controles.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    print(f"Passage {passage} — mails : {plan['mails']} — non construits : {plan['non_construits']} — alertes : {len(alertes)}")
+    print(f"Passage {passage} — {len(plan['mails'])} mail(s) : {plan['mails']} — "
+          f"non construits : {plan['non_construits']} — alertes : {len(alertes)}")
 
 
 if __name__ == "__main__":

@@ -95,9 +95,22 @@ de la rotation), à relire dans le récapitulatif. Prérequis découvert : le se
 `CLAUDE_CODE_OAUTH_TOKEN` n'existait pas, créé le 2026-10-02 (`claude setup-token`).
 
 **Lancer à la main** : onglet Actions → « Rapport quotidien » → *Run workflow*, en
-choisissant les mails (`vn,vo,apv,directeur,plaque` par défaut). En local, pour la mise
-au point : `python -m rapport.collecte --mails vo --sortie build` puis
-`python -m rapport.envoi --sec` (n'envoie rien).
+choisissant les mails (`vn,vo,apv,directeur,plaque` par défaut), la plaque (ex.
+`PLQ_HYUNDAI`) et les concessions (`toutes` par défaut dès qu'une plaque est choisie).
+En ligne de commande : `gh workflow run rapport-quotidien.yml --ref <branche> -f
+plaque=PLQ_HYUNDAI`. En local, pour la mise au point : `python -m rapport.collecte
+--mails vo --plaque PLQ_HYUNDAI --sortie build` puis `python -m rapport.envoi --sec`
+(n'envoie rien).
+
+**Périmètre plaque par plaque (2026-10-06)** : le code ne contient plus de concession
+en dur. Un passage traite une plaque : un mail VN, VO, APV et Directeur par concession
+(liste et noms lus dans `Référentiel Concession > Concessions_Plaques`) et un mail
+Plaque. Les passages planifiés suivent `config.PERIMETRE_CRON` (Opel/Fiat Dijon pour
+l'instant) ; c'est ce même code que le déploiement utilisera. Chaque mail est composé
+par un appel Claude séparé (4 en parallèle) : une plaque compte jusqu'à ~35 mails.
+Identifiant d'un mail : `<type>__<code>` (ex. `apv__HYU_COLMAR`, `plaque__PLQ_HYUNDAI`).
+En test, plus de copie à rapport-quotidien@ : les envois restent dans son dossier
+« Envoyés ».
 
 ## 5. Ordre de construction
 

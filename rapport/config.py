@@ -8,16 +8,20 @@ lecture se fasse par nom de colonne.
 
 REFERENTIEL = "1L-wJkip_8gqk0B4C4edEf_ZIRqDCOMu6KDciFQ4WPnY"
 
-# Périmètre pilote (WORKFLOW.md §5) : Opel/Fiat Dijon et sa plaque.
-CONCESSION = "OPELFIAT_DIJON"
-PLAQUE = "PLQ_FIATOPEL"
+# Périmètre des passages planifiés (cron) : une plaque et ses concessions (liste de
+# codes, ou "toutes" = toutes les concessions de la plaque dans le Référentiel). Un
+# lancement manuel peut choisir un autre périmètre (--plaque / --concessions), par le
+# même code : c'est le procédé du déploiement, plaque par plaque.
+PERIMETRE_CRON = dict(plaque="PLQ_FIATOPEL", concessions=["OPELFIAT_DIJON"])
 
 # Mode test : seuls destinataires possibles. Le mode prod n'est pas encore construit.
 DESTINATAIRES_TEST = [
     "quentinmichel@hessautomobile.com",
     "corentinlaas@hessautomobile.com",
 ]
-COPIE = ["rapport-quotidien@hessautomobile.com"]
+# Pas de copie en test (demande de Corentin, 2026-10-06) : les mails envoyés restent
+# dans le dossier « Envoyés » de rapport-quotidien@, qui sert de trace.
+COPIE = []
 ALERTES = DESTINATAIRES_TEST
 
 # plage : zone lue (par défaut A1:CZ5000) — à réduire sur les gros onglets pour rester
@@ -88,18 +92,19 @@ _VN = [s for s, c in SOURCES.items() if c["service"] == "VN"]
 _VO = [s for s, c in SOURCES.items() if c["service"] == "VO"]
 _APV = [s for s, c in SOURCES.items() if c["service"] == "APV"]
 
-# perimetre : "concession" = lignes du code concession ; "plaque" = code plaque + toutes
-# les concessions de la plaque (lues dans le Référentiel).
+# Types de mail. perimetre : "concession" = un mail par concession du périmètre (lignes
+# du code concession) ; "plaque" = un seul mail (code plaque + toutes ses concessions).
+# Chaque mail produit a pour identifiant "<type>__<code concession ou plaque>".
 MAILS = {
-    "vn": dict(titre="VN — Opel/Fiat Dijon", passage="matin", perimetre="concession",
+    "vn": dict(libelle="VN", passage="matin", perimetre="concession",
                sources=_VN, maquette="docs/mockup_email_vn.html"),
-    "vo": dict(titre="VO — Opel/Fiat Dijon", passage="matin", perimetre="concession",
+    "vo": dict(libelle="VO", passage="matin", perimetre="concession",
                sources=_VO, maquette="docs/mockup_email_vo.html"),
-    "apv": dict(titre="APV — Opel/Fiat Dijon", passage="midi", perimetre="concession",
+    "apv": dict(libelle="APV", passage="midi", perimetre="concession",
                 sources=_APV, maquette="docs/mockup_email_apv_v2_safe.html"),
-    "directeur": dict(titre="Directeur — Opel/Fiat Dijon", passage="midi", perimetre="concession",
+    "directeur": dict(libelle="Directeur", passage="midi", perimetre="concession",
                       sources=_VN + _VO + _APV, maquette="docs/mockup_email_directeur.html"),
-    "plaque": dict(titre="Plaque Fiat/Opel", passage="midi", perimetre="plaque",
+    "plaque": dict(libelle="Plaque", passage="midi", perimetre="plaque",
                    sources=_VN + _VO + _APV, maquette="docs/mockup_email_plaque.html"),
 }
 
