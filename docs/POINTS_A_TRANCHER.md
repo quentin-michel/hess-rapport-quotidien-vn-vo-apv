@@ -91,7 +91,7 @@ durable), puis cocher le point ici.
   (vérifié le 2026-10-06).
 - [ ] **Encours sous 20 j de CA** : §12.3 dit « Rien à signaler », le mail du 30/09
   montrait quand même le top 5. *Provisoire : §12.3.*
-- [ ] **Maquette APV à aligner sur la fiche** : n° OR cité dans la synthèse, ventes à perte
+- [x] **Maquette APV à aligner sur la fiche** — *non retenu (Corentin, 2026-10-06) : la fiche fait foi, la maquette reste en l'état* : n° OR cité dans la synthèse, ventes à perte
   limitées aux « 4 plus significatives » sans client ni réceptionnaire, pas de bloc
   remises forcées Magasin, pas de tuiles objectifs.
 
