@@ -89,8 +89,8 @@ Onglet `Plaque APV` — 1 ligne par plaque (13 plaques), généré automatiqueme
 |---|---|---|---|
 | A | Plaque | `=UNIQUE('Concession-plaques'!$C:$C)` | — |
 | B1 | Date de référence | `='Analyse Globale'!$B$1` (suivi automatique du déplacement C1→B1 du 2026-10-02) | — |
-| B | Efficience J-1 | `SUMIFS(Temps_facture)/SUMIFS(Rappel_temps_passe)` par Plaque+Date | `Historique efficience/prod` (I=Plaque) |
-| C | Productivité J-1 | `SUMIFS(Temps_facture)/SUMIFS(Temps_passe_total)` par Plaque+Date | `Historique efficience/prod` (I=Plaque) |
+| B | Efficience J-1 | `IFERROR(SUMIFS(Temps_facture)/SUMIFS(Rappel_temps_passe);"")` par Plaque+Date | `Historique efficience/prod` (I=Plaque) |
+| C | Productivité J-1 | `IFERROR(SUMIFS(Temps_facture)/SUMIFS(Temps_passe_total);"")` par Plaque+Date — vide plutôt que `#DIV/0!` quand la plaque n'a aucun temps passé total ce jour-là (cas PLQ_BMW_MOTO au 05/10, corrigé le 2026-10-06) | `Historique efficience/prod` (I=Plaque) |
 | D | Valeur encours MO+PR | `SUMIFS(Montant_MO_PR_encours)` par Plaque | `Encours à date` (Y=Plaque, M=Montant) |
 | E | Encours +90j (nb) | `COUNTIFS(Ancienneté>=90)` par Plaque | `Encours à date` (Y=Plaque, I=Ancienneté) |
 | F | Encours en j de CA | Valeur encours ÷ ((somme CA MO 6 mois + somme CA PR interne 6 mois)/180), pondéré réseau | `Historique CA mensuel ateliers` (F=Plaque, C=CA MO, D=CA PR interne) |
@@ -109,8 +109,8 @@ Onglet `Plaque APV` — 1 ligne par plaque (13 plaques), généré automatiqueme
 le bloc APV du mail **ne remonte pas de CA/objectif** — uniquement des compteurs de
 problème (voir mémoire `feedback_plaque_mail_apv_signals_not_ca`). **Exception
 (2026-10-06)** : malfaçons et gestes commerciaux en montant et en % du CA MO
-(colonnes K-M, formules `docs/sheets-formulas/malfacons.txt` §3 — **à coller
-dans le Sheet**, pas encore en place au 2026-10-06). Les totaux Plaque
+(colonnes K-M, formules `docs/sheets-formulas/malfacons.txt` §3, en place depuis
+le 2026-10-06). Les totaux Plaque
 sont calculés en **agrégation pondérée** (somme des numérateurs/dénominateurs réseau),
 jamais en moyenne simple des % par concession.
 
