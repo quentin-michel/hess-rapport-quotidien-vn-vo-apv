@@ -3,13 +3,14 @@ name: Rapport quotidien (test)
 # Voir docs/WORKFLOW.md. Mode test uniquement : les mails partent vers Quentin et
 # Corentin. Le mode prod n'est pas construit.
 #
-# Périmètre : une plaque et ses concessions. Les passages planifiés utilisent
-# config.PERIMETRE_CRON ; un lancement manuel choisit la plaque et les concessions.
-# C'est le même code dans les deux cas : le déploiement se fera plaque par plaque.
+# Une plaque par job, en parallèle (matrice) : préparation (liste des plaques) →
+# un job par plaque (collecte, composition, envoi) → un récapitulatif unique. Les
+# passages planifiés traitent config.PERIMETRES_CRON ; un lancement manuel choisit
+# la ou les plaques. C'est le même code dans les deux cas : le procédé du déploiement.
 #
 # Deux passages par jour (heure de Paris) : ~7h30 (VN, VO) et ~11h45 (APV, Directeur,
 # Plaque). Le cron GitHub est en UTC et ignore le changement d'heure : chaque passage
-# est planifié sur ses deux horaires UTC possibles, et rapport.collecte ne garde que
+# est planifié sur ses deux horaires UTC possibles, et rapport.perimetres ne garde que
 # celui qui tombe à la bonne heure de Paris (l'autre s'arrête sans rien faire).
 # Les déclencheurs planifiés ne s'activent qu'une fois ce fichier sur la branche main.
 on:
@@ -19,7 +20,8 @@ on:
     - cron: "45 9 * * *"   # 11h45 heure d'été
     - cron: "45 10 * * *"  # 11h45 heure d'hiver
   # TEMPORAIRE (essai avant fusion) : un push sur la branche workflow-dijon lance les
-  # 5 mails en mode test. À retirer avant de fusionner dans main.
+  # 5 mails en mode test sur le périmètre des passages planifiés. À retirer avant de
+  # fusionner dans main.
   push:
     branches: [workflow-dijon]
   workflow_dispatch:
@@ -29,11 +31,11 @@ on:
         required: true
         default: "vn,vo,apv,directeur,plaque"
       plaque:
-        description: "Code plaque (vide = périmètre des passages planifiés)"
+        description: "Code plaque, plusieurs codes séparés par des virgules, ou « toutes » (vide = périmètre des passages planifiés)"
         required: false
         default: ""
       concessions:
-        description: "« toutes » ou codes concession séparés par des virgules (vide = toutes si une plaque est choisie)"
+        description: "Si une seule plaque : « toutes » ou codes concession séparés par des virgules"
         required: false
         default: ""
 
@@ -44,14 +46,53 @@ concurrency:
   group: rapport-quotidien
   cancel-in-progress: false
 
+env:
+  GWS_CLIENT_ID: ${{ secrets.GWS_CLIENT_ID }}
+  GWS_CLIENT_SECRET: ${{ secrets.GWS_CLIENT_SECRET }}
+  GWS_REFRESH_TOKEN: ${{ secrets.GWS_REFRESH_TOKEN }}
+
 jobs:
-  rapport:
+  preparation:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 10
+    outputs:
+      a_faire: ${{ steps.p.outputs.a_faire }}
+      passage: ${{ steps.p.outputs.passage }}
+      mails: ${{ steps.p.outputs.mails }}
+      matrice: ${{ steps.p.outputs.matrice }}
+      attendues: ${{ steps.p.outputs.attendues }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 0. Plaques à traiter
+        id: p
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python -m rapport.perimetres --mails "${{ inputs.mails }}" --plaque "${{ inputs.plaque }}" --concessions "${{ inputs.concessions }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            python -m rapport.perimetres --mails "vn,vo,apv,directeur,plaque"
+          else
+            python -m rapport.perimetres --passage auto
+          fi
+
+  plaque:
+    needs: preparation
+    if: needs.preparation.outputs.a_faire == 'oui'
+    name: ${{ matrix.plaque }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      # plaques traitées en même temps ; chaque job compose 4 mails à la fois :
+      # 6 × 4 = 24 appels Claude simultanés au plus (quota du jeton partagé)
+      max-parallel: 6
+      matrix:
+        include: ${{ fromJSON(needs.preparation.outputs.matrice) }}
     env:
-      GWS_CLIENT_ID: ${{ secrets.GWS_CLIENT_ID }}
-      GWS_CLIENT_SECRET: ${{ secrets.GWS_CLIENT_SECRET }}
-      GWS_REFRESH_TOKEN: ${{ secrets.GWS_REFRESH_TOKEN }}
+      PASSAGE: ${{ needs.preparation.outputs.passage }}
+      MAILS: ${{ needs.preparation.outputs.mails }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -61,21 +102,15 @@ jobs:
       - name: 1-2. Contrôle et lecture des Sheets
         id: collecte
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            python -m rapport.collecte --mails "${{ inputs.mails }}" --plaque "${{ inputs.plaque }}" --concessions "${{ inputs.concessions }}"
-          elif [ "${{ github.event_name }}" = "push" ]; then
-            python -m rapport.collecte --mails "vn,vo,apv,directeur,plaque"
-          else
-            python -m rapport.collecte --passage auto
-          fi
+          python -m rapport.collecte --mails "$MAILS" --plaque "${{ matrix.plaque }}" \
+            --concessions "${{ matrix.concessions }}" ${PASSAGE:+--passage "$PASSAGE"}
           python -c "import json; p=json.load(open('build/plan.json')); print('a_composer=' + ('oui' if p['mails'] else 'non'))" >> "$GITHUB_OUTPUT"
-          python -c "import json; p=json.load(open('build/plan.json')); print('a_traiter=' + ('oui' if p['mails'] or p['non_construits'] else 'non'))" >> "$GITHUB_OUTPUT"
 
       - name: 3-4. Synthèse et mise en page (Claude)
         # Claude Code en ligne de commande (claude-code-action refuse certains
-        # déclencheurs, dont push). Un appel par mail (une plaque = jusqu'à ~30 mails),
-        # 4 en parallèle. La sortie de Claude reste dans build/ : elle peut contenir
-        # des noms réels, elle n'est pas affichée dans le journal du run.
+        # déclencheurs, dont push). Un appel par mail, 4 en parallèle. La sortie de
+        # Claude reste dans build/ : elle peut contenir des noms réels, elle n'est pas
+        # affichée dans le journal du run.
         if: steps.collecte.outputs.a_composer == 'oui'
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -84,16 +119,46 @@ jobs:
           mkdir -p build/mails build/claude
           python -c "import json; print('\n'.join(json.load(open('build/plan.json'))['mails']))" > build/a_composer.txt
           composer() {
+            debut=$(date +%s)
             claude -p "Lis le fichier rapport/consignes_composition.md et applique-le intégralement pour composer uniquement le mail $1 (faits : build/faits/$1.json). Écris le résultat dans build/mails/. Ne modifie aucun autre fichier." \
               --allowedTools "Read,Write,Glob,Grep" --max-turns 60 > "build/claude/$1.txt" 2>&1 \
               || echo "Claude a terminé en erreur sur $1"
+            echo "$1 : $(( $(date +%s) - debut )) s"
           }
           export -f composer
           xargs -P 4 -I{} bash -c 'composer "$1"' _ {} < build/a_composer.txt
           echo "Mails composés : $(ls -1 build/mails/*.html 2>/dev/null | wc -l) sur $(wc -l < build/a_composer.txt)"
 
-      - name: 5-6. Envoi (test) et récapitulatif
-        # always() : même si une étape précédente a échoué, on prévient Quentin et
-        # Corentin par mail (sauf hors créneau, où il n'y a rien à traiter)
-        if: always() && steps.collecte.outputs.a_traiter != 'non'
-        run: python -m rapport.envoi --mode test
+      - name: 5. Envoi (test)
+        # always() : même si une étape précédente a échoué, le bilan est écrit pour le
+        # récapitulatif. Le bilan ne contient aucune donnée personnelle.
+        if: always()
+        run: python -m rapport.envoi --mode test --bilan "build/bilan-${{ matrix.plaque }}.json"
+
+      - name: Bilan pour le récapitulatif
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bilan-${{ matrix.plaque }}
+          path: build/bilan-${{ matrix.plaque }}.json
+          retention-days: 3
+          if-no-files-found: ignore
+
+  recapitulatif:
+    needs: [preparation, plaque]
+    if: always() && needs.preparation.outputs.a_faire == 'oui'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bilan-*
+          path: bilans
+          merge-multiple: true
+        continue-on-error: true
+      - name: 6. Récapitulatif
+        run: python -m rapport.envoi --mode test --fusionner bilans --attendues "${{ needs.preparation.outputs.attendues }}"

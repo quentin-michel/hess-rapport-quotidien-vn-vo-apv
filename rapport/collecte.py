@@ -9,8 +9,7 @@ Produit :
 Règle (WORKFLOW.md §2) : un contrôle en échec n'empêche pas l'envoi, il génère une
 alerte. Seule exception : un onglet illisible → le mail qui en dépend ne part pas.
 
-Périmètre : une plaque et ses concessions. Par défaut config.PERIMETRE_CRON ; un
-lancement manuel peut en choisir un autre (même code, c'est le procédé du déploiement).
+Périmètre : une plaque et ses concessions (un job GitHub par plaque, cf. rapport.perimetres).
 
 Usage : python -m rapport.collecte --passage auto|matin|midi [--mails vn,apv]
         [--plaque PLQ_HYUNDAI] [--concessions toutes|CODE1,CODE2] [--sortie build]
@@ -135,9 +134,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--passage", default="auto", choices=["auto", "matin", "midi"])
     ap.add_argument("--mails", default="", help="types imposés, ex. vn,apv (ignore le passage)")
-    ap.add_argument("--plaque", default="", help="code plaque (défaut : config.PERIMETRE_CRON)")
+    ap.add_argument("--plaque", default="", help="code plaque (défaut : 1re entrée de config.PERIMETRES_CRON)")
     ap.add_argument("--concessions", default="",
-                    help="« toutes » ou codes séparés par des virgules (défaut : config.PERIMETRE_CRON)")
+                    help="« toutes » ou codes séparés par des virgules")
     ap.add_argument("--sortie", default="build")
     args = ap.parse_args()
 
@@ -163,11 +162,12 @@ def main():
         json.dump(alertes, open(os.path.join(args.sortie, "controles.json"), "w", encoding="utf-8"))
         return
 
-    plaque = args.plaque or config.PERIMETRE_CRON["plaque"]
+    plaque = args.plaque or config.PERIMETRES_CRON[0]["plaque"]
     toutes, nom_plaque = referentiel_plaque(plaque)
     if not toutes:
         sys.exit(f"Plaque {plaque} inconnue du Référentiel (onglet Concessions_Plaques).")
-    choix = args.concessions or ("" if args.plaque else ",".join(config.PERIMETRE_CRON["concessions"]))
+    defaut = config.PERIMETRES_CRON[0]["concessions"]
+    choix = args.concessions or ("" if args.plaque else defaut if isinstance(defaut, str) else ",".join(defaut))
     if not choix or choix.strip().lower() == "toutes":
         concessions = toutes
     else:

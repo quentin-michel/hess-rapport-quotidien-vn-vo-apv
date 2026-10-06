@@ -1,13 +1,18 @@
 """Étapes 5 et 6 du workflow : contrôle des chiffres, envoi des mails, récapitulatif.
 
-- Mode test (seul mode disponible) : chaque mail part vers config.DESTINATAIRES_TEST,
-  avec rapport-quotidien@ en copie visible (trace = la boîte mail elle-même).
+- Mode test (seul mode disponible) : chaque mail part vers config.DESTINATAIRES_TEST
+  (trace = dossier « Envoyés » de rapport-quotidien@).
 - Les nombres de chaque mail sont comparés aux faits : ceux qui ne s'y retrouvent pas
   sont signalés dans le récapitulatif (le mail part quand même, WORKFLOW.md §2).
 - Un récapitulatif part à la fin vers config.ALERTES, préfixé [ALERTE] s'il y a des
   alertes de contrôle, des mails non envoyés ou des chiffres non retrouvés.
 
-Usage : python -m rapport.envoi --mode test [--sortie build] [--sec]
+Une plaque par job GitHub : chaque job envoie ses mails et écrit son bilan
+(--bilan fichier.json, sans donnée personnelle) au lieu d'envoyer le récapitulatif ;
+un dernier job rassemble les bilans et envoie un seul récapitulatif (--fusionner).
+
+Usage : python -m rapport.envoi --mode test [--sortie build] [--sec] [--bilan f.json]
+        python -m rapport.envoi --fusionner <dossier des bilans> --attendues PLQ_A,PLQ_B [--sec]
   --sec : n'envoie rien, affiche ce qui serait envoyé (mise au point locale).
 """
 
@@ -83,9 +88,11 @@ def nombres_non_retrouves(html_mail, vals):
 def recap_html(plan, alertes, envoyes, non_envoyes, douteux):
     def liste(items):
         return "<ul>" + "".join(f"<li>{html.escape(i)}</li>" for i in items) + "</ul>" if items else "<p><i>Aucun</i></p>"
+    plaques = plan.get("plaques") or ([plan["perimetre"]["nom_plaque"]] if plan.get("perimetre") else [])
     blocs = [
         f"<p>Passage <b>{plan.get('passage') or 'manuel'}</b> du {plan.get('genere_le', '')[:16].replace('T', ' ')} "
-        f"— données attendues du {plan.get('date_attendue', '')}.</p>",
+        f"— données attendues du {plan.get('date_attendue', '')}"
+        f"{' — ' + html.escape(', '.join(plaques)) if plaques else ''}.</p>",
         "<h3>Mails envoyés</h3>" + liste(envoyes),
         "<h3>Mails non envoyés</h3>" + liste(non_envoyes),
         "<h3>Alertes de contrôle (les mails sont partis quand même)</h3>"
@@ -97,26 +104,15 @@ def recap_html(plan, alertes, envoyes, non_envoyes, douteux):
             + "".join(blocs) + "</div>")
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", default="test", choices=["test", "prod"])
-    ap.add_argument("--sortie", default="build")
-    ap.add_argument("--sec", action="store_true")
-    args = ap.parse_args()
-    if args.mode == "prod":
-        sys.exit("Mode prod pas encore construit : seuls les envois de test sont possibles.")
-
+def envoyer_mails(args):
+    """Envoie les mails composés d'un périmètre et renvoie son bilan (sans donnée personnelle)."""
     chemin_plan = os.path.join(args.sortie, "plan.json")
     if not os.path.exists(chemin_plan):
-        plan, alertes = {}, [dict(source="collecte", message="la collecte a échoué avant de produire plan.json "
-                                                              "(voir le journal du run GitHub)")]
-    else:
-        plan = json.load(open(chemin_plan, encoding="utf-8"))
-        alertes = json.load(open(os.path.join(args.sortie, "controles.json"), encoding="utf-8"))
-        if not plan["mails"] and not plan["non_construits"]:
-            print("Rien à envoyer (hors créneau).")
-            return
-
+        return dict(plan={}, envoyes=[], non_envoyes=[], douteux={},
+                    alertes=[dict(source="collecte", message="la collecte a échoué avant de produire plan.json "
+                                                             "(voir le journal du run GitHub)")])
+    plan = json.load(open(chemin_plan, encoding="utf-8"))
+    alertes = json.load(open(os.path.join(args.sortie, "controles.json"), encoding="utf-8"))
     envoyes, non_envoyes, douteux = [], [], {}
     for nc in plan.get("non_construits", []):
         non_envoyes.append(f"{nc['mail']} — {nc['raison']}")
@@ -143,7 +139,62 @@ def main():
         except Exception as e:
             non_envoyes.append(f"{mail} — échec d'envoi : {e}")
             print(f"ERR envoi {mail} : {e}", file=sys.stderr)
+    return dict(plan=plan, alertes=alertes, envoyes=envoyes, non_envoyes=non_envoyes, douteux=douteux)
 
+
+def fusionner(dossier, attendues):
+    """Rassemble les bilans des jobs (un par plaque) ; une plaque sans bilan = job planté."""
+    bilans = []
+    for racine, _, fichiers in os.walk(dossier):
+        for f in sorted(fichiers):
+            if f.endswith(".json"):
+                bilans.append(json.load(open(os.path.join(racine, f), encoding="utf-8")))
+    total = dict(plan={}, alertes=[], envoyes=[], non_envoyes=[], douteux={})
+    vues = set()
+    for b in bilans:
+        perimetre = b["plan"].get("perimetre") or {}
+        vues.add(perimetre.get("plaque"))
+        if not total["plan"]:
+            total["plan"] = {k: b["plan"].get(k) for k in ("passage", "genere_le", "date_attendue")}
+        total["plan"].setdefault("plaques", []).append(perimetre.get("nom_plaque") or "?")
+        for k in ("alertes", "envoyes", "non_envoyes"):
+            total[k] += b[k]
+        total["douteux"].update(b["douteux"])
+    for plaque in attendues:
+        if plaque not in vues:
+            total["non_envoyes"].append(f"{plaque} — le job de cette plaque a planté avant le bilan "
+                                        f"(voir le journal du run GitHub)")
+    return total
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--mode", default="test", choices=["test", "prod"])
+    ap.add_argument("--sortie", default="build")
+    ap.add_argument("--sec", action="store_true")
+    ap.add_argument("--bilan", default="", help="écrit le bilan dans ce fichier au lieu d'envoyer le récapitulatif")
+    ap.add_argument("--fusionner", default="", help="dossier des bilans à rassembler en un récapitulatif")
+    ap.add_argument("--attendues", default="", help="plaques attendues (avec --fusionner)")
+    args = ap.parse_args()
+    if args.mode == "prod":
+        sys.exit("Mode prod pas encore construit : seuls les envois de test sont possibles.")
+
+    if args.fusionner:
+        b = fusionner(args.fusionner, [p for p in args.attendues.split(",") if p])
+    else:
+        b = envoyer_mails(args)
+        if b["plan"] and not b["plan"].get("mails") and not b["plan"].get("non_construits"):
+            print("Rien à envoyer (hors créneau).")
+            return
+        if args.bilan:
+            json.dump(b, open(args.bilan, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+            print(f"Bilan écrit : {args.bilan}")
+            if b["non_envoyes"]:
+                sys.exit(1)
+            return
+
+    plan, alertes, envoyes, non_envoyes, douteux = (b["plan"], b["alertes"], b["envoyes"],
+                                                    b["non_envoyes"], b["douteux"])
     probleme = bool(alertes or non_envoyes or any(douteux.values()))
     objet_recap = (f"{'[ALERTE] ' if probleme else ''}Rapport quotidien — passage "
                    f"{plan.get('passage') or 'manuel'} — {len(envoyes)} envoyé(s), "

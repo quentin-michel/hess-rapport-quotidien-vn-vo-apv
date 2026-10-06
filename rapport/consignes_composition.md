@@ -22,23 +22,21 @@ fichier du dépôt.
   `date_donnees` = date réelle des données (la plus ancienne trouvée).
 - La maquette du mail (`maquette` dans le fichier de faits) : modèle de structure, de
   mise en page et de style. Reproduis sa structure et son HTML, avec les données du jour.
-- Les règles métier, à lire avant de composer :
-  - Toujours : `docs/CADRAGE.md` §3 (règles de rédaction de la synthèse) et §6 (HTML
-    « email-safe » : tableaux et styles en ligne uniquement, pas de flex/grid, pas de
-    variables CSS, pas de police web).
-  - Mail `vn` : `docs/CADRAGE_VN.md` §6 (maquette mail VN) et les blocs §1-5.
-  - Mail `vo` : `docs/CADRAGE_VO.md` §14 (format du mail), §15 (icône météo), blocs §3-11.
-  - Mail `apv` : `docs/CADRAGE_APV.md` §12 (formalisation du mail, icônes §12.6/§12.7),
-    §14 (règle de l'effet de mix sur la marge PR interne) et §15 (malfaçons et gestes
-    commerciaux : bloc du mail et points météo).
-  - Mail `directeur` : `docs/CADRAGE.md` §7.
-  - Mail `plaque` : `docs/CADRAGE.md` §8. Au niveau Plaque, le bloc APV remonte des
-    compteurs de problèmes (encours, pièces à perte, forfaits, remises…), pas du CA ni
-    des objectifs. Seule exception, aux niveaux Directeur et Plaque : les malfaçons et
-    gestes commerciaux s'affichent en montant (hier, cumul du mois) et en % du CA MO du
-    mois (`docs/CADRAGE_APV.md` §15).
-  - Dictionnaire des colonnes : `docs/DATA_MAP_VN.md`, `docs/DATA_MAP_VO.md`,
-    `docs/DATA_MAP_APV.md`.
+- Les règles métier, à lire avant de composer : les **fiches condensées** de
+  `rapport/regles/` (elles résument les cadrages, ne lis pas `docs/CADRAGE*.md`) :
+  - Toujours : `rapport/regles/commun.md` (rédaction de la synthèse, HTML email-safe).
+  - Mail `vn` : `rapport/regles/vn.md`.
+  - Mail `vo` : `rapport/regles/vo.md`.
+  - Mail `apv` : `rapport/regles/apv.md`.
+  - Mail `directeur` : `rapport/regles/directeur.md`, plus `vn.md`, `vo.md` et `apv.md`
+    pour les icônes météo et ce qui est significatif dans chaque service.
+  - Mail `plaque` : `rapport/regles/plaque.md`. Au niveau Plaque, le bloc APV remonte
+    des compteurs de problèmes, pas du CA ni des objectifs, sauf les malfaçons et
+    gestes commerciaux (montant hier, cumul du mois, % du CA MO du mois).
+  - Seulement si un en-tête attendu par une fiche est introuvable dans les faits :
+    dictionnaire des colonnes `docs/DATA_MAP_VN.md`, `docs/DATA_MAP_VO.md` ou
+    `docs/DATA_MAP_APV.md`. En cas de doute non résolu, n'affiche pas la donnée.
+  - En cas de contradiction entre une fiche et la maquette, la fiche l'emporte.
 
 ## Règles impératives
 

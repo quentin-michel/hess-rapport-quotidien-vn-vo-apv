@@ -77,11 +77,13 @@ Déclencheur : cron (planifié) ou lancement manuel
 ```
 .github/workflows/rapport-quotidien.yml   ← cron (2 passages) + lancement manuel
 rapport/
-  config.py                  ← sources (classeur/onglet), mails, périmètre Dijon, destinataires de test
+  config.py                  ← sources (classeur/onglet), types de mail, plaques du cron, destinataires de test
   sheets.py                  ← lecture Sheets + envoi Gmail (token GitHub ; en local : CLI gws, sans envoi)
-  collecte.py                ← étapes 1-2 : contrôles + extraits filtrés → build/faits/<mail>.json
+  perimetres.py              ← étape 0 : plaques à traiter (une par job GitHub)
+  collecte.py                ← étapes 1-2 : contrôles + extraits filtrés → build/faits/<type>__<code>.json
   consignes_composition.md   ← étapes 3-4 : consignes données à Claude
-  envoi.py                   ← étapes 5-6 : contrôle des chiffres, envoi test, récapitulatif
+  regles/                    ← règles condensées par type de mail, lues par Claude à la place des cadrages
+  envoi.py                   ← étapes 5-6 : contrôle des chiffres, envoi test, bilan par plaque, récapitulatif
 ```
 
 `build/` (faits, mails, récapitulatif) n'est jamais commité : il contient des noms réels.
@@ -103,12 +105,21 @@ plaque=PLQ_HYUNDAI`. En local, pour la mise au point : `python -m rapport.collec
 (n'envoie rien).
 
 **Périmètre plaque par plaque (2026-10-06)** : le code ne contient plus de concession
-en dur. Un passage traite une plaque : un mail VN, VO, APV et Directeur par concession
-(liste et noms lus dans `Référentiel Concession > Concessions_Plaques`) et un mail
-Plaque. Les passages planifiés suivent `config.PERIMETRE_CRON` (Opel/Fiat Dijon pour
-l'instant) ; c'est ce même code que le déploiement utilisera. Chaque mail est composé
-par un appel Claude séparé (4 en parallèle) : une plaque compte jusqu'à ~35 mails.
+en dur. Un passage traite une liste de plaques, **une plaque par job GitHub, en
+parallèle** (matrice, 6 plaques à la fois au plus) :
+1. job `preparation` (`rapport.perimetres`) : plaques à traiter — `config.PERIMETRES_CRON`
+   pour les passages planifiés (Opel/Fiat Dijon pour l'instant), ou le choix du
+   lancement manuel (un code, plusieurs, ou `toutes`) ;
+2. un job par plaque : collecte (un mail VN, VO, APV et Directeur par concession, liste
+   et noms lus dans `Référentiel Concession > Concessions_Plaques`, plus un mail
+   Plaque), composition (un appel Claude par mail, 4 en parallèle), envoi, puis un
+   bilan sans donnée personnelle ;
+3. job `recapitulatif` : rassemble les bilans et envoie **un seul** récapitulatif ; une
+   plaque sans bilan (job planté) y est signalée.
 Identifiant d'un mail : `<type>__<code>` (ex. `apv__HYU_COLMAR`, `plaque__PLQ_HYUNDAI`).
+Ordre de grandeur pour le groupe (~67 concessions, 13 plaques, ~280 mails/jour) : la
+durée d'un passage devient celle de la plus grosse plaque, pas la somme. Limite à
+surveiller : le quota du jeton Claude, partagé par tous les appels simultanés.
 En test, plus de copie à rapport-quotidien@ : les envois restent dans son dossier
 « Envoyés ».
 

@@ -8,11 +8,13 @@ lecture se fasse par nom de colonne.
 
 REFERENTIEL = "1L-wJkip_8gqk0B4C4edEf_ZIRqDCOMu6KDciFQ4WPnY"
 
-# Périmètre des passages planifiés (cron) : une plaque et ses concessions (liste de
-# codes, ou "toutes" = toutes les concessions de la plaque dans le Référentiel). Un
-# lancement manuel peut choisir un autre périmètre (--plaque / --concessions), par le
-# même code : c'est le procédé du déploiement, plaque par plaque.
-PERIMETRE_CRON = dict(plaque="PLQ_FIATOPEL", concessions=["OPELFIAT_DIJON"])
+# Périmètres des passages planifiés (cron) : une entrée par plaque, chacune traitée
+# par son propre job GitHub en parallèle ; "concessions" = liste de codes ou "toutes"
+# (toutes les concessions de la plaque dans le Référentiel). Un lancement manuel peut
+# choisir d'autres plaques : même code, c'est le procédé du déploiement.
+PERIMETRES_CRON = [
+    dict(plaque="PLQ_FIATOPEL", concessions=["OPELFIAT_DIJON"]),
+]
 
 # Mode test : seuls destinataires possibles. Le mode prod n'est pas encore construit.
 DESTINATAIRES_TEST = [
