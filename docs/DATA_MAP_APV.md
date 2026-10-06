@@ -1,226 +1,266 @@
 # Carte des données APV — où trouver quoi
 
-**Statut : vivant, à tenir à jour à chaque fois qu'un onglet est renommé/déplacé.**
-Dernière mise à jour : 2026-10-06 (colonnes de signaux du barème météo).
+**Statut : vivant, à tenir à jour à chaque fois qu'un onglet est renommé ou déplacé.**
+Réécrite le 2026-10-06 à partir des en-têtes réels des Sheets (relecture complète, date
+de référence 05/10/2026).
 
-Ce document répond à une seule question : **pour générer le mail APV (niveau Service,
-Directeur ou Plaque), où va-t-on chercher chaque donnée ?** Il complète
-`CADRAGE_APV.md` (qui documente le *pourquoi* et l'historique des corrections) en
-donnant un accès direct *classeur → onglet → colonne* sans avoir à refouiller.
+Ce document répond à une seule question : **pour générer les mails (APV, Directeur,
+Plaque), où va-t-on chercher chaque donnée APV ?** Il donne l'accès direct *classeur →
+onglet → colonne*. Le *pourquoi* des règles et leur historique sont dans
+`CADRAGE_APV.md` ; les règles de composition dans `rapport/regles/apv.md`.
 
-**Piège permanent** : les classeurs sont des Sheets vivants, édités en parallèle par
-Corentin/Quentin. Onglets renommés, colonnes déplacées ou tableaux à double mise en
-page sont déjà arrivés plusieurs fois ce chantier (voir §5). **Toujours vérifier
-l'en-tête réel avant d'écrire dans une colonne**, ne jamais supposer.
+**Règle de lecture** : le rapport lit chaque onglet **par nom d'en-tête**, jamais par
+lettre. Les lettres ci-dessous sont un repère au 2026-10-06 : les colonnes bougent
+(réagencement du 02/10, insertions des 05 et 06/10). **Toujours vérifier l'en-tête réel
+avant d'écrire dans une colonne.**
 
 ## 1. Classeurs
 
 | Classeur | ID | Rôle |
 |---|---|---|
-| `Rapport quotidien APV` | `1MtgVOe17uB4gjb88Dgx-AgRbp3SMr44Rr8kdw0qumYw` | Classeur principal — KPI par concession et par plaque |
-| `Anomalies forfaits` | `1T_BKjedX0yH7ENq4Z_88OWlGnBUu6RSez5ohLb0YscU` | Forfaits à marge faible/négative (détection dédiée) |
-| `Prix/Remises forcés` | `1ZZ2Y1EtbonrgOeJ0Zf81XngcZCiifCvtAP2dHczl7GY` | Remises/prix forcés Atelier+Magasin (**bloc pas encore branché au niveau Plaque**) |
-| `Référentiel Concession` | `1L-wJkip_8gqk0B4C4edEf_ZIRqDCOMu6KDciFQ4WPnY` | Classeur de Quentin, source de vérité transverse (concessions, plaques, mapping brut) |
+| `Rapport quotidien APV` | `1MtgVOe17uB4gjb88Dgx-AgRbp3SMr44Rr8kdw0qumYw` | Classeur principal : KPI par concession et par plaque, listes de détail |
+| `Anomalies forfaits` | `1T_BKjedX0yH7ENq4Z_88OWlGnBUu6RSez5ohLb0YscU` | Forfaits à marge estimée < 10 % |
+| `Prix/Remises forcés` | `1ZZ2Y1EtbonrgOeJ0Zf81XngcZCiifCvtAP2dHczl7GY` | Remises et prix forcés Atelier + Magasin |
+| `Référentiel Concession` | `1L-wJkip_8gqk0B4C4edEf_ZIRqDCOMu6KDciFQ4WPnY` | Classeur de Quentin, source de vérité : concessions, plaques, noms, mapping brut |
 
-## 2. Niveau Service (1 concession) — `Rapport quotidien APV`
+## 2. Onglets lus par le rapport (`rapport/config.py`)
 
-| Donnée | Onglet | Colonnes clés | Notes |
+| Source (config) | Classeur › onglet | 1 ligne = | Clé de filtre | Détail |
+|---|---|---|---|---|
+| `apv_analyse_globale` | APV › `Analyse Globale` | 1 concession | B = code concession, A = code plaque | §3 |
+| `apv_encours_prioritaires` | APV › `Encours prioritaires` | 1 OR (top 5 par concession) | A | §4.1 |
+| `apv_pieces_a_perte` | APV › `Analyse pièces client J-1` | 1 pièce vendue à perte hier | U, V | §4.2 |
+| `apv_efficience_ci` | APV › `Efficience OR CI trop élevé` | 1 OR | A, G | §4.3 |
+| `apv_remises_elevees` | APV › `Taux remise MO/PR interne élevé` | 1 OR | A, K | §4.4 |
+| `apv_malfacons_j1` | APV › `Malfaçons J-1` | 1 OR × fiche × document | Q, R | §4.5 |
+| `apv_plaque` | APV › `Plaque APV` | 1 plaque | A | §6 |
+| `apv_forfaits_marge_faible` | Anomalies forfaits › `Extrait J-1 - Marges<10%` | 1 forfait | V, W | §7 |
+| `apv_remises_forcees` | Prix/Remises forcés › `Prix/Remises forcés` | 1 ligne forcée | V | §8 |
+
+Le rapport ne garde que les lignes contenant un code du périmètre (code concession pour
+les mails de concession ; code plaque + codes de ses concessions pour le mail Plaque).
+
+## 3. `Analyse Globale` — 1 ligne par concession
+
+Structure : **B1** = date de référence (`=MAX('Détail facturation atelier journalière'!M:M)`,
+A1 = libellé) ; ligne 1 à partir de C = bandeaux de blocs ; ligne 2 = en-têtes ;
+ligne 3 et suivantes = une concession (67 au 05/10). A = code plaque (via
+`Concession-plaques`), B = code concession canonique (liste unique tirée de
+`Historique CA par atelier`).
+
+### 3.1 Colonnes (72, de A à BT)
+
+| Col. | Bandeau | Contenu |
+|---|---|---|
+| C-K | ATELIER - CA MO J-1 | C Nb OR clôturés J-1 · D CA MO net HT J-1 · E moy. mobile 4 sem. (médiane des 28 j) · F écart % · G **Alerte écart CA** · H-J % CA MO CLIENT / GARANTIE / CESSION J-1 · **K Malfaçons J-1** (€) |
+| L-S | ATELIER - CA MO MTD | L CA MO MTD · M-O % CLIENT / GARANTIE / CESSION MTD · P Objectif MO mensuel · Q % réalisation (L/P, plein mois) · **R Malfaçons MTD** (€) · **S % Malfaçons MTD** (R/L) |
+| T-AE | ATELIER - CA & Marge PR Interne J-1 | T CA PR interne J-1 · U moy. mobile · V écart % · **W Alerte écart CA PR interne** · X-Z % CLIENT / GARANTIE / CESSION J-1 · AA coût · AB marge · AC taux marge · AD marge attendue (mix) · AE écart vs mix (affiché en % = points) |
+| AF-AK | ATELIER - CA & Marge PR Interne MTD | AF CA PR interne MTD · AG-AI % CLIENT / GARANTIE / CESSION MTD · AJ Objectif PR interne mensuel · AK % réalisation |
+| AL-AS | ATELIER - Prod/Efficience | AL Productivité J-1 · AM moy. mobile · AN écart % · AO **Alerte productivité basse** · AP Efficience J-1 · AQ moy. mobile · **AR Efficience cessions internes J-1** · AS Efficience cessions internes MTD |
+| AT-BD | ATELIER - Encours | AT Nb OR en cours · AU Valeur encours MO+PR · AV-AX vieux encours 90-180 j / 180-365 j / +365 j (nb) · AY-BA idem (valeur) · BB Dépréciation · BC Encours en j de CA · BD **Alerte encours** |
+| BE-BN | MAGASIN | BE CA PR externe J-1 · BF moy. mobile · **BG écart %** · **BH Alerte écart CA PR externe** · BI coût · BJ marge · BK taux marge J-1 · BL CA PR externe MTD · BM Objectif PR externe mensuel · BN % réalisation |
+| BO-BQ | *(Magasin)* | BO Nb pièces magasin vendues J-1 · **BP Valeur pièces magasin à perte J-1** · BQ % pièces magasin vendues à perte J-1 |
+| BR-BT | *(données Atelier sous le bandeau Magasin)* | BR Nb pièces atelier client vendues J-1 (hors forfaits) · **BS Valeur pièces atelier à perte J-1 (hors forfait)** · BT % vendues à perte |
+
+En gras : signaux du barème météo et colonnes malfaçons (voir §3.2 et §3.3).
+
+### 3.2 Sources et formules clés
+
+| Colonnes | Source | Règle |
+|---|---|---|
+| C-J, L-O, T-AD, AF-AI | `Historique CA par atelier` (B date, N code) | J-1 = date B1 ; MTD = du 1er du mois à B1 ; moyennes mobiles = **médiane** des 28 jours précédant B1 |
+| P, AJ, BM | `Objectif APV` (J code, B année, C mois ; D MO, F PR interne, G PR externe) | objectif du mois de B1, sans prorata |
+| AD | X-Z × `Référentiel métier` B18-B20 (marges de référence CLIENT 34,6 %, GARANTIE 5,7 %, CESSION 7 %) | marge attendue au mix du jour |
+| AL-AS | `Historique efficience/prod` (B date, H code ; C temps facturé total, D temps passé rappelé total, E temps facturé cession interne, F temps passé cession interne, G temps passé total) | productivité = C/G ; efficience = C/D ; efficience cessions internes = E/F (AR jour B1, AS mois) |
+| AT-BD | `Encours à date` (V code, I ancienneté, M valeur MO+PR, T dépréciation) ; BC ÷ CA moyen 6 mois de `Historique CA mensuel ateliers` | seuils `Référentiel métier` B15-B17 (20 / 30 / 40 j) |
+| BE-BN | `Historique CA par Magasin` (B date, E code ; C CA, D coût) | même logique J-1 / MTD / médiane 28 j |
+| K, R, S | `Malfaçons du mois` (P montant total, Q code, B date) | formules : `docs/sheets-formulas/malfacons.txt` |
+| G, W, BH | F, V, BG < `Référentiel métier` B8 (−30 %) | « ALERTE » ; G : `=IF(F3<…$B$8;"ALERTE";"")`, W et BH : `=IF(V3="";"";IF(V3<…$B$8;"ALERTE";""))` |
+| BO, BQ | `Détail facturation magasin journaliere` (T code, C date, S est à perte) | BQ = Σ S ÷ BO |
+| BP | `Analyse pièces client J-1` (Q marge €, U code, A canal = « Magasin ») | `=SUMIFS(…!$Q:$Q;…!$U:$U;$B3;…!$A:$A;"Magasin")` |
+| BR, BS, BT | `Détail facturation atelier journalière` | critères communs : AK = code, O = « Pièce », AH = « CLIENT », U = 0, N ≠ « FACTURE INTRA GROUPE ATELIER », AI ≠ « Intra-groupe sauf Primocar », AI ≠ « Inter sites » ; BR + X > 0 ; BS = SUMIFS(AA) − SUMIFS(Y) avec AR = 1 ; BT = COUNTIFS(… AR = 1) ÷ BR |
+
+### 3.3 Pièces à perte : un seul périmètre partout (décision du 2026-10-06)
+
+Vente **CLIENT externe**, **hors pièces de forfait**, **hors intragroupe** (Atelier :
+imputation `FACTURE INTRA GROUPE ATELIER`, catégories `Intra-groupe sauf Primocar`,
+`Inter sites` ; Magasin : `Cessions internes - interservices`, `Intra-Groupe Renault`,
+`Inter sites`, `Intra-groupe sauf Primocar`, `Export`), hors avoirs, quantité > 0, prix de
+vente net < PAMP. La liste du mail (`Analyse pièces client J-1`), les colonnes BP-BT, la
+météo et `Plaque APV!G` comptent **les mêmes pièces**. Les paliers du barème en € portent
+sur le **total du jour**. Vérifié le 2026-10-06 (B1 = 05/10) : 34 lignes Atelier + 11
+Magasin = 45 = somme de `Plaque APV!G` ; BP-BT identiques à un recalcul indépendant pour
+les 67 concessions.
+
+### 3.4 Contrôles et constats du 2026-10-06
+
+- 0 cellule en erreur sur les 67 lignes. Cohérences vérifiées : Q = L/P, AK = AF/AJ,
+  BN = BL/BM, F = D/E − 1, V = T/U − 1, AN = AL/AM − 1, AB = T − AA, AC = AB/T,
+  AE = AC − AD, BJ = BE − BI, BK = BJ/BE, BG = BE/BF − 1.
+- Alertes d'écart de CA fréquentes un lundi (05/10 : 23/67 MO, 25/67 PR interne, 31/67
+  PR externe) — à surveiller.
+- Valeurs aberrantes BMW_COLMAR (efficience cessions internes MTD 2 880 %, écart marge vs
+  mix +417 %) : très peu d'heures pointées ou de CA.
+- FIAT_MULHOUSE : mix MO/PR ≠ 100 % (lignes sources à `Affectation` = `0` / `NC` / `1`).
+
+## 4. Listes de détail (niveau concession)
+
+### 4.1 `Encours prioritaires` — top 5 par concession
+A Code concession · B N° OR · C Immatriculation · D Ancienneté (j) · E Montant MO encours ·
+F Montant PR encours · G Valeur totale OR · H Dépréciation · I Score. **Plafonné à 5 par
+concession** (OR > 30 j, tri par score) : jamais présenté comme exhaustif. Source :
+`Encours à date`.
+
+### 4.2 `Analyse pièces client J-1` — pièces vendues à perte hier ⚠️
+22 colonnes : A Canal (Atelier / Magasin) · B Concession (nom, via `Concession-plaques`) ·
+C N° OR (n° de document côté Magasin) · D Date · E Référence · F Désignation ·
+G Réceptionnaire / Nom_Magasinier ⚠️ · H Canal de vente · I Catégorie client ·
+J Nom du client ⚠️ · K Quantité · L CA brut · M Montant remise · N Remise % · O CA net ·
+P PAMP · Q Marge € · R Marge % · S Remise forcée · T Prix forcé · U Code concession ·
+V Plaque. Formule unique en A2 : `docs/sheets-formulas/analyse_pieces_j1.txt` (périmètre
+§3.3, tri par Marge € croissante). Vide sous l'en-tête un jour sans perte.
+
+### 4.3 `Efficience OR CI trop élevé` — OR en cession interne > 105 %
+**Deux tableaux côte à côte** : A-G pour l'affichage (A Code concession, B N° OR,
+C Réceptionnaire ⚠️, D Temps facturé, E Temps passé, F Efficience en %, **G Plaque**) et
+J-O en décimal (J Code, K N° OR, L Mécanicien ⚠️, M Temps facturé, N Temps passé rappelé,
+O Efficience). Le rapport utilise A-G. Seuil : `Référentiel métier` (105 %).
+
+### 4.4 `Taux remise MO/PR interne élevé` — remise MO > 15 % ou PR interne > 20 % ⚠️
+A Code concession · B N° OR · C Nom client ⚠️ · D Réceptionnaire ⚠️ · E CA brut MO ·
+F Remise MO · G Taux remise MO · H CA brut PR · I Remise PR · J Taux remise PR · **K Plaque**.
+Seuils : `Référentiel métier`. Voir §9 (taux aberrants quand le CA brut vaut 0).
+
+### 4.5 `Malfaçons du mois` et `Malfaçons J-1` ⚠️
+`Malfaçons du mois` = extrait du connecteur BigQuery `Malfaçons` (requête
+`docs/sql/malfacons_gestes_commerciaux.sql`, du 1er du mois de J-1 à J-1) : A Concession ·
+B Date_document · C Activite (Mécanique / Carrosserie) · D Fiche_imputee ·
+E Libelle_detail_intervention · F Categorie_OR · G Receptionnaire ⚠️ · H Nom_client ⚠️
+(propriétaire) · I Immatriculation · J Type_document (Facture / Avoir) · K Numero_OR_DMS ·
+L Numero_document · M Montant_MO · N Montant_PR · O Montant_autres · P Montant_total ·
+**Q Code concession** (formule, tirée jusqu'à la ligne 2000).
+`Malfaçons J-1` = mêmes colonnes A-Q filtrées sur la date B1 d'`Analyse Globale`, triées
+par montant décroissant, + **R Plaque**. Définition (10 fiches de cession interne) :
+`CADRAGE_APV.md` §15. Montants nets HT, avoirs déduits.
+
+## 5. Onglets intermédiaires (extraits des connecteurs BigQuery)
+
+| Onglet (GRID) | Connecteur (DATA_SOURCE) | Colonnes utiles | Remarques |
 |---|---|---|---|
-| KPI CA/objectifs/efficience/productivité/encours + volume Magasin (1 ligne/concession) | `Analyse Globale` | A=Code plaque, B=Code concession canonique, **B1**=date de référence (A1 = libellé ; déplacée de C1 le 2026-10-02), ligne 1 à partir de C = bandeaux de blocs, ligne 2=en-têtes, ligne 3+=data. Détail des colonnes (A→BR, plus 2 à ajouter) en §2.1 | Toutes les formules SUMIFS/AVERAGEIFS pointent vers les onglets bruts ci-dessous. **Lire par nom d'en-tête, pas par lettre** (colonnes réagencées le 2026-10-02, 3 colonnes malfaçons insérées le 2026-10-05) |
-| Top 5 encours les plus anciens par concession | `Encours prioritaires` | Code concession, N° OR, Immatriculation, Ancienneté (j), Montant MO/PR encours, Valeur totale OR, Dépréciation, Score | **Plafonné à 5/concession** — pas une liste exhaustive |
-| Ventes à perte pièces (J-1) | `Analyse pièces client J-1` (renommé, ex-"Analyse pièces J-1") | 22 colonnes (mise en page du 2026-10-02) : A=Canal (Atelier/Magasin), **B=Concession (nom)**, C=N° OR (n° de document côté Magasin), D=Date (format Date), G=Réceptionnaire/Nom_Magasinier ⚠️, J=Nom du client ⚠️, Q=Marge € (tri croissant), **U=Code concession**, **V=Plaque** | ⚠️ Données personnelles. Formule unique en A2 : `docs/sheets-formulas/analyse_pieces_j1.txt`. Était en `#VALUE!` jusqu'au 2026-10-02 (cf. §8 pt.6). **Hors pièces de forfait côté Atelier depuis le 2026-10-06** (`U=0`) : même périmètre que BP-BT d'`Analyse Globale` (05/10 : 34 lignes Atelier au lieu de 126, 11 Magasin ; somme = `Plaque APV!G`, 45) |
-| Ventes à perte pièces Magasin, volume total (J-1) | `Détail facturation magasin journaliere` | Revalidé le 2026-10-02 : B=Concession (brut), C=Date_document, D=Numero_document, E=Avoir, F=Categorie_client, G=Nom_Magasinier ⚠️, H=Nom_client ⚠️, I=Reference, J=Libelle_piece, K=Qte_servie, L=Prix_unitaire_net, M=Prix_brut_ligne, N=Remise_ligne, O=Prix_net_ligne, P=PAMP, Q=Prix_force, R=Remise_forcee, **S**=Est à perte (formule Sheet), **T**=Code concession (formule Sheet, fixe) | ⚠️ Données personnelles. Requête : `docs/sql/magasin_detail_journalier.sql`. Champ `Magasin` retiré le 25/09 → tout a décalé d'1 colonne **sauf** S et T |
-| Pièces atelier client vendues / à perte (J-1) | `Détail facturation atelier journalière` | Reflet de `facturation_detaillee_or` : N=Libelle_type_imputation, O=Libelle_type_operation, U=Est_ligne_forfait, X=Quantite_facturation, Y=PAMP_facturation (total de ligne), AA=Prix_vente_net, AD=Facture_avoirisee, AH=Affectation, AI=Categorie_client, AJ=Nom_client ⚠️, AK=Code concession, **AR=Est pièce à perte** | AR corrigée le 2026-10-02 : `=SI($AK2="";"";SI($O2="Pièce";SI(ET($X2>0;$AD2<>1;$AA2<$Y2);1;0);""))` — même règle que `Analyse pièces client J-1` (prix de vente net < PAMP, quantité > 0, hors facture avoirisée). L'ancienne version (`$Z<$Y`, montant facturé) marquait à tort les pièces de forfait (facturées 0 €) et les avoirs : 1 834 lignes « à perte » le 01/10 contre 153 réelles. BJ/BK d'`Analyse Globale` filtrent en plus `Est_ligne_forfait=0`. ⚠️ Quelques lignes sources arrivent **décalées** (ex. un nom de client en colonne Code concession, `Affectation` = `0`/`NC`/`1`) — origine probable de l'écart de mix FIAT_MULHOUSE, non traité |
-| CA PR externe (Magasin) J-1 / MTD | `Historique CA par Magasin` (extraction du connecteur `Historique CA Magasin`) | Concession, Date, CA_PR_Externe_Net_HT, Cout_PR_Externe, Code concession | Périmètre vérifié le 2026-10-02 (53/53 concessions à l'euro près) : **intersite exclu** (codes mouvement SIS/EIS = catégorie « Inter sites »), mais **intragroupe et cessions au service commercial inclus**. Requête du connecteur pas encore dans le dépôt |
-| OR en cession interne, efficience >105% | `Efficience OR CI trop élevé` | **2 tableaux côte à côte** : A:F (affichage %) et I:N (calcul décimal). A=Code concession, G=Plaque, C=Réceptionnaire ⚠️ | ⚠️ Ne pas confondre les deux tableaux ; Plaque en G, **pas** en O |
-| OR à taux de remise MO/PR interne élevé | `Taux remise MO/PR interne élevé` | A=Code concession, K=Plaque, C=Nom client ⚠️, D=Réceptionnaire ⚠️ | ⚠️ Données personnelles |
-| Malfaçons et gestes commerciaux du mois (1er du mois de J-1 → J-1) | `Malfaçons du mois` (extrait du connecteur BigQuery, sans onglet d'aperçu) | A=Concession, B=Date_document, C=Activite (Mécanique/Carrosserie), D=Fiche_imputee, E=Libelle_detail_intervention, F=Categorie_OR, G=Receptionnaire ⚠️, H=Nom_client ⚠️ (propriétaire), I=Immatriculation, J=Type_document (Facture/Avoir), K=Numero_OR_DMS, L=Numero_document, M=Montant_MO, N=Montant_PR, O=Montant_autres, P=Montant_total, **Q=Code concession** (formule Sheet, tirée jusqu'à la ligne 2000) | Requête : `docs/sql/malfacons_gestes_commerciaux.sql` (10 fiches de cession interne, définition `CADRAGE_APV.md` §15). Montants nets HT (`Prix_vente_net`, avoirs déduits). 1 ligne = 1 OR × fiche × date × document. Retirer un champ de la requête décale Q (cf. §8 pt.6) |
-| Malfaçons et gestes commerciaux du jour (J-1) | `Malfaçons J-1` | Mêmes 17 colonnes A:Q que `Malfaçons du mois` + **R=Plaque**. Formules : `docs/sheets-formulas/malfacons.txt` (A1 en-têtes, A2 `SORT(FILTER(...))` sur la date `Analyse Globale!B1`, tri par montant décroissant ; R2 via `Concession-plaques`) | ⚠️ Données personnelles. Vide sous l'en-tête un jour sans malfaçon |
-| Seuils métier (productivité basse, encours surveillance/alerte/critique) | `Référentiel métier` | `$B$11` (productivité), `$B$15/16/17` (encours) | |
+| `Détail facturation atelier journalière` | `Facturation détaillée Atelier` | reflet de `facturation_detaillee_or` J-1 : E Receptionnaire, L/M n° OR, N Libelle_type_imputation, O Libelle_type_operation, U Est_ligne_forfait, W Prix unitaire, X Quantite_facturation, Y PAMP_facturation (total de ligne), AA Prix_vente_net, AB/AC remise, AD Facture_avoirisee, AF/AG forçage, AH Affectation, AI Categorie_client, AJ Nom_client ⚠️, **AK Code concession**, AR **Est pièce à perte** | M = date (donne B1). AR : `=SI($AK2="";"";SI($O2="Pièce";SI(ET($X2>0;$AD2<>1;$AA2<$Y2);1;0);""))`. Quelques lignes sources arrivent décalées (§9) |
+| `Détail facturation magasin journaliere` | `Magasin` (`docs/sql/magasin_detail_journalier.sql`) | B Concession, C Date_document, D Numero_document, E Avoir, F Categorie_client, G Nom_Magasinier ⚠️, H Nom_client ⚠️, I Reference, J Libelle_piece, K Qte_servie, L Prix_unitaire_net, M Prix_brut_ligne, N Remise_ligne, O Prix_net_ligne, P PAMP, Q Prix_force, R Remise_forcee, **S Est à perte**, **T Code concession** | S corrigée le 2026-10-06 (elle comparait PAMP < prix forcé depuis le décalage du 25/09) : `=IF($T2="";"";IF(AND($K2>0;$E2<>1;$O2<$P2;$F2<>"Cessions internes - interservices";$F2<>"Intra-Groupe Renault";$F2<>"Inter sites";$F2<>"Intra-groupe sauf Primocar";$F2<>"Export");1;0))` |
+| `Historique CA par atelier` | `Historique CA Atelier` | A Concession, B Date, C CA MO, D CA PR interne, E Coût PR interne, F Nb OR clôturés, G-I CA MO CLIENT / GARANTIE / CESSION, J CA PR interne CLIENT, K coût PR interne CLIENT, L-M CA PR interne GARANTIE / CESSION, N Code concession | aucun filtre `Est_ferme` sur le CA depuis le 30/09 (`CADRAGE_APV.md` §14) |
+| `Historique CA mensuel ateliers` | `Historique CA mensuel par atelier` | A Concession, B Mois, C CA MO, D CA PR interne, E-K mix par canal, L Code concession, M Plaque | base de l'encours en jours de CA |
+| `Historique efficience/prod` | `Historique Efficience + Productivité` | A Concession, B Date, C Temps_facture_total, D Rappel_temps_passe_total, E Temps_facture_cession_interne, F Rappel_temps_passe_cession_interne, G Temps_passe_total, H Code concession, I Plaque | le « / » du nom d'onglet doit être encodé dans une URL d'API |
+| `Encours à date` | `Encours` (Salesforce, OR non clôturés) | B Concession, C Numero_OR_DMS, D Immatriculation, I Anciennete_jours, J Receptionnaire, L-P montants, T Depreciation_OR, V Code concession, W Score, X > 30 j, Y Plaque | |
+| `Historique CA par Magasin` | `Historique CA Magasin` | A Concession, B Date, C CA_PR_Externe_Net_HT, D Cout_PR_Externe, E Code concession | intersite exclu ; intragroupe et cessions au service commercial **inclus** (vérifié 02/10) ; requête pas dans le dépôt |
+| `Objectif APV` | `Obj APV` | A Concession, B Année, C Mois, D MO, E PR interne client, F PR interne, G PR externe, H Magasin, I Plaque, J Code concession | |
+| `Malfaçons du mois` | `Malfaçons` | §4.5 | |
+| `Temps facturés par jour`, `Temps passés par jour` | `Temps facturés journaliers`, `Temps passés journaliers` | — | non lus par `Analyse Globale` |
 
-### 2.1 `Analyse Globale` — colonnes (réagencées le 2026-10-02, malfaçons le 2026-10-05, signaux météo le 2026-10-06)
+Actualisation : tous les connecteurs du classeur sont rafraîchis ensemble chaque jour à
+10 h (heure de Paris), après la remontée des sources dans BigQuery.
 
-Rangées par activité (Atelier puis Magasin), puis par indicateur : chaque
-indicateur regroupe J-1, moyenne mobile, écart, alerte, MTD, objectif et mix
-par canal. Bandeaux de blocs en ligne 1 (repris tels quels ci-dessous).
+`Référentiel métier` : seuils (B2-B4 vieux encours 90/180/365 j, B5 et B12 efficience
+cession interne 105 %, B8 écart CA −30 %, B11 productivité 80 %, B13-B14 remises 15 % /
+20 %, B15-B17 encours 20/30/40 j, B18-B20 marges PR interne de référence par canal).
 
-| Colonnes | Bandeau ligne 1 | Contenu |
-|---|---|---|
-| A-B | — | Code plaque, Code concession canonique |
-| C-K | ATELIER - CA MO J-1 | C Nb OR clôturés J-1, D CA MO J-1, E moy. mobile 4 sem., F écart %, G **Alerte écart CA**, H-J % CA MO CLIENT/GARANTIE/CESSION J-1, **K Malfaçons J-1** (€) |
-| L-S | ATELIER - CA MO MTD | L CA MO MTD, M-O % CA MO CLIENT/GARANTIE/CESSION MTD, P objectif MO mensuel, Q % réalisation, **R Malfaçons MTD** (€), **S % Malfaçons MTD** (= R/L, coût total malfaçons rapporté au seul CA MO) |
-| T-AE | ATELIER - CA & Marge PR Interne J-1 | T CA PR interne J-1, U moy. mobile, V écart %, **W Alerte écart CA PR interne**, X-Z % CA PR interne CLIENT/GARANTIE/CESSION J-1, AA coût, AB marge, AC taux marge J-1, AD marge attendue (mix), AE écart vs mix (affiché en % = points) |
-| AF-AK | ATELIER - CA & Marge PR Interne MTD | AF CA PR interne MTD, AG-AI % CLIENT/GARANTIE/CESSION MTD, AJ objectif PR interne mensuel, AK % réalisation |
-| AL-AS | ATELIER - Prod/Efficience | AL productivité J-1, AM moy. mobile, AN écart %, AO **Alerte productivité basse**, AP efficience J-1, AQ moy. mobile, **AR efficience cessions internes J-1** (journée entière), AS efficience cessions internes MTD |
-| AT-BD | ATELIER - Encours | AT nb OR en cours, AU valeur, AV-AX vieux encours 90-180j/180-365j/+365j (nb), AY-BA idem (valeur), BB dépréciation, BC encours en j de CA, BD **Alerte encours** |
-| BE-BN | MAGASIN | BE CA PR externe J-1, BF moy. mobile, **BG écart % CA PR externe**, **BH Alerte écart CA PR externe**, BI coût, BJ marge, BK taux marge J-1, BL CA PR externe MTD, BM objectif, BN % réalisation |
-| BO-BQ | *(sous le bandeau MAGASIN)* | BO nb pièces magasin vendues J-1, **BP Valeur pièces magasin à perte J-1**, BQ % vendues à perte J-1 |
-| BR-BT | *(sous le bandeau MAGASIN, mais données Atelier)* | BR nb pièces atelier client vendues (hors forfaits, hors intragroupe, Quantité>0), **BS Valeur pièces atelier à perte J-1 (Hors forfait)**, BT % vendues à perte |
+## 6. Niveau Plaque — `Plaque APV`
 
-**Colonnes de signaux du barème météo** (ajoutées par Corentin le 2026-10-06 : prévues
-au cadrage §12.6/§12.7 mais jamais collées jusque-là) :
-- W `Alerte écart CA PR interne` : `=IF(V3="";"";IF(V3<'Référentiel métier'!$B$8;"ALERTE";""))`
-- AR `Efficience cessions internes J-1` : même formule que AS mais sur la seule date B1 —
-  `Historique efficience/prod` E (`Temps_facture_cession_interne`) ÷ F
-  (`Rappel_temps_passe_cession_interne`) par code concession (H) et date (B)
-- BG `Écart % CA PR Externe journalier` : `=IFERROR((BE3-BF3)/BF3;"")` ; BH `Alerte écart CA
-  PR externe` : même règle que W sur BG
-- **Pièces à perte — un seul périmètre partout** (décision de Corentin, 2026-10-06) :
-  vente CLIENT externe, **hors pièces de forfait, hors intragroupe** (Atelier : imputation
-  `FACTURE INTRA GROUPE ATELIER`, catégories `Intra-groupe sauf Primocar` et `Inter sites` ;
-  Magasin : cessions internes, intragroupe, inter sites, Export), hors avoirs, quantité > 0,
-  prix net < PAMP. La liste `Analyse pièces client J-1`, les colonnes € et % et la météo
-  comptent les mêmes pièces. Paliers du barème = total du jour, pas ligne par ligne.
-  - BP `Valeur pièces magasin à perte J-1` = somme des Marge € Magasin de la liste :
-    `=SUMIFS('Analyse pièces client J-1'!$Q:$Q;'Analyse pièces client J-1'!$U:$U;$B3;'Analyse pièces client J-1'!$A:$A;"Magasin")`
-  - BQ s'appuie sur `Détail facturation magasin journaliere!S` (`Est à perte`), **corrigée
-    le 2026-10-06** : elle comparait `PAMP < Prix forcé` (colonnes décalées depuis le
-    retrait du champ Magasin le 25/09), ce qui comptait les retours en perte et ratait les
-    vraies ventes à perte. Nouvelle formule (S2, tirée) :
-    `=IF($T2="";"";IF(AND($K2>0;$E2<>1;$O2<$P2;$F2<>"Cessions internes - interservices";$F2<>"Intra-Groupe Renault";$F2<>"Inter sites";$F2<>"Intra-groupe sauf Primocar";$F2<>"Export");1;0))`
-  - BR, BS, BT lisent `Détail facturation atelier journalière` avec les critères : AK = code
-    concession, O = « Pièce », AH = « CLIENT », U = 0 (hors forfait), N ≠ « FACTURE INTRA
-    GROUPE ATELIER », AI ≠ « Intra-groupe sauf Primocar » et ≠ « Inter sites » ; BR ajoute
-    X > 0 ; BS et BT ajoutent AR = 1 (pièce à perte). BS = SUMIFS(AA) − SUMIFS(Y) (prix de
-    vente net − PAMP), BT = COUNTIFS(…) ÷ BR.
-  - Vérifié le 2026-10-06 sur les 67 concessions (B1 = 05/10) : BP/BQ = liste Magasin, et
-    BR/BS/BT = recalcul indépendant depuis le détail atelier, à l'unité près.
+1 ligne par plaque ; B1 = `='Analyse Globale'!$B$1`. **11 plaques au 06/10** :
+`PLQ_PRIMOCAR` et `PLQ_VEODROME` n'y figurent pas (pas d'activité APV remontée).
 
-Constat du 05/10 à surveiller : les alertes d'écart de CA se déclenchent souvent (23/67
-concessions côté MO, 25/67 PR interne, 31/67 PR externe, un lundi). Valeurs aberrantes à
-BMW_COLMAR (efficience cessions internes MTD 2 880 %, écart marge vs mix +417 %).
-
-Colonnes malfaçons (2026-10-05) : K = `SUMIFS` de `Malfaçons du mois!P` par code
-concession (Q) à la date B1 ; R = même somme du 1er du mois à B1 ; S = R/L.
-Formules exactes : `docs/sheets-formulas/malfacons.txt`. Vérifié le 2026-10-05 sur
-OPELFIAT_DIJON : K = 0 € (dimanche 04/10), R = 2 507,91 € (2 OR du 01/10), S = 57,9 %
-(début de mois : ratio très volatil, cf. `CADRAGE_APV.md` §15).
-
-Contrôles de cohérence passés le 2026-10-02 sur les 67 concessions (lettres
-actuelles, après les insertions des 2026-10-05 et 06 : Q=L/P, AK=AF/AJ, BN=BL/BM, F=D/E-1,
-V=T/U-1, AN=AL/AM-1, AB=T-AA, AC=AB/T, AE=AC-AD, BJ=BE-BI, BK=BJ/BE) : 0 incohérence.
-Relecture du 2026-10-06 (B1 = 05/10) : 0 cellule en erreur sur les 67 lignes. Seule anomalie de données :
-FIAT_MULHOUSE, mix MO/PR ≠ 100 % (lignes à `Affectation` = `0`/`NC`/`1`).
-
-## 3. Transco concession/plaque — `Rapport quotidien APV`
-
-| Onglet | Rôle | Colonnes |
-|---|---|---|
-| `Mapping concession` | Valeur brute BigQuery → code canonique (entete_or, entete_pieces) | A-D = Source_BigQuery/Champ_Source/Valeur_Source/Code_Concession_Canonique (import filtré depuis `Référentiel Concession > Mapping_Sources`) ; E/F = Code_Plaque/Nom_Plaque ajoutés (non utilisés par `Plaque APV`, redondant avec `Concession-plaques`) |
-| `Concession-plaques` | Code canonique → Plaque — **LA** source de vérité Plaque | Import direct de `Référentiel Concession > Concessions_Plaques!A:D` (Code_Concession, Nom_Concession, Code_Plaque, Nom_Plaque) |
-
-**Piège important** : les champs BigQuery `Regroupement_Concession_APV`
-(`entete_pieces`) et `Regroupement_concessions_APV` (`entete_or`) **ne font aucun
-regroupement multi-marques** — vérifié empiriquement, leur valeur est identique au
-champ `Concession` brut. Ne jamais s'y fier pour la transco ; toujours passer par
-`Mapping concession`/`Mapping_Sources`.
-
-## 4. Niveau Plaque (réseau) — `Rapport quotidien APV`
-
-Onglet `Plaque APV` — 1 ligne par plaque (13 plaques), généré automatiquement.
-
-| Colonne | Donnée | Formule (résumé) | Source brute |
+| Col. | Donnée | Calcul | Source |
 |---|---|---|---|
-| A | Plaque | `=UNIQUE('Concession-plaques'!$C:$C)` | — |
-| B1 | Date de référence | `='Analyse Globale'!$B$1` (suivi automatique du déplacement C1→B1 du 2026-10-02) | — |
-| B | Efficience J-1 | `IFERROR(SUMIFS(Temps_facture)/SUMIFS(Rappel_temps_passe);"")` par Plaque+Date | `Historique efficience/prod` (I=Plaque) |
-| C | Productivité J-1 | `IFERROR(SUMIFS(Temps_facture)/SUMIFS(Temps_passe_total);"")` par Plaque+Date — vide plutôt que `#DIV/0!` quand la plaque n'a aucun temps passé total ce jour-là (cas PLQ_BMW_MOTO au 05/10, corrigé le 2026-10-06) | `Historique efficience/prod` (I=Plaque) |
-| D | Valeur encours MO+PR | `SUMIFS(Montant_MO_PR_encours)` par Plaque | `Encours à date` (Y=Plaque, M=Montant) |
-| E | Encours +90j (nb) | `COUNTIFS(Ancienneté>=90)` par Plaque | `Encours à date` (Y=Plaque, I=Ancienneté) |
-| F | Encours en j de CA | Valeur encours ÷ ((somme CA MO 6 mois + somme CA PR interne 6 mois)/180), pondéré réseau | `Historique CA mensuel ateliers` (F=Plaque, C=CA MO, D=CA PR interne) |
-| G | Pièces client en marge négative | `=COUNTIFS('Analyse pièces client J-1'!$V:$V;$A3)` (Atelier + Magasin) — affichait 0 partout jusqu'au 2026-10-02, repointé sur V | `Analyse pièces client J-1` (**V**=Plaque) |
-| H | Forfaits marge <10% | `RECHERCHEV` + `IMPORTRANGE` vers un résumé agrégé (pas le détail brut) | `Anomalies forfaits > Plaque - Forfaits marge faible` |
-| I | OR remise élevée | `COUNTIFS` par Plaque | `Taux remise MO/PR interne élevé` (K=Plaque) |
-| J | OR efficience CI élevée | `COUNTIFS` par Plaque | `Efficience OR CI trop élevé` (**G**=Plaque) |
-| K | Malfaçons J-1 (€) | `SUMIFS('Analyse Globale'!K)` par Code plaque (A) | `Analyse Globale` (K) |
-| L | Malfaçons MTD (€) | `SUMIFS('Analyse Globale'!R)` par Code plaque | `Analyse Globale` (R) |
-| M | % Malfaçons MTD | L ÷ `SUMIFS('Analyse Globale'!L)` (CA MO MTD) — pondéré | `Analyse Globale` (R, L) |
+| A | Plaque | `UNIQUE` des plaques | `Concession-plaques` |
+| B | Efficience J-1 | `IFERROR(Σ temps facturé ÷ Σ temps passé rappelé;"")` par plaque et date | `Historique efficience/prod` (I) |
+| C | Productivité J-1 | `IFERROR(Σ temps facturé ÷ Σ temps passé total;"")` — vide si aucun temps passé total (PLQ_BMW_MOTO le 05/10) | idem |
+| D | Valeur encours MO+PR | Σ par plaque | `Encours à date` (Y, M) |
+| E | Encours +90 j (nb) | `COUNTIFS(ancienneté ≥ 90)` | `Encours à date` (Y, I) |
+| F | Encours en j de CA | valeur ÷ (CA MO + CA PR interne des 6 mois ÷ 180), pondéré | `Historique CA mensuel ateliers` (M) |
+| G | Pièces client en marge négative | `COUNTIFS('Analyse pièces client J-1'!$V:$V;$A3)` (Atelier + Magasin) | §4.2 |
+| H | Forfaits marge < 10 % | `VLOOKUP` + `IMPORTRANGE` du résumé agrégé | `Anomalies forfaits › Plaque - Forfaits marge faible` |
+| I | Remise élevée (OR) | `COUNTIFS` par plaque | `Taux remise MO/PR interne élevé` (K) |
+| J | Efficience CI élevée (OR) | `COUNTIFS` par plaque | `Efficience OR CI trop élevé` (G) |
+| K | Malfaçons J-1 | `SUMIFS('Analyse Globale'!K)` par code plaque (A) | `Analyse Globale` |
+| L | Malfaçons MTD | `SUMIFS('Analyse Globale'!R)` | idem |
+| M | % Malfaçons MTD | L ÷ Σ `'Analyse Globale'!L` (CA MO MTD) — pondéré | idem |
 
-**Statut connu au 2026-09-25** : `UNIQUE()` ne remonte que 11 plaques sur 13
-(`PLQ_PRIMOCAR` et `PLQ_VEODROME` suspectées manquantes) — à vérifier/corriger.
+Principe : au niveau Plaque et Directeur, le bloc APV remonte des **compteurs de
+problèmes**, pas de CA ni d'objectifs — **sauf les malfaçons** (montant et % du CA MO,
+décision du 2026-10-06). Totaux Plaque toujours **pondérés** (somme des numérateurs ÷
+somme des dénominateurs), jamais une moyenne des %. Les remises forcées n'ont pas de
+total Plaque (classeur pas branché, §8).
 
-**Principe de conception (validé avec Corentin le 25/09)** : au niveau Plaque/Directeur,
-le bloc APV du mail **ne remonte pas de CA/objectif** — uniquement des compteurs de
-problème (voir mémoire `feedback_plaque_mail_apv_signals_not_ca`). **Exception
-(2026-10-06)** : malfaçons et gestes commerciaux en montant et en % du CA MO
-(colonnes K-M, formules `docs/sheets-formulas/malfacons.txt` §3, en place depuis
-le 2026-10-06). Les totaux Plaque
-sont calculés en **agrégation pondérée** (somme des numérateurs/dénominateurs réseau),
-jamais en moyenne simple des % par concession.
-
-## 5. Classeur `Anomalies forfaits`
+## 7. Classeur `Anomalies forfaits`
 
 | Onglet | Rôle | Colonnes |
 |---|---|---|
-| `Mapping` | Même structure que `Mapping concession` (transco brute→canonique) | Source_BigQuery/Champ_Source/Valeur_Source/Code_Concession_Canonique |
-| `Extrait J-1 - Marges<10%` | Forfaits à marge <10% du jour | V=Code concession (déjà branché), W=Plaque, E=Nom_client ⚠️, H=Receptionnaire ⚠️ |
-| `Concession-plaques` | Import local (même source que dans `Rapport quotidien APV`) | — |
-| `Plaque - Forfaits marge faible` | Résumé agrégé par plaque, **seul ce qui est réimporté dans `Plaque APV`** (pas le détail brut avec les noms) | A=Plaque (`UNIQUE`), B=Nb forfaits (`COUNTIFS`) |
-| `Forfaits pièces suspectes` (DATA_SOURCE) | Détection n°3 — **en pause depuis 2026-09-23**, non utilisée dans le mail actuel | — |
+| `Data source Forfait marges` (connecteur) → `Extrait J-1 - Marges<10%` | Forfaits facturés hier à marge estimée < 10 % (requête `docs/sql/marge_forfaits_j1_extract.sql`) | A Date_reference · B Concession · D Numero_OR_DMS · E Nom_client ⚠️ · H Receptionnaire ⚠️ · J Libelle_forfait · M Detail_pieces · N Prix_forfait_HT · O Taux_remise_forfait_pct · P Cout_PR · Q Heures_MO · R Taux horaire estimé · S Coût MO estimé · T Marge_estimee · U Taux_marge_estime_pct · **V Code concession** · **W Plaque** |
+| `Plaque - Forfaits marge faible` | Résumé par plaque, seul onglet réimporté dans `Plaque APV` | A Code_Plaque · B Nb forfaits < 10 % |
+| `Historique`, `Destinataires marge faible` | Historisation et diffusion dédiée du mail forfaits (`CADRAGE_APV.md` §9.1) | — |
+| `Forfaits pièces suspectes` → `Forfaits suspects` | Détection n° 3, **en pause** : pas dans le mail | — |
+| `Mapping`, `Concession-plaques` | Transco locale | — |
 
-## 6. Classeur `Prix/Remises forcés` — **pas encore branché au niveau Plaque**
+## 8. Classeur `Prix/Remises forcés` — pas encore branché au niveau Plaque
 
 | Onglet | Rôle | Colonnes |
 |---|---|---|
-| `Mapping concessions` | Transco brute→canonique complet (entete_or, entete_pieces, v_sf_account) | A-D |
-| `Prix/Remises forcés` | Extrait Atelier+Magasin du jour | V=Code concession (corrigé le 25/09 — pointait vers un onglet `Mapping` renommé en `Mapping concessions`, fallback `IFERROR` masquait l'erreur), C=Nom client ⚠️, D=Réceptionnaire ⚠️ |
-| `Contact` | Destinataires par concession | Concession, Fonction (Chef d'atelier / Responsable Magasin), Nom complet ⚠️, Email |
-| `Transco_Concessions` | Mapping legacy différent (nom brut → nom groupé lisible), potentiellement redondant avec `Mapping concessions` — statut à clarifier avec Corentin | |
+| `Data Prix/Remises forcés` (connecteur) → `Prix/Remises forcés` | Lignes à prix ou remise forcés, Atelier + Magasin | A concession · B numero_or · C numero_facture · **D type** (Atelier / Magasin : le mail APV ne prend que **Magasin**) · E date_doc · F receptionnaire ⚠️ · G reference · H libelle · I type_imputation · J categorie_client · K nom_client ⚠️ · L forfait · M forcage · N quantite · O prix_brut · P prix_vente_net · Q remise_montant · R remise_pct · S pamp · T marge · U taux_marge_pct · **V Code concession** |
+| `Contact` | Destinataires par concession | Concession · Fonction (Chef d'atelier / Responsable Magasin) · Nom complet ⚠️ · Email |
+| `Mapping concessions`, `Transco_Concessions` | Transco (la seconde, legacy, est à clarifier) | — |
 
-Pour brancher ce classeur au niveau Plaque : même recette que pour les forfaits
-(§4/§5) — ajouter une colonne `Plaque` sur `Prix/Remises forcés` (via import de
-`Concession-plaques`), puis un onglet résumé agrégé par plaque, puis
-`RECHERCHEV`+`IMPORTRANGE` depuis `Plaque APV`. Pas fait à ce jour.
+Pour le niveau Plaque : même recette que les forfaits (colonne Plaque, résumé agrégé par
+plaque, `IMPORTRANGE` depuis `Plaque APV`). Pas fait.
 
-## 7. Données personnelles — où elles sont, jamais dans un mockup non anonymisé
+## 9. Anomalies de données connues
 
-Colonnes contenant des noms de clients/salariés réels (à toujours anonymiser avant
-tout commit git ou brouillon partagé) :
+- **`Taux remise MO/PR interne élevé`** : quand le CA brut MO ou PR vaut 0 avec une remise
+  non nulle, le taux sort absurde (ex. BMW_BELFORT au 05/10 : −343 399 471 587 000 000 %).
+  Ces lignes ne sont pas de vraies remises élevées ; la formule devrait exiger un CA brut > 0.
+- **`Efficience OR CI trop élevé`** : des OR à 0,01 h de temps passé donnent des
+  efficiences de plusieurs milliers de % (ex. 3 300 % à BMW_COLMAR).
+- **`Détail facturation atelier journalière`** : quelques lignes sources arrivent
+  décalées (un nom de client en colonne Code concession, `Affectation` = `0` / `NC` / `1`).
+- **Isuzu Châlons** (plaque Hyundai) : pas de données VO ni APV propres.
 
-- `Rapport quotidien APV` : `Analyse pièces client J-1` (Nom du client, Réceptionnaire),
-  `Détail facturation magasin journaliere` (Nom_client, Nom_Magasinier),
-  `Efficience OR CI trop élevé` (Réceptionnaire/Mécanicien), `Taux remise MO/PR interne
-  élevé` (Nom client, Réceptionnaire), `Malfaçons du mois` et `Malfaçons J-1`
-  (Nom_client, Receptionnaire, Immatriculation)
-- `Anomalies forfaits` : `Extrait J-1 - Marges<10%` (Nom_client, Receptionnaire)
-- `Prix/Remises forcés` : `Prix/Remises forcés` (nom_client, receptionnaire),
-  `Contact` (Nom complet, Email)
+## 10. Données personnelles
 
-Les onglets résumés agrégés (`Plaque APV`, `Plaque - Forfaits marge faible`) ne
-contiennent **aucune** donnée personnelle — uniquement des compteurs — c'est
-pourquoi ce sont eux qu'on réimporte entre classeurs, jamais le détail brut.
+Noms réels de clients et de salariés (jamais dans un fichier commité ni une maquette non
+anonymisée ; noms réels dans les mails envoyés) :
+- `Rapport quotidien APV` : `Analyse pièces client J-1`, `Détail facturation atelier
+  journalière`, `Détail facturation magasin journaliere`, `Efficience OR CI trop élevé`,
+  `Taux remise MO/PR interne élevé`, `Malfaçons du mois`, `Malfaçons J-1`, `Encours à date`
+  (réceptionnaire, mécanicien), `Encours prioritaires` (immatriculations).
+- `Anomalies forfaits` : `Extrait J-1 - Marges<10%`.
+- `Prix/Remises forcés` : `Prix/Remises forcés`, `Contact`.
 
-## 8. Pièges génériques rencontrés ce chantier (à ne pas refaire)
+Les résumés agrégés (`Plaque APV`, `Plaque - Forfaits marge faible`) ne contiennent que des
+compteurs et montants : ce sont eux qu'on réimporte entre classeurs, jamais le détail.
 
-1. Un onglet renommé en cours de route casse silencieusement toute formule qui le
-   référence par nom — si l'erreur est avalée par un `IFERROR` avec fallback sur la
-   valeur brute, le bug reste invisible. Toujours préférer un fallback visible
-   (`"MAPPING MANQUANT: "&valeur`) à un silence.
-2. Ne jamais supposer qu'une colonne est vide avant d'y écrire — vérifier l'en-tête
-   réel (arrivé 3 fois : `Encours à date` colonnes W/X, `Efficience OR CI trop élevé`
-   colonne O au lieu de G).
-3. `IMPORTRANGE` ne traverse qu'un seul onglet/plage à la fois — deux structures
-   sources différentes (ex. mapping valeur-brute vs mapping plaque) nécessitent deux
-   imports séparés, même dans le même classeur.
-4. Import inter-classeurs : toujours importer le **résultat agrégé** (compteur par
-   plaque), jamais le détail brut, pour éviter de propager des données personnelles
-   d'un classeur à l'autre.
-5. Une plage type `NomOnglet!A1:D100` contenant un `/` dans le nom d'onglet doit être
-   URL-encodée si on y accède via l'API brute (le CLI `gws` ne le fait pas
-   automatiquement).
-6. Retirer un champ d'une requête `DATA_SOURCE` décale toutes les colonnes de
-   l'extrait qui le suivent — **sauf** les colonnes ajoutées manuellement en dehors
-   de la requête (ex. `Code concession` sur `Détail facturation magasin
-   journaliere`, ancrée en position fixe) : elles restent où elles sont, ce qui
-   peut désynchroniser une formule qui référence une autre colonne par sa position
-   d'avant le changement (arrivé le 25/09 : `Date_document` glissée de D à C après
-   retrait du champ `Magasin`, formule `Analyse Globale` cassée jusqu'à correction).
-   Même cause pour `Analyse pièces client J-1`, en `#VALUE!` jusqu'au 2026-10-02 :
-   la partie Magasin lisait les anciennes lettres, ne trouvait plus aucune ligne,
-   et un `FILTER` vide (1 cellule `#N/A`) empilé sous un bloc de 20 colonnes fait
-   planter tout le tableau. Corrigé, et chaque bloc est désormais protégé par
-   `IFNA(...; ligne vide)`.
-7. Comparer des valeurs avant/après ne détecte pas une colonne déjà cassée avant :
-   `Plaque APV!G` valait 0 avant et après le 2026-10-02, alors que la liste
-   source contenait 139 lignes (corrigé le jour même). Toujours confronter un
-   compteur à sa source.
+## 11. Pièges rencontrés (à ne pas refaire)
+
+1. **Colonnes décalées par un changement de requête.** Retirer ou ajouter un champ à une
+   requête de connecteur décale les colonnes de l'extrait, mais pas les colonnes en
+   formule ajoutées à droite. Toute formule qui lit l'extrait par lettre doit alors être
+   revue. Arrivé le 25/09 (retrait du champ `Magasin`) : `Analyse Globale` cassée, liste
+   des pièces à perte en `#VALUE!` jusqu'au 02/10, et colonne `Est à perte` du détail
+   magasin fausse jusqu'au 06/10 (elle comparait PAMP et prix forcé).
+2. **Un `IFERROR` peut cacher une panne.** Un onglet renommé casse les formules qui le
+   citent ; si l'erreur est avalée par un `IFERROR` avec une valeur de repli, rien ne se
+   voit. Préférer un repli visible (`"MAPPING MANQUANT: "&valeur`).
+3. **Un compteur se confronte à sa source.** Comparer avant/après ne voit pas une colonne
+   déjà cassée : `Plaque APV!G` valait 0 avant et après le 02/10 alors que la liste
+   contenait 139 lignes.
+4. **Deux mesures d'un même signal doivent partager le même périmètre.** Le 06/10, la
+   valeur et le % des pièces à perte se contredisaient (l'un incluait les forfaits,
+   l'autre l'intragroupe) : un seul périmètre, §3.3.
+5. **Vérifier l'en-tête réel avant d'écrire.** Arrivé plusieurs fois (`Encours à date`
+   W/X, `Efficience OR CI trop élevé` G et non O).
+6. **`IMPORTRANGE`** : une plage par import ; importer le résultat agrégé, jamais le détail
+   (données personnelles).
+7. **Nom d'onglet avec « / »** (`Historique efficience/prod`, `Taux remise MO/PR interne
+   élevé`, `Prix/Remises forcés`) : à encoder dans une URL d'API ; l'outil de lecture local
+   (`gws`) échoue dessus, GitHub Actions passe.
+8. **Champs BigQuery `Regroupement_concession(s)_APV`** : ne regroupent rien (valeur =
+   concession brute). Toujours passer par `Mapping concession` pour obtenir le code.
