@@ -118,7 +118,7 @@ Malfaçons J-1 (K), Malfaçons MTD (R), % Malfaçons MTD (S)) (§15)
 | CA PR Externe J-1 / MTD | CA PR externe J-1 (BE) / CA PR externe MTD (BL) |
 | Objectif PR ext. mensuel / % Réal. | objectif (BM) / % réalisation (BN) — même règle « plein mois » |
 | Marge PR Externe J-1 / Taux marge | marge (BJ) / taux marge J-1 (BK) |
-| Nb pièces vendues J-1 / % vendues à perte J-1 | nb pièces magasin vendues J-1 (BO) / % à perte (BP) |
+| Nb pièces vendues J-1 / % vendues à perte J-1 | nb pièces magasin vendues J-1 (BO) / % à perte (BQ) |
 
 - Taux marge PR Externe inclut l'Export (marge ≈ 100 %, PAMP vide) : optimiste si fort export.
 
@@ -130,12 +130,14 @@ Aucun cas : « Rien à signaler » en italique. Hors score.
 
 ## 7. Ventes à perte du jour (`apv_pieces_a_perte`, colonne Canal) (§12.4, §11)
 
-- Ventes CLIENT hors intragroupe/inter-sites/Export, prix de vente net < PAMP, quantité > 0,
-  hors avoirs. Deux sous-listes : **Magasin**, puis **Atelier**. Toutes les lignes.
+- Ventes CLIENT hors intragroupe/inter-sites/Export, **hors pièces de forfait**, prix de
+  vente net < PAMP, quantité > 0, hors avoirs. Deux sous-listes : **Magasin**, puis
+  **Atelier**. Toutes les lignes. Les colonnes € et % d'`Analyse Globale` comptent exactement
+  ces lignes : « Valeur pièces magasin/atelier à perte J-1 », « % pièces … à perte J-1 ».
 - Colonnes obligatoires : N° OR (n° document côté Magasin), Référence, Désignation,
   **Nom du client**, **Réceptionnaire/Nom_Magasinier**, Marge € (rouge gras). Tri par Marge €.
 - Intro Magasin : volume de contexte, ex. « 35 pièces vendues à perte sur 339 vendues, soit
-  10,3 % » (BO, BP ; nb à perte = nb de lignes Magasin de la liste).
+  10,3 % » (BO, BQ ; nb à perte = nb de lignes Magasin de la liste).
 - Aucune ligne d'un canal : « Rien à signaler » pour ce canal.
 
 ## 8. Météo Atelier — barème de points (CADRAGE_APV §12.6, §15)
@@ -148,7 +150,7 @@ Score calculé au moment de la composition (pas de colonne score dans le Sheet).
 | Écart CA = **max** (CA MO, CA PR interne) | « Alerte écart CA » (G) ou « Alerte écart CA PR interne » (W) | 1 (jamais 2) |
 | Efficience globale J-1 (AP) | 80-90 % / < 80 % | 1 / 3 |
 | « Efficience cessions internes J-1 » (AR, journée entière) | 110-150 % / > 150 % | 1 / 2 |
-| « Valeur pièces atelier à perte J-1 » (total du jour, négatif) | perte 100-250 € / 250-500 € / > 500 € | 1 / 2 / 3 |
+| « Valeur pièces atelier à perte J-1 (Hors forfait) » (BS, total du jour, négatif) | perte 100-250 € / 250-500 € / > 500 € | 1 / 2 / 3 |
 | Forfaits : somme des Marge_estimee négatives de la liste du jour (total du jour) | −50 à −200 € / −200 à −500 € / < −500 € | 1 / 2 / 3 |
 | Écart marge PR interne vs mix (AE, « −6 % » = −6 pts) | −10 à −5 pts / < −10 pts | 1 / 2 |
 | Malfaçons J-1 (K) | 150-500 € / 500-1 500 € / > 1 500 € | 1 / 2 / 3 |
@@ -167,7 +169,7 @@ Score calculé au moment de la composition (pas de colonne score dans le Sheet).
 
 | Signal | Mesure | Points |
 |---|---|---|
-| « Valeur pièces magasin à perte J-1 » (total du jour, négatif) | perte 50-100 € / 100-200 € / > 200 € | 1 / 2 / 3 |
+| « Valeur pièces magasin à perte J-1 » (BP, total du jour, négatif) | perte 50-100 € / 100-200 € / > 200 € | 1 / 2 / 3 |
 | « Alerte écart CA PR externe » (BH) = ALERTE | écart < −30 % | 1 |
 | Taux marge PR Externe J-1 (BK) | 10-15 % / < 10 % | 1 / 2 |
 

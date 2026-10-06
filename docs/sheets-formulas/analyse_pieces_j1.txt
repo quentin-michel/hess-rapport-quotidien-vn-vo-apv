@@ -50,6 +50,11 @@ sources sont retouches) :
 
 Filtres :
 - Atelier : Libelle_type_operation="Pièce" ; Facture_avoirisee<>1 ;
+  Est_ligne_forfait=0 (colonne U, ajout du 2026-10-06 : pièces vendues dans un
+  forfait exclues, leur perte est déjà portée par la marge du forfait et signalée
+  par le bloc Anomalies forfaits ; même périmètre que les colonnes « Valeur pièces
+  atelier à perte J-1 » et « % pièces atelier Client vendues à perte J-1 (Hors
+  forfaits) » d'Analyse Globale, qui comptent cette liste) ;
   Quantite_facturation>0 ; marge<0 ; Affectation="CLIENT" (vente client
   uniquement) ; Libelle_type_imputation<>"FACTURE INTRA GROUPE ATELIER" ET
   Categorie_client pas dans ("Intra-groupe sauf Primocar", "Inter sites")
@@ -104,6 +109,7 @@ Formule (cellule A2) :
        'Détail facturation atelier journalière'!$AG$2:$AG};
       'Détail facturation atelier journalière'!$O$2:$O="Pièce";
       'Détail facturation atelier journalière'!$AD$2:$AD<>1;
+      'Détail facturation atelier journalière'!$U$2:$U=0;
       'Détail facturation atelier journalière'!$X$2:$X>0;
       ('Détail facturation atelier journalière'!$AA$2:$AA-'Détail facturation atelier journalière'!$Y$2:$Y)<0;
       'Détail facturation atelier journalière'!$AH$2:$AH="CLIENT";

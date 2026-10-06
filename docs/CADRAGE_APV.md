@@ -1031,7 +1031,10 @@ jamais été collées ; elles existent désormais dans `Analyse Globale` sous le
 externe`, `Valeur pièces atelier/magasin à perte J-1` — lettres actuelles :
 `DATA_MAP_APV.md` §2.1 ; les lettres citées plus bas dans cette section sont obsolètes).
 **Paliers en € (pièces à perte, forfaits) = total de la journée**, pas ligne par ligne
-(décision de Corentin, 2026-10-06).
+(décision de Corentin, 2026-10-06). **Pièces à perte : hors pièces de forfait et hors
+intragroupe**, Atelier comme Magasin, pour la liste du mail, les colonnes € et % et la
+météo (même décision) — une pièce de forfait vendue sous son coût est déjà portée par le
+bloc Anomalies forfaits. Formules : `DATA_MAP_APV.md` §2.1.
 
 Score → icône (paliers élargis 2026-09-28, même raison — passer de Soleil à
 Nuage sur un seul signal mineur isolé jugé trop dur) : **0-1 = ☀️ Soleil**,

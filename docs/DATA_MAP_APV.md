@@ -54,8 +54,8 @@ par canal. Bandeaux de blocs en ligne 1 (repris tels quels ci-dessous).
 | AL-AS | ATELIER - Prod/Efficience | AL productivité J-1, AM moy. mobile, AN écart %, AO **Alerte productivité basse**, AP efficience J-1, AQ moy. mobile, **AR efficience cessions internes J-1** (journée entière), AS efficience cessions internes MTD |
 | AT-BD | ATELIER - Encours | AT nb OR en cours, AU valeur, AV-AX vieux encours 90-180j/180-365j/+365j (nb), AY-BA idem (valeur), BB dépréciation, BC encours en j de CA, BD **Alerte encours** |
 | BE-BN | MAGASIN | BE CA PR externe J-1, BF moy. mobile, **BG écart % CA PR externe**, **BH Alerte écart CA PR externe**, BI coût, BJ marge, BK taux marge J-1, BL CA PR externe MTD, BM objectif, BN % réalisation |
-| BO-BP (+1) | *(sous le bandeau MAGASIN)* | BO nb pièces magasin vendues J-1, BP % vendues à perte J-1, puis **Valeur pièces magasin à perte J-1** (à insérer après BP) |
-| BQ-BR (+1) | *(sous le bandeau MAGASIN, mais données Atelier)* | BQ nb pièces atelier client vendues hors forfaits (Quantité>0), BR % vendues à perte, puis **Valeur pièces atelier à perte J-1** (en fin de tableau) |
+| BO-BQ | *(sous le bandeau MAGASIN)* | BO nb pièces magasin vendues J-1, **BP Valeur pièces magasin à perte J-1**, BQ % vendues à perte J-1 |
+| BR-BT | *(sous le bandeau MAGASIN, mais données Atelier)* | BR nb pièces atelier client vendues (hors forfaits, hors intragroupe, Quantité>0), **BS Valeur pièces atelier à perte J-1 (Hors forfait)**, BT % vendues à perte |
 
 **Colonnes de signaux du barème météo** (ajoutées par Corentin le 2026-10-06 : prévues
 au cadrage §12.6/§12.7 mais jamais collées jusque-là) :
@@ -65,11 +65,26 @@ au cadrage §12.6/§12.7 mais jamais collées jusque-là) :
   (`Rappel_temps_passe_cession_interne`) par code concession (H) et date (B)
 - BG `Écart % CA PR Externe journalier` : `=IFERROR((BE3-BF3)/BF3;"")` ; BH `Alerte écart CA
   PR externe` : même règle que W sur BG
-- `Valeur pièces magasin à perte J-1` / `Valeur pièces atelier à perte J-1` : total du jour
-  (négatif) des Marge € de `Analyse pièces client J-1` par code concession (U) et canal (A) —
-  `=SUMIFS('Analyse pièces client J-1'!$Q:$Q;'Analyse pièces client J-1'!$U:$U;$B3;'Analyse pièces client J-1'!$A:$A;"Magasin")`
-  (« Atelier » pour la seconde). Les paliers du barème s'appliquent au total du jour
-  (décision du 2026-10-06), pas ligne par ligne.
+- **Pièces à perte — un seul périmètre partout** (décision de Corentin, 2026-10-06) :
+  vente CLIENT externe, **hors pièces de forfait, hors intragroupe** (Atelier : imputation
+  `FACTURE INTRA GROUPE ATELIER`, catégories `Intra-groupe sauf Primocar` et `Inter sites` ;
+  Magasin : cessions internes, intragroupe, inter sites, Export), hors avoirs, quantité > 0,
+  prix net < PAMP. La liste `Analyse pièces client J-1`, les colonnes € et % et la météo
+  comptent les mêmes pièces. Paliers du barème = total du jour, pas ligne par ligne.
+  - BP `Valeur pièces magasin à perte J-1` = somme des Marge € Magasin de la liste :
+    `=SUMIFS('Analyse pièces client J-1'!$Q:$Q;'Analyse pièces client J-1'!$U:$U;$B3;'Analyse pièces client J-1'!$A:$A;"Magasin")`
+  - BQ s'appuie sur `Détail facturation magasin journaliere!S` (`Est à perte`), **corrigée
+    le 2026-10-06** : elle comparait `PAMP < Prix forcé` (colonnes décalées depuis le
+    retrait du champ Magasin le 25/09), ce qui comptait les retours en perte et ratait les
+    vraies ventes à perte. Nouvelle formule (S2, tirée) :
+    `=IF($T2="";"";IF(AND($K2>0;$E2<>1;$O2<$P2;$F2<>"Cessions internes - interservices";$F2<>"Intra-Groupe Renault";$F2<>"Inter sites";$F2<>"Intra-groupe sauf Primocar";$F2<>"Export");1;0))`
+  - BR, BS, BT lisent `Détail facturation atelier journalière` avec les critères : AK = code
+    concession, O = « Pièce », AH = « CLIENT », U = 0 (hors forfait), N ≠ « FACTURE INTRA
+    GROUPE ATELIER », AI ≠ « Intra-groupe sauf Primocar » et ≠ « Inter sites » ; BR ajoute
+    X > 0 ; BS et BT ajoutent AR = 1 (pièce à perte). BS = SUMIFS(AA) − SUMIFS(Y) (prix de
+    vente net − PAMP), BT = COUNTIFS(…) ÷ BR.
+  - Vérifié le 2026-10-06 sur les 67 concessions (B1 = 05/10) : BP/BQ = liste Magasin, et
+    BR/BS/BT = recalcul indépendant depuis le détail atelier, à l'unité près.
 
 Constat du 05/10 à surveiller : les alertes d'écart de CA se déclenchent souvent (23/67
 concessions côté MO, 25/67 PR interne, 31/67 PR externe, un lundi). Valeurs aberrantes à
