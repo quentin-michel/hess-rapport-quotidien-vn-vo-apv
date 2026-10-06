@@ -26,7 +26,9 @@ données déjà extraites et contrôlées. Ne modifie aucun autre fichier du dé
   - Mail `directeur` : `docs/CADRAGE.md` §7.
   - Mail `plaque` : `docs/CADRAGE.md` §8. Au niveau Plaque, le bloc APV remonte des
     compteurs de problèmes (encours, pièces à perte, forfaits, remises…), pas du CA ni
-    des objectifs.
+    des objectifs. Seule exception, aux niveaux Directeur et Plaque : les malfaçons et
+    gestes commerciaux s'affichent en montant (hier, cumul du mois) et en % du CA MO du
+    mois (`docs/CADRAGE_APV.md` §15).
   - Dictionnaire des colonnes : `docs/DATA_MAP_VN.md`, `docs/DATA_MAP_VO.md`,
     `docs/DATA_MAP_APV.md`.
 

@@ -98,13 +98,19 @@ Onglet `Plaque APV` — 1 ligne par plaque (13 plaques), généré automatiqueme
 | H | Forfaits marge <10% | `RECHERCHEV` + `IMPORTRANGE` vers un résumé agrégé (pas le détail brut) | `Anomalies forfaits > Plaque - Forfaits marge faible` |
 | I | OR remise élevée | `COUNTIFS` par Plaque | `Taux remise MO/PR interne élevé` (K=Plaque) |
 | J | OR efficience CI élevée | `COUNTIFS` par Plaque | `Efficience OR CI trop élevé` (**G**=Plaque) |
+| K | Malfaçons J-1 (€) | `SUMIFS('Analyse Globale'!K)` par Code plaque (A) | `Analyse Globale` (K) |
+| L | Malfaçons MTD (€) | `SUMIFS('Analyse Globale'!R)` par Code plaque | `Analyse Globale` (R) |
+| M | % Malfaçons MTD | L ÷ `SUMIFS('Analyse Globale'!L)` (CA MO MTD) — pondéré | `Analyse Globale` (R, L) |
 
 **Statut connu au 2026-09-25** : `UNIQUE()` ne remonte que 11 plaques sur 13
 (`PLQ_PRIMOCAR` et `PLQ_VEODROME` suspectées manquantes) — à vérifier/corriger.
 
 **Principe de conception (validé avec Corentin le 25/09)** : au niveau Plaque/Directeur,
 le bloc APV du mail **ne remonte pas de CA/objectif** — uniquement des compteurs de
-problème (voir mémoire `feedback_plaque_mail_apv_signals_not_ca`). Les totaux Plaque
+problème (voir mémoire `feedback_plaque_mail_apv_signals_not_ca`). **Exception
+(2026-10-06)** : malfaçons et gestes commerciaux en montant et en % du CA MO
+(colonnes K-M, formules `docs/sheets-formulas/malfacons.txt` §3 — **à coller
+dans le Sheet**, pas encore en place au 2026-10-06). Les totaux Plaque
 sont calculés en **agrégation pondérée** (somme des numérateurs/dénominateurs réseau),
 jamais en moyenne simple des % par concession.
 

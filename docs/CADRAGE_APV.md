@@ -1346,7 +1346,13 @@ montant), puis le cumul du mois et son % du CA MO (avec la réserve de début de
 mois). Liste complète, sans plancher en € (même principe que §12.4). Jour sans
 cas : « Rien à signaler ».
 
-**À trancher** : au niveau Directeur/Plaque, compteur (nombre d'OR) seul ou
-montant aussi — la règle générale est « compteurs plutôt que CA » (§12, mémoire
-Plaque). `Plaque APV` n'a pas encore de colonne malfaçons.
+**Mails Directeur et Plaque (décidé le 2026-10-06)** : Corentin veut les
+**montants** de malfaçons et le **% du CA MO**, pas un simple compteur —
+exception assumée à la règle « compteurs plutôt que CA » de ces niveaux : une
+malfaçon est un coût de non-qualité, son montant est le signal. Afficher le
+montant d'hier, le cumul du mois et le % MTD du CA MO (avec la réserve de
+début de mois). Sources : `Analyse Globale` K/R/S par concession ; `Plaque APV`
+K/L/M pour le total Plaque (% pondéré = somme des malfaçons ÷ somme des CA MO
+de la plaque, jamais une moyenne des % ; formules :
+`docs/sheets-formulas/malfacons.txt` §3).
 

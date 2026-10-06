@@ -40,3 +40,21 @@ rapporte ce cout total au seul CA MO du mois (choix de Corentin), cessions inclu
 dans le CA MO. Le 1er du mois, le connecteur renvoie tout le mois precedent et
 B1 = dernier jour de ce mois : le MTD reste coherent.
 Le rapport lit ces colonnes par leur nom d'en-tete, pas par lettre.
+
+
+3) Onglet 'Plaque APV' - 3 colonnes a ajouter apres J (decide le 2026-10-06)
+---------------------------------------------------------------------------
+Mails Directeur et Plaque : montants de malfacons et % du CA MO (exception a la
+regle "compteurs plutot que CA", cf. CADRAGE_APV.md §15).
+Ligne 2 (en-tetes) : K2 = Malfaçons J-1 ; L2 = Malfaçons MTD ; M2 = % Malfaçons MTD
+Ligne 3, a tirer sur toutes les plaques :
+
+K3 : =SUMIFS('Analyse Globale'!$K:$K; 'Analyse Globale'!$A:$A; $A3)
+L3 : =SUMIFS('Analyse Globale'!$R:$R; 'Analyse Globale'!$A:$A; $A3)
+M3 : =IFERROR(L3/SUMIFS('Analyse Globale'!$L:$L; 'Analyse Globale'!$A:$A; $A3); "")
+
+Somme des lignes concession d'Analyse Globale (A = Code plaque). Le % est pondere
+(total malfacons de la plaque / total CA MO MTD de la plaque), jamais une moyenne
+des % des concessions. Lettres d'Analyse Globale au 2026-10-06 : K = Malfaçons J-1,
+R = Malfaçons MTD, L = CA MO Net HT MTD - a revoir si des colonnes y sont inserees.
+

@@ -506,6 +506,11 @@ significatif :
   nouveau score recalculé pour ce niveau) — affichées en 3 mini-cartes en
   tête de mail, chacune avec le fait le plus marquant du service en une
   ligne.
+- **Malfaçons et gestes commerciaux dans le bloc APV** (2026-10-06) :
+  montant d'hier, cumul du mois et % du CA MO du mois — des montants, par
+  exception à la règle « compteurs plutôt que CA » (coût de non-qualité,
+  voir `CADRAGE_APV.md` §15). Bloc omis si aucune malfaçon hier et un
+  cumul du mois non significatif.
 
 Maquette (données réelles Renault Strasbourg, 23/09/2026, email-safe dès
 la première version — règles §6 appliquées d'emblée) :
@@ -582,6 +587,11 @@ Fiat/Opel du 30/09 contient un vrai bloc APV : tableau par concession
 (efficience, productivité, encours +90j, encours en jours de CA, pièces à
 perte, forfaits <10%) avec une ligne Total Plaque pondérée, et les signaux
 croisés (ex. pièces à perte et remises élevées sur les mêmes OR).
+**Ajout du 2026-10-06** : colonnes malfaçons et gestes commerciaux dans ce
+tableau — montant d'hier, cumul du mois et % du CA MO du mois par
+concession (`Analyse Globale` K/R/S), ligne Total Plaque depuis `Plaque APV`
+K/L/M (% pondéré). Montants affichés par exception à la règle « compteurs
+plutôt que CA » (voir `CADRAGE_APV.md` §15).
 
 **Test complet Plaque Fiat/Opel (2026-09-30)** — deuxième plaque après
 Renault, même structure que [`docs/mockup_email_plaque.html`](mockup_email_plaque.html)
