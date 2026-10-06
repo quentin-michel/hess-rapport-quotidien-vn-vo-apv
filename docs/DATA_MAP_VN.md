@@ -1,121 +1,165 @@
 # Carte des données VN — où trouver quoi
 
 **Statut : vivant, à tenir à jour à chaque fois qu'un onglet est renommé/déplacé.**
-Dernière mise à jour : 2026-10-02.
+Dernière mise à jour : 2026-10-05 — **vérifié onglet par onglet sur les Sheets réels** (en-têtes
+lus via `gws`, chiffres recalculés depuis les extraits), pas seulement recopié de
+`CADRAGE_VN.md`.
 
 Ce document répond à une seule question : **pour générer le mail VN (niveau Service), où
 va-t-on chercher chaque donnée ?** Il complète `CADRAGE_VN.md` (qui documente le *pourquoi*
-et l'historique des corrections) en donnant un accès direct *classeur → onglet → colonne*
-sans avoir à refouiller. Même principe que `DATA_MAP_APV.md`.
+et l'historique) en donnant un accès direct *classeur → onglet → colonne*. Même principe que
+`DATA_MAP_APV.md`.
 
 **Piège permanent** : les classeurs sont des Sheets vivants. Onglets renommés, colonnes
-déplacées ou réordonnées sont déjà arrivés plusieurs fois ce chantier (voir §6). **Toujours
-vérifier l'en-tête réel avant d'écrire dans une colonne**, ne jamais supposer.
+déplacées ou réordonnées sont déjà arrivés plusieurs fois (voir §7). **Toujours vérifier
+l'en-tête réel avant de lire ou d'écrire dans une colonne.**
 
 ## 1. Classeurs
 
-| Classeur | ID | Rôle |
+| Classeur (titre réel) | ID | Onglets réels (dans l'ordre) |
 |---|---|---|
-| Bloc 1 — Leads VN | `1oQzC5CV8Xqb6oTVAmNakcn3pSJD0yqP1eSdE7guHn80` | Leads VN reçus/non traités |
-| Bloc 2 — Commandes & Facturations VN vs Objectifs | `14iuxhKZr34StlxCn8IodM9iquoqH9wnc5EhsBYxBUDE` | Pacing commandes/facturations par concession × marque |
-| Bloc 3 (Stock VN/VD) + Bloc 4 (Couverture/Excès/Plaque) | `10cOmCg_e8JKKpaHY0pI6QTPWLehO_VVfVAU6bXAROWE` | Même fichier, 2 chaînes d'onglets distinctes (stock, puis ventes+couverture) |
-| Bloc 6 — Anomalies Ventes VN/VD | `16xQnrbCZpPP2sDy4WxJvglRdIVYkwx31wiWC_n0lKcg` | Marge négative/suspecte, détention longue VD |
-| `Référentiel Concession` | `1L-wJkip_8gqk0B4C4edEf_ZIRqDCOMu6KDciFQ4WPnY` | Classeur de Quentin, source de vérité transverse (concessions, plaques, mapping brut) |
+| `Rapport quotidien VN - Bloc 1` | `1oQzC5CV8Xqb6oTVAmNakcn3pSJD0yqP1eSdE7guHn80` | `Mapping`, `Leads_SF_VN` (connecté), `Extrait Leads_SF_VN` ⚠️, `BLOC 1 Leads VN` |
+| `Rapport quotidien VN - Bloc 2` | `14iuxhKZr34StlxCn8IodM9iquoqH9wnc5EhsBYxBUDE` | `Mapping`, `Obj Com/Fact.` (connecté), `Extrait_ComFact`, `BLOC 2` |
+| `Rapport quotidien VN - Bloc 3/4/5` | `10cOmCg_e8JKKpaHY0pI6QTPWLehO_VVfVAU6bXAROWE` | `Mapping`, `Mapping Marque Modèle`, `DM_Stock_VN_VD` (connecté), `DM_Vente_VN_VD` (connecté), `Extrait_Stock_VN_VD`, `Extrait_Vente_VN_VD`, `BLOC 3 P1 Stock VN_VD`, `BLOC 3 P2 Stock VN_VD`, `BLOC 4 Couverture VN`, `BLOC 5 TOP 3` |
+| `Rapport quotidien VN - BLOC 6` | `16xQnrbCZpPP2sDy4WxJvglRdIVYkwx31wiWC_n0lKcg` | `Mapping`, `DM Vente` (connecté), `Extrait Vente VN VD` ⚠️, `BLOC 6 - Anomalie Vente VN-VD` |
+| `Référentiel Concession` | `1L-wJkip_8gqk0B4C4edEf_ZIRqDCOMu6KDciFQ4WPnY` | Source de vérité transverse (concessions, plaques, mapping brut) |
 
-## 2. Niveau Service — par bloc
+⚠️ **Deux noms d'onglets contiennent une espace insécable** (entre `Extrait` et le reste) :
+`Extrait Leads_SF_VN` et `Extrait Vente VN VD`. Taper une espace normale dans une plage
+(`gws`, formule, script) échoue avec « Unable to parse range ». Passer le caractère
+`U+00A0` (ex. en bash : `$'Extrait\xc2\xa0Leads_SF_VN'`). Les onglets `BLOC …`,
+`Extrait_ComFact`, `Extrait_Stock_VN_VD`, `Extrait_Vente_VN_VD` ont des noms normaux.
+
+## 2. Règles de lecture communes à tous les onglets
+
+- **Lignes parasites à toujours ignorer** : toute ligne dont le `Code_concession` est vide ou
+  vaut `" "`. Elles existent dans presque tous les onglets (voir détail par bloc) et le
+  script ne doit jamais les remonter dans un mail.
+- **Lignes fantômes** dans `Extrait_Stock_VN_VD` : environ 2 125 lignes sans type
+  (`Est_VN_VD_ou_VO` vide), restes de formules. Filtrer sur `VN`/`VD`.
+- **Nombres au format français** : virgule décimale (`-23681,1`), pourcentages en texte
+  (`-9,39%`), dates `JJ/MM/AAAA`.
+- **`Mapping`** : présent en premier onglet de chaque classeur, 3 colonnes
+  `Valeur_Source, Code_concession, Code_Plaque` (Blocs 2, 3/4/5, 6) ; le classeur Bloc 1 a une
+  colonne de plus en tête (`Source_BigQuery`, valeur `v_sf_leads`).
+
+## 3. Exclusions volontaires (décisions de Quentin, ne pas "corriger")
+
+| Libellé source | Où il apparaît | Statut |
+|---|---|---|
+| `Stock Plaque Renault` | Stock VN/VD (1 012 véhicules) | Retiré du rattachement concession, compté seulement niveau plaque |
+| `Renault Saint-Avold` | Stock VN/VD (237 véhicules) | Exclu volontairement (confirmé 2026-10-05) |
+| `Fiat Saint-Etienne` | Stock VN/VD (85 véhicules) | Exclu volontairement (confirmé 2026-10-05) |
+| `S-LEASE …` (Bischheim, Metz, Laxou, Illzach, Dijon, Franois, Besançon, Reims, Prix-lès-Mézières) / `SLEASE` | Stock, ventes, Bloc 2, Bloc 6 | Exclu volontairement (confirmé 2026-10-05) |
+| Concessions de Bâle | Tous blocs | Hors périmètre |
+
+Conséquence : ces libellés n'ont pas de `Code_concession` dans les extraits — c'est **normal**.
+
+## 4. Niveau Service — par bloc
 
 ### Bloc 1 — Leads VN
-Tabs : `Leads_SF_VN` (Connected Sheet BigQuery) → `Extrait Leads_SF_VN` → `BLOC 1 Leads VN`
-(onglet final).
+Classeur `Bloc 1`. Chaîne : `Leads_SF_VN` → `Extrait Leads_SF_VN` → `BLOC 1 Leads VN`.
 
-| Donnée | Onglet | Colonnes clés | Notes |
+| Donnée | Onglet | Colonnes (A→…) | Notes |
 |---|---|---|---|
-| Leads reçus/non traités (1 ligne/concession) | `BLOC 1 Leads VN` | `Code_concession, Date_reference, Leads_recus_J1, Leads_recus_7j, Leads_non_traites_J1, Leads_non_traites_7j` | Structure identique au Bloc 1 VO. Filtre VN géré côté connecteur BigQuery, pas visible via `gws` |
+| Leads reçus/non traités | `BLOC 1 Leads VN` | A `Code_concession`, B `Date_reference`, C `Leads_recus_J1`, D `Leads_recus_7j`, E `Leads_non_traites_J1`, F `Leads_non_traites_7j` | Date de référence = la veille. **1re ligne = code `" "`** : leads sans concession dès la source (42 reçus J-1, tous non traités le 2026-10-04) — **perdus pour les mails**, à ignorer |
+| Extrait (avant consolidation) | `Extrait Leads_SF_VN` | A `Concession` (libellé brut), B…F idem, G `Code_concession` | 1re ligne : `Concession` vide |
 
 ### Bloc 2 — Commandes & Facturations VN vs Objectifs
-Tabs : `Mapping` (transco), `Obj Com/Fact.` (Connected Sheet, objectifs) → `Extrait_ComFact`
-(extraction réduite) → `BLOC 2` (final).
+Classeur `Bloc 2`. Chaîne : `Obj Com/Fact.` → `Extrait_ComFact` → `BLOC 2`.
 
-| Donnée | Onglet | Colonnes clés | Notes |
+| Donnée | Onglet | Colonnes | Notes |
 |---|---|---|---|
-| Jours ouvrés du mois (constantes) | `Extrait_ComFact` | `$J$2`/`$K$2`/`$L$2` = écoulés/total/restants | Référence **fixe** réutilisée telle quelle dans tout `BLOC 2` (contrairement au VO, qui a un calendrier différent par flux, voir `DATA_MAP_VO.md`) |
-| Commandes/Facturations vs objectifs (1 ligne par concession × marque + totaux Plaque/marque) | `BLOC 2` | Par flux (Commandes, Facturations) : J-1, 7j, moy. hebdo 4 sem., MTD, MTD N-1, Objectif mois, Manque à date, Taux atteinte %, Projection fin de mois, Reste à faire/jour ouvré, Tendance | **Pas de ligne TOTAL GROUPE** (retirée 2026-09-25). BMW Motorrad : `Nb_commande_d__claratif` (déclaratif mensuel, pas de détail J-1/7j) |
-| Transco brute → canonique | `Mapping` | `Valeur_Source → Code_concession/Code_Plaque` | — |
+| Extrait brut | `Extrait_ComFact` | A `flux` (Commandes/Facturations), B `libelle` (concession brute, vide = total marque), C `marque`, D `j1`, E `s7`, F `s4_prec_total`, G `mtd`, H `mtd_n1`, I `obj_mois`, J `jo_ecoules`, K `jo_mois`, L `jo_restants`, M `date_reference`, N `Code_concession`, O `Code_Plaque` | Jours ouvrés identiques pour les 2 flux (calendrier lun-ven) : `$J$2/$K$2/$L$2` |
+| Résultat final | `BLOC 2` | 25 colonnes A→Y : A `Plaque`, B `Concession`, C `Marque`, puis **D→N** `Cde – …` et **O→Y** `Fact – …` (J-1, 7 jours, Moy. hebdo 4 sem., Mois à date, Mois à date N-1, Objectif mois, Manque à date, Taux atteinte %, Projection fin de mois, Reste à faire / jour ouvré, Tendance) | Voir types de lignes ci-dessous |
+
+**4 types de lignes dans `BLOC 2`** (à distinguer à la lecture) :
+1. **Concession × marque** : `Plaque`, `Concession`, `Marque` renseignés (ex. `PLQ_BMW / BMW_BELFORT / MINI`).
+2. **Total concession** : `Marque = TOTAL` (ex. `PLQ_BMW / BMW_BELFORT / TOTAL`).
+3. **Total plaque** : `Concession = TOTAL` et `Marque = TOTAL`.
+4. **Total marque pour le groupe** : `Plaque` et `Concession` vides, `Marque` renseignée (`ALFA ROMEO`, `FIAT`, `NISSAN`, `OPEL`, `TOYOTA`) + une ligne `TOTAL`.
+
+Plus : pour chaque concession, une ligne à **marque vide**, toute à zéro — à ignorer.
+`Taux atteinte %` vide quand l'objectif vaut 0 (normal). Aucune erreur `#REF`/`#N/A` constatée.
+BMW Motorrad : `Cde – Mois à date` vient d'un déclaratif mensuel (pas de détail J-1/7j).
+
+**À trancher** : 6 libellés de l'extrait n'ont **aucun code concession** et sont donc absents de
+`BLOC 2` — `Nissan Beaune`, `Opel Metz`, `Alfa Romeo Besançon`, `Fiat Haguenau`, `Fiat
+Huningue`, `Opel Thionville`. Tous à 0 aujourd'hui (aucune perte visible), mais dès qu'une
+de ces concessions aura de l'activité elle disparaîtra silencieusement du mail. Hors
+périmètre ou mapping à ajouter ?
 
 ### Bloc 3 — Stock VN/VD
-Tabs : `DM_Stock_VN_VD` (Connected Sheet BigQuery) → `Extrait_Stock_VN_VD` (extraction
-finale) → `Bloc 3 - P1 Stock VN_VD` / `Bloc 3 - P2 Stock VN_VD`.
+Classeur `Bloc 3/4/5`. Chaîne : `DM_Stock_VN_VD` → `Extrait_Stock_VN_VD` → `BLOC 3 P1` / `P2`.
 
-| Donnée | Onglet | Colonnes clés | Notes |
+| Donnée | Onglet | Colonnes | Notes |
 |---|---|---|---|
-| Détail stock + calculs (1 ligne/véhicule) | `Extrait_Stock_VN_VD` | A-U = colonnes de la requête BigQuery dans l'ordre (Concession, Est_VN_VD_ou_VO, Statut_de_stock, Detail_statut_stock, Numero_de_stock, CRC_vehicule, Serie_VIN, Libelle_marque, Libelle_modele, Date_achat, Numero_commande_constructeur, Date_commande_constructeur, Date_commande_client, Date_livraison_a_client, Est_contremarque, Prix_achat, Somme_options_constructeur, Somme_options_complementaires, Somme_frais, Montant_surestimation, Somme_aides) ; **V**=Ancienneté depuis achat, **W**=Durée de contremarque, **X**=Valeur_stock, **Y**=Code_concession, **Z**=Code_Plaque, **AA**=Rang âge VN, **AB**=Rang âge VD, **AC**=Rang contremarqué, **AD/AE**=Marque/Modèle harmonisés (ajoutées pour le Bloc 4, voir ci-dessous) | `Nb_jours_depuis_date_achat` natif de BigQuery est vide à 100% — ne pas l'utiliser, c'est `V` (calcul Sheet) qui sert |
-| Synthèse par concession | `Bloc 3 - P1 Stock VN_VD` | Stock VN, Stock VD, Stock âgé VN (+6 mois/180j), Stock âgé VD (+6 mois), Contremarqué +90j | `COUNTIFS` sur `Extrait_Stock_VN_VD` |
-| Top-5 détail par concession | `Bloc 3 - P2 Stock VN_VD` | 3 `QUERY` : Stock âgé VN, Stock âgé VD, Contremarqué — colonnes renvoyées : Code_concession, N° de stock, VIN, Marque, Modèle, puis Ancienneté (ou Durée de contremarque) | Basé sur les colonnes de rang (AA/AB/AC), sentinelle `999` pour les non-qualifiants (pas de texte vide, casse `QUERY` sinon) |
+| Détail stock | `Extrait_Stock_VN_VD` | **A→U** : `Concession`, `Est_VN_VD_ou_VO`, `Statut_de_stock`, `Detail_statut_stock`, `Numero_de_stock`, `CRC_vehicule`, `Serie_VIN`, `Libelle_marque`, `Libelle_modele`, `Date_achat`, `Numero_commande_constructeur`, `Date_commande_constructeur`, `Date_commande_client`, `Date_livraison_a_client`, `Est_contremarque`, `Prix_achat`, `Somme_options_constructeur`, `Somme_options_complementaires`, `Somme_frais`, `Montant_surestimation`, `Somme_aides` ; **V** `Ancienneté depuis l'achat`, **W** `Durée de contremarque`, **X** `Valeur_stock`, **Y** `Code_concession`, **Z** `Code_Plaque`, **AA/AB/AC** voir ci-dessous, **AD** `Marque harmonisée`, **AE** `Modèle harmonisé` | ⚠️ **AA, AB, AC** s'appellent `Stock âgé VN (+6 mois)`, `Stock âgé VD (+6 mois)`, `Contremarqué +90j` mais contiennent des **rangs** (sentinelle `999` pour les non-qualifiants), pas des compteurs |
+| Synthèse par concession | `BLOC 3 P1 Stock VN_VD` | A `Code_Concession` (C majuscule), B `Stock VN`, C `Stock VD`, D `Stock âgé VN (+6 mois)`, E `Stock âgé VD (+6 mois)`, F `Contremarqué +90j` | **Recalculé depuis l'extrait : 0 écart sur les 63 concessions.** Contient 2 lignes parasites (code vide / `" "`) |
+| Top-5 détail | `BLOC 3 P2 Stock VN_VD` | **3 tableaux côte à côte** : A→F (`Code_concession`, `Numéro Stock`, `VIN`, `marque`, `modele`, `Stock âgé VN`), H→M (idem, `Stock âgé VD`), O→T (idem, `Contremarqué`) | ⚠️ **Pas un vrai top 5** : les ex æquo d'ancienneté dépassent 5 lignes (BMW_MULHOUSE 8, REN_SELESTAT 8 en contremarqué, BMW_LONS/HYU_MULHOUSE 7…). ⚠️ Le groupe sans code concession occupe ~1 018 lignes de bruit en tête — filtrer |
 
-### Bloc 4 — Couverture, Excès de stock, Comparaison Plaque
-Même fichier que le Bloc 3. Tabs : `Mapping Marque Modèle` (transco libellés), `DM_Vente_VN_VD`
-(Connected Sheet) → `Extrait_Vente_VN_VD` → `BLOC 4 Couverture VN` (final).
+### Bloc 4 — Couverture, Excès de stock
+Même classeur. Chaîne : `DM_Vente_VN_VD` → `Extrait_Vente_VN_VD` → `BLOC 4 Couverture VN` → `BLOC 5 TOP 3`.
 
-| Donnée | Onglet | Colonnes clés | Notes |
+| Donnée | Onglet | Colonnes | Notes |
 |---|---|---|---|
-| Transco libellés marque/modèle | `Mapping Marque Modèle` | `Marque (source), Libellé modèle (source), Marque harmonisée, Modèle harmonisé` | Construite par Quentin — 163/344 paires stock/ventes sans correspondance exacte avant harmonisation |
-| Ventes 90j agrégées (1 ligne/concession × marque × modèle) | `Extrait_Vente_VN_VD` | A=Concession, B=Libelle_marque, C=Libelle_modele, D=nb_ventes_90j, E=ventes_moy_mensuelle, F=Code_concession, G=Code_Plaque, H=Marque harmonisée, I=Modèle harmonisé | Source `datamart_ventes.entete_du_dossier` + `vehicules` (**pas** `v_sf_vente`, Modele_Vehicule__c trop souvent vide/technique côté Salesforce) |
-| Couverture/Excès (1 ligne/concession × marque × modèle harmonisés) | `BLOC 4 Couverture VN` | A=Code_concession, B=Marque harm., C=Modèle harm., D=Stock, E=Ventes moy., F=Couverture, G=Excès de stock, H=Ancien_nb (+6 mois), I=Rang (top 3 excès), J=Code_Plaque, K=Stock Plaque, L=Ventes moy. Plaque, M=Couverture Plaque | Exclut les lignes `Code_concession` vide (39% des lignes brutes, jugé non prioritaire par Quentin). **Colonnes J-M (comparaison Plaque) réservées au futur mail Directeur de plaque — à retirer du mail Service** |
+| Transco libellés | `Mapping Marque Modèle` | `Marque (source)`, `Libellé modèle (source)`, `Marque harmonisée`, `Modèle harmonisé` | Construite par Quentin |
+| Ventes 90 jours | `Extrait_Vente_VN_VD` | A `Concession`, B `Libelle_marque`, C `Libelle_modele`, D `nb_ventes_90j`, E `ventes_moy_mensuelle`, F `Code_concession`, G `Code_Plaque`, H `Marque harmonisée`, I `Modèle harmonisé` | 34 lignes sans code concession, toutes S-LEASE (exclusion volontaire) |
+| Couverture / excès | `BLOC 4 Couverture VN` | A `Code_concession`, B `Marque harmonisée`, C `Modèle harmonisé`, D `Stock`, E `Ventes moy`, F `Couveture` (**faute de frappe réelle**), G `Excès de stock`, H `Ancien_nb`, I `Colonne de rang`, J `Code_Plaque de la ligne`, K `Stock Plaque`, L `Ventes moy. Plaque`, M `Couverture Plaque` | **Recalculé : 0 écart sur les 723 lignes.** Dernière ligne parasite (code vide, `#N/A` en J). **J→M = comparaison Plaque, réservée au futur mail Directeur** |
+| Podium top 3 excès | `BLOC 5 TOP 3` | A `Code_concession`, B `Marque harmonisée`, C `Modèle harmonisé`, D `Stock`, E `Ventes moy`, F `Excès de stock` | Excès ≥ 12 (P90), 3 lignes max par concession. Commence par des lignes à code vide (dont un « stock » fantôme de 2 125) — ignorer |
+
+**Limites connues du Bloc 4** (à avoir en tête, pas des erreurs de calcul) :
+- **92 véhicules en stock sans modèle harmonisé** (`Mapping Marque Modèle` incomplet : Nissan Juke F16B 48, Leaf 26, Interstar 5, Hyundai Ioniq 3 / Inster / Ioniq 5 N, un Range Rover). Ils sont regroupés en **une seule ligne à modèle vide par marque** → couverture et excès de ces modèles faux. Côté ventes : 20 lignes dans le même cas (Juke, Mini Cooper F66, Leaf, Scenic E-Tech…).
+- **Les modèles vendus sans stock actuel n'apparaissent pas** (112 couples concession × modèle, ~95 ventes/mois) : la liste est construite à partir du stock. Une rupture sur un modèle qui se vend est invisible.
+- **Arrondi à l'affichage** : un excès affiché `12` peut valoir 11,7 et rester sous le seuil (BMW Besançon Série 1 : absent du `TOP 3`).
 
 ### Bloc 6 — Anomalies Ventes VN/VD
-Tabs connectées : `entete_du_dossier`, `vehicules`, `lignes_du_dossier` → `DM Vente` →
-`Extrait Vente VN/VD` → `BLOC 6 - Anomalie Vente VN-VD` (final).
+Classeur `BLOC 6`. Chaîne : `DM Vente` → `Extrait Vente VN VD` → `BLOC 6 - Anomalie Vente VN-VD`.
 
-| Donnée | Onglet | Colonnes clés | Notes |
+| Donnée | Onglet | Colonnes | Notes |
 |---|---|---|---|
-| Détail ventes + marges + classification (1 ligne/dossier) | `Extrait Vente VN/VD` | Colonnes requête (A-T) : numero_dossier, vin, immatriculation, Concession, marque, modele, vn_vd, Vendeur ⚠️, categorie, destination, energie, Date_de_vente, date_achat_vehicule, ca_brut_vehicule_ht, cout_acquisition_ht, remise_ht, transfert_de_marge_ht, aides_au_chassis_ht, marge_brute_vehicule_ht, marge_dossier_icar_ht ; puis Code_concession/Code_Plaque (RECHERCHEX via `Mapping` local), Durée de détention (VD), % Marge brute Véhicule | ⚠️ **Colonnes réordonnées le 2026-09-25** : `% Marge brute Véhicule` déplacée en **U**, ce qui décale `Code_concession/Code_Plaque/Durée de détention/Anomalie VD/Pas a signaler` en **V/W/X/Y/Z**, et place `A signaler` en **AA**, `A vérifier` en **AB**. **Toute lettre de colonne ci-dessus est à revérifier sur le Sheet avant usage** — la formule du listing final (ci-dessous) a été écrite avant ce réordonnancement et référence encore `U/V` comme Code_concession/Code_Plaque |
-| Listing final (anomalies du jour) | `BLOC 6 - Anomalie Vente VN-VD` | `QUERY` : numero_dossier, Code_concession/Code_Plaque, marque/modèle, vn_vd, destination, les 2 marges, 3 colonnes d'anomalie (Anomalie VD / À signaler / À vérifier) | Seuil générique BMW hors BMW/MINI actuellement **cassé** (`$Z$1` pointe vers un en-tête texte, pas un nombre — comparaison toujours vraie, voir §6) |
+| Détail ventes + classification | `Extrait Vente VN VD` | **A→T** : `numero_dossier`, `vin`, `immatriculation`, `Concession`, `marque`, `modele`, `vn_vd`, `Vendeur` ⚠️, `categorie`, `destination`, `energie`, `Date_de_vente`, `date_achat_vehicule`, `ca_brut_vehicule_ht`, `cout_acquisition_ht`, `remise_ht`, `transfert_de_marge_ht`, `aides_au_chassis_ht`, `marge_brute_vehicule_ht`, `marge_dossier_icar_ht` ; **U** `% Marge brute Véhicule`, **V** `Code_concession`, **W** `Code_Plaque`, **X** `Durée de détention`, **Y** `Anomalie VD`, **Z** `Pas a signaler`, **AA** `A signaler`, **AB** `A vérifier` | 447 lignes, fenêtre 5 jours (30/09→03/10). Classification : Y = 36, Z = 16 (« OK - compensé par périphériques »), **AA = 59 (« À corriger … »)**, AB = 5 |
+| **Listing final (à lire pour le mail)** | `BLOC 6 - Anomalie Vente VN-VD` | A `numero_dossier`, B `vin`, C `immatriculation`, D `Code_concession`, E `Code_Plaque`, F `marque`, G `modele`, H `vn_vd`, I `destination`, J `marge_brute_vehicule_ht`, K `marge_dossier_icar_ht`, L `Durée de détention`, M `Anomalie VD`, N `A signaler`, O `A vérifier` | 66 dossiers au 2026-10-05, triés pire marge en premier. Ne contient **pas** `Vendeur` |
 
-## 3. Transco concession/plaque
+Formule actuelle du listing (corrigée le 2026-10-05) :
+```
+=QUERY('Extrait Vente VN VD'!A2:AB; "SELECT A, B, C, V, W, E, F, G, J, S, T, X, Y, AA, AB WHERE Y != '' OR AA != '' OR AB != '' ORDER BY S"; 0)
+```
+**Correctif optionnel non appliqué** : 13 dossiers S-LEASE (code concession vide) y figurent encore.
+Les exclure avec `WHERE V != '' AND (Y != '' OR AA != '' OR AB != '')`.
 
-Le `Mapping` local de chaque classeur (Bloc 2, Bloc 6) est alimenté par `IMPORTRANGE` depuis
-`Référentiel Concession > Mapping_Sources` (même source que VO/APV) ; `Code_Plaque` récupéré
-par `RECHERCHEX` (XLOOKUP), pas par `VLOOKUP` (piège VO déjà rencontré, voir
-`DATA_MAP_VO.md` §4 — vérifier qu'il ne se reproduit pas ici si une nouvelle formule est
-ajoutée).
+## 5. Niveau Plaque — réservé à un futur mail Directeur
 
-**Piège spécifique IMPORTRANGE** : la formule doit être saisie puis autorisée manuellement
-une première fois dans l'UI Sheets — sinon les `RECHERCHEX` en aval échouent silencieusement
-sans erreur visible côté requête.
+Colonnes `J→M` de `BLOC 4 Couverture VN` (comparaison Plaque) : décision de périmètre du
+2026-09-23, **à retirer du mail Service**. Pas d'onglet Plaque dédié côté VN (contrairement à
+`Plaque APV`).
 
-## 4. Niveau Plaque — réservé à un futur mail Directeur
+## 6. Données personnelles — jamais dans un mockup non anonymisé
 
-Les colonnes de comparaison Plaque (Bloc 4, colonnes J-M de `BLOC 4 Couverture VN`) existent
-déjà mais sont **réservées au futur mail Directeur de plaque** — décision de périmètre prise
-le 2026-09-23, retrait du mail Service pas encore exécuté dans la maquette. Pas d'onglet
-Plaque dédié séparé pour VN (contrairement à `Plaque APV` côté APV) : la comparaison vit
-directement dans l'onglet concession.
+- `Extrait Vente VN VD`, colonne **H `Vendeur`** : nom du vendeur. **Absente du listing final**
+  `BLOC 6` (le `SELECT` ne la reprend pas) — ne pas l'y ajouter.
 
-## 5. Données personnelles — jamais dans un mockup non anonymisé
+Les autres onglets (Blocs 1 à 5, listing Bloc 6) sont des agrégats ou des listes orientées
+véhicule sans nom de personne. Immatriculation/VIN ne sont pas traités comme donnée
+personnelle (convention APV/VO).
 
-- `Extrait Vente VN/VD` (classeur Bloc 6) : colonne **Vendeur** — nom du vendeur.
+## 7. Pièges rencontrés (à ne pas refaire)
 
-Aucune autre colonne nominative identifiée dans les onglets finaux documentés ci-dessus
-(Blocs 1-4 sont des agrégats sans nom de personne). Immatriculation/VIN ne sont pas traités
-comme donnée personnelle dans ce chantier (convention déjà actée côté APV/VO).
-
-## 6. Pièges génériques rencontrés ce chantier (à ne pas refaire)
-
-1. **Champ `Est_vehicule_courtoisie` est INT64`** — ne jamais le comparer à `'0'` entre
-   guillemets (erreur rencontrée et corrigée le 2026-09-17).
-2. **`IF(condition; COUNTIFS(...)+1; "")` casse `QUERY` en aval** — remplacer le texte vide
-   par la sentinelle numérique `999` pour les lignes non qualifiantes.
-3. **`QUERY` peut mal deviner l'en-tête** quand la plage commence à la ligne 2 d'un onglet —
-   ajouter `; 0` en 3ᵉ argument force "pas d'en-tête".
-4. **Désaccord de libellés marque/modèle entre sources** (stock vs ventes, préfixes/suffixes/
-   accents/codes techniques) — toujours passer par une table de transco dédiée
-   (`Mapping Marque Modèle`), ne jamais comparer les libellés bruts directement.
-5. **Un réordonnancement manuel de colonnes casse silencieusement toute formule qui les
-   référence par lettre ailleurs** (Bloc 6, §2 ci-dessus) — même famille de bug que le
-   piège §8.1 de `CADRAGE_APV.md` (onglet renommé → référence orpheline), mais ici c'est un
-   déplacement de colonnes dans le même onglet. Toujours revérifier l'en-tête réel avant de
-   réutiliser une lettre de colonne documentée.
-6. **Comparaison nombre/texte toujours vraie côté Sheets** : une formule qui compare une
-   valeur à une cellule censée contenir un seuil, mais qui contient en réalité un texte
-   (en-tête de colonne mal référencé), ne renvoie jamais `FAUX` — bug actuellement ouvert sur
-   le seuil générique du Bloc 6 (`$Z$1`, voir §2).
+1. **Formule `QUERY` non mise à jour après un réordonnancement de colonnes** (Bloc 6, corrigé
+   le 2026-10-05) : le listing renvoyait le `%` de marge à la place du code concession et
+   **aucune des 59 anomalies « À corriger »**, sans aucune erreur visible. Après tout
+   déplacement de colonne, relire **toutes** les formules qui référencent l'onglet par lettre.
+2. **Espace insécable dans un nom d'onglet** : voir §1.
+3. **En-têtes qui ne disent plus ce qu'il y a dedans** : `AA/AB/AC` de `Extrait_Stock_VN_VD`
+   (rangs nommés comme des compteurs). Se fier au contenu vérifié, pas au libellé.
+4. **`IF(condition; COUNTIFS(...)+1; "")` casse `QUERY` en aval** : utiliser la sentinelle
+   numérique `999`. `QUERY` mal devine l'en-tête sur une plage commençant ligne 2 : ajouter `; 0`.
+5. **Champ `Est_vehicule_courtoisie` est INT64** : ne pas le comparer à `'0'` entre guillemets.
+6. **Libellés marque/modèle différents entre stock et ventes** : toujours passer par
+   `Mapping Marque Modèle` ; un modèle absent du mapping fausse silencieusement couverture et
+   excès (voir limites du Bloc 4).
+7. **`IMPORTRANGE` à autoriser manuellement une première fois** dans l'UI Sheets, sinon les
+   `RECHERCHEX` en aval échouent sans erreur visible.
+8. **Seuil générique « marge fortement négative » hors BMW (cellule `$Z$1`)** : pointait vers
+   un en-tête texte (comparaison toujours vraie). Le classement `À corriger` produit bien 59
+   lignes aujourd'hui, mais l'emplacement du vrai seuil reste à confirmer (`CADRAGE_VN.md` §7).

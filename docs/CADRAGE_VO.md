@@ -89,6 +89,14 @@ Mapping → consolidation que le Bloc 1.
 champ non identifié) ni "hors buy-back" sur les reprises (spec initial le
 signalait déjà comme non résolu).
 
+**Définition de la fenêtre (constatée le 2026-10-05 dans la requête du connecteur)** :
+les compteurs J-1 / 7j sont calculés sur `DATE(CreatedDate)` — la date de **création**
+de l'offre — avec le statut **actuel** (`Offre Acceptée` / `Offre Refusée`). Ce n'est pas
+la date de confirmation du BDC utilisée au Bloc 9 (§11) : les « Commandes VOP
+acceptées 7j » de ce bloc et les « Commandes 7 jours » du Bloc 9 ne coïncident donc pas
+(ex. BMW Belfort le 2026-10-05 : 3 ici, 4 au Bloc 9). Un mail qui affiche les deux doit
+préciser laquelle est lue, ou n'en retenir qu'une.
+
 **Validé (2026-09-09)** — Renault Mulhouse : 3 commandes VOP J-1 (27/7j), 1
 offre refusée J-1 (19/7j), 1 reprise acceptée J-1 (10/7j).
 
@@ -405,6 +413,94 @@ formules.
 **Reste à faire** : intégrer ce bloc à la maquette mail VO
 (`docs/mockup_email_vo.html`), sur le modèle de ce qui a été fait pour le
 Bloc 2 VN dans sa maquette.
+
+### 11.1 Bloc 2_2 — BDC ouverts depuis plus de 15 jours (documenté le 2026-10-05)
+
+**Statut : construit par Quentin dans le Sheet, relevé le 2026-10-05 lors de la
+vérification de la carte des données — jusque-là absent de ce cadrage.** Aucune
+décision d'intégration au mail n'est documentée : il **n'est pas dans la maquette**
+(`docs/mockup_email_vo.html`) et n'a pas de règle de rédaction du commentaire.
+
+**Question métier** : quels clients ont signé un bon de commande (BDC) il y a plus
+de 15 jours et attendent toujours leur véhicule ? C'est un risque d'annulation et
+d'insatisfaction que ni le Bloc 5 (couverture) ni le Bloc 4 (« CL en retard »,
+basé sur la date de livraison souhaitée) ne montrent : ici l'ancienneté se mesure
+depuis la **signature du BDC**.
+
+**Fichier** : même classeur que le Bloc 2 et le Bloc 9
+(`1C1jMlaD8M1TearS98aiC_J3t6lieq7sp2GdMq_fKDzI`). Chaîne d'onglets :
+`BDC Ouvert + 15j` (Connected Sheet BigQuery) → `Extrait_BDC_Ouvert` →
+`BLOC 2_2 BDC Ouvert` (final).
+
+**Source BigQuery** (requête du connecteur, 11 colonnes) :
+```sql
+SELECT
+  q.Concession_du_proprietaire__c        AS concession_proprietaire,
+  q.Date_confirmation_commande_client__c AS date_confirmation_bdc,
+  u.nom_utilisateur                      AS proprietaire,
+  q.Status                               AS status,
+  q.Etape_de_l_affaire__c                AS etape_affaire,
+  v.Statut_du_vehicule__c                AS statut_vehicule,
+  v.Statut_stock_vehicule__c             AS statut_stock,
+  v.Name                                 AS vehicule_selectionne,
+  q.Immatriculation__c                   AS immatriculation,
+  q.Designation_Marque__c                AS marque,
+  q.Designation_Modele__c                AS modele
+FROM `hess-data.salesforce_source_views.v_sf_quote` q
+JOIN `hess-data.salesforce_source_views.v_sf_vehicule_stock` v ON v.Id = q.Vehicule_selectionne__c
+LEFT JOIN `hess-data.salesforce_source_views.v_sf_user` u ON u.id_utilisateur = q.OwnerId
+WHERE q.RecordTypeId = '012b0000000cUf6AAE'      -- Offre VO
+  AND q.Status = 'Offre Acceptée'                 -- BDC
+  AND v.Statut_stock_vehicule__c = 'CL'           -- cours de livraison
+  AND q.Date_confirmation_commande_client__c < DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 15 DAY)
+ORDER BY concession_proprietaire, date_confirmation_bdc;
+```
+Le critère est **strictement plus de 15 jours** (ancienneté minimale observée : 16 j,
+maximale : 278 j). **La concession est celle du propriétaire de l'offre**
+(`Concession_du_proprietaire__c`), pas `TECH_Concession__c` comme au Bloc 2/9.
+**Aucun filtre sur `Etape_de_l_affaire__c`** : le 2026-10-05, sur 494 BDC, 318 sont à
+l'étape « 4- Gagné », **173 à « 3- Offre en cours »**, et 3 à « 4- Gagné / Facturé »,
+« 4- Gagné / Facturé / Livré » ou « 5- Perdu » — donc « BDC ouvert » est large, y
+compris quelques dossiers probablement clos.
+
+**Onglet `Extrait_BDC_Ouvert`** (A→O) : A→K = les 11 colonnes ci-dessus ; puis
+formules côté Sheet :
+- **L `Code_concession`** : `=XLOOKUP(A2;Mapping!B:B;Mapping!C:C;"")` (via l'onglet `Mapping` local) ;
+- **M `Code_Plaque`** : `=XLOOKUP(A2;Mapping!B:B;Mapping!D:D;"")` ;
+- **N `Ancienneté_j`** : `=IF(ISBLANK(B2);"";TODAY()-B2)` — **calculée à partir de
+  `TODAY()`** (le jour de la lecture), pas de J-1 comme les autres blocs ;
+- **O `Rang`** : `=IF(ISBLANK($B2);999;COUNTIFS($L:$L;$L2;$N:$N;">"&$N2)+1)` — rang
+  d'ancienneté décroissante par concession (1 = le plus ancien), sentinelle `999`
+  pour les lignes vides. Les ex æquo d'ancienneté partagent le même rang.
+
+**Onglet final `BLOC 2_2 BDC Ouvert`** — deux tableaux côte à côte :
+- **Détail A→G** (formule en `A2`) :
+  `=QUERY(Extrait_BDC_Ouvert!A2:O; "SELECT L, I, J, K, C, B, N WHERE O <= 5 AND L IS NOT NULL AND L != '' ORDER BY L, N DESC"; 0)`
+  → `Code_concession, immatriculation, marque, modele, proprietaire, date_confirmation_bdc,
+  Ancienneté_j`. **Top 5 par concession, le plus ancien en premier** ; comme le rang
+  gère mal les ex æquo, une concession peut dépasser 5 lignes (jusqu'à 9 le 2026-10-05).
+  Pas de ligne « +N autres » : le total est dans le tableau suivant.
+- **Résumé I→J** : `I` = liste triée des codes concession présents
+  (`=SORT(UNIQUE(FILTER(Extrait_BDC_Ouvert!L2:L; Extrait_BDC_Ouvert!L2:L<>"")))`),
+  `J` = `Nb BDC VO` (`COUNTIF` sur toute la colonne `L` de l'extrait) — **le nombre
+  total de BDC de la concession, pas seulement les 5 du détail**. Vérifié le
+  2026-10-05 : égal au décompte de l'extrait pour les 68 concessions.
+
+**Chiffres relevés le 2026-10-05** : 494 BDC dans l'extrait, 281 lignes de détail,
+68 concessions. Exemples : Opel/Fiat Dijon — 5 dossiers de 88 j à 28 j ; Renault/Nissan
+Mulhouse — 5 dossiers de 39 j à 25 j.
+
+**Points d'attention** :
+- **Donnée personnelle** : la colonne `proprietaire` (E du détail, C de l'extrait) est le
+  **nom du vendeur**. À anonymiser dans tout mockup commité, et à décider avant
+  de l'afficher dans le mail (le Bloc 8 VO n'affiche aucun nom de personne).
+- **3 BDC sans code concession** (`Strasbourg Illkirch` ×2, `Toyota Meuse` ×1) : absents
+  du détail et du résumé faute de ligne dans `Mapping`.
+- **L'extrait contient environ 505 lignes vides** (restes de formules) : ne jamais le
+  lire directement, passer par `BLOC 2_2`.
+- **Pas la même notion de « commande » que le Bloc 2** : voir §4 — `BLOC 2 Offre` compte
+  les offres *créées* dans la fenêtre (`CreatedDate`) et acceptées, alors que le Bloc 9
+  et le Bloc 2_2 partent de la **date de confirmation du BDC**.
 
 ## 12. Calibrage des seuils Bloc 8 — méthode
 
