@@ -44,12 +44,16 @@ Score calculé à la composition (le Sheet ne le calcule pas), somme de 3 critè
 |---|---|
 | Anomalies ouvertes (tuile 4 : Bloc 3 sur 7 j + Bloc 8 d'hier) ≥ 6 | +2 (sinon 0) |
 | Tendance ventes 30j ≥ 0 % / entre 0 et −5 % / entre −5 et −10 % / < −10 % | 0 / +1 / +2 / +3 |
-| Couverture hors zone normale | +2 — **zone normale non définie : non évalué, 0 pt** |
+| Couverture hors zone normale (`Couverture_mois` < 1,5 ou > 3 mois ; vide = non évalué, 0 pt) | +2 |
+
+Bornes de la tendance : exactement −5 % compte dans le palier « entre −5 et −10 % » (+2) et
+exactement −10 % dans « < −10 % » (+3). Zone normale de couverture décidée le 2026-10-06
+(mêmes seuils que les actions du Bloc 7).
 
 Score 0-1 `&#9728;` Soleil · 2-3 `&#9729;` Nuage · 4-5 `&#127783;` Pluie · 6+ `&#9928;` Orage.
 - Pas de 5ᵉ icône. **Si `Ventes_VOP_moy_mensuelle` < 3 : aucune icône** (volume non significatif).
 - `title` de la cellule, comme la maquette : « Score de vigilance X — anomalies ouvertes
-  (N, +p pt), tendance ventes T% (+p pt), couverture non évaluée. » (CADRAGE_VO §15)
+  (N, +p pt), tendance ventes T% (+p pt), couverture C mois (+p pt). » (CADRAGE_VO §15)
 
 ## 4. Synthèse (commentaire IA)
 
@@ -68,7 +72,8 @@ Reçus J-1 `Leads_recus_J1` · Reçus 7j `Leads_recus_7j` · Non traités J-1
 ## 6. Offres VO & Facturations vs Objectifs — `vo_bloc2_offres` + `vo_bloc9_commandes_facturations`
 
 Une seule section (fusion Bloc 2 + Bloc 9). (CADRAGE_VO §4, §11, §14 pt.11)
-- **Compteurs** (Bloc 2), « valeur hier (valeur 7j) » : Commandes VOP acceptées
+- **Compteurs** (Bloc 2), « valeur hier (valeur 7j) » : **Offres VOP acceptées** (et non
+  « commandes », pour ne pas les confondre avec les commandes du Bloc 9)
   `Commandes_VOP_acceptees_J1` (`…_7j`), Offres refusées `Offres_refusees_J1` (`…_7j`),
   Reprises acceptées `Reprises_acceptees_J1` (`…_7j`).
 - **Narratif (commentaire IA)** depuis la ligne concession du Bloc 9, Commandes puis
@@ -77,9 +82,10 @@ Une seule section (fusion Bloc 2 + Bloc 9). (CADRAGE_VO §4, §11, §14 pt.11)
 - **Tableau** Commandes / Facturations (colonnes préfixées `Cde – …` / `Fact – …`) : MTD
   (`Mois à date`), Objectif (`Objectif mois`), % (`Taux atteinte %`, à l'unité), Rythme 7j/sem.
   (« `7 jours` / `Moy. hebdo 4 sem.` », arrondis). Ne pas afficher Manque à date ni Projection.
-- **Tendance** (`… – Tendance`) = pilule à côté du nom du flux, pas une colonne ; flèche +
-  mot du Sheet. Hausse confirmée / Accélère : fond `#E4F1EB`, texte `#2E7D5F` ; Baisse
-  confirmée / Ralentit : fond `#F6EADA`, texte `#C1793A` ; Stable / Nouveau / Volume trop
+- **Tendance** (`… – Tendance`) = pilule à côté du nom du flux, pas une colonne ; **mot
+  seul, sans flèche** (les flèches Unicode ne passent pas dans tous les clients mail), comme
+  au VN : Hausse, Baisse, Accélère, Ralentit, Stable, Nouveau, Volume faible. Hausse / Accélère : fond `#E4F1EB`, texte `#2E7D5F` ; Baisse
+  / Ralentit : fond `#F6EADA`, texte `#C1793A` ; Stable / Nouveau / Volume trop
   faible : fond `#F8F6F0`, texte `#8A8474`.
 - Ligne italique : « Reste à faire : X commandes/jour ouvré et Y facturations/jour ouvré pour
   atteindre l'objectif du mois » (`Reste à faire / jour ouvré`) ; vide ou 0 = objectif atteint.
@@ -103,27 +109,29 @@ Une seule section (fusion Bloc 2 + Bloc 9). (CADRAGE_VO §4, §11, §14 pt.11)
 - Motifs (déjà calculés, ne pas recalculer) : Marge négative < −1 000 €, Marge élevée
   > 4 000 €, Détention longue > 180 j (ces trois hors canal Primocar) ; Écart FRE significatif
   > 500 € ; Facturation Marchand non autorisée (hors `PRIMO_*`). Motifs cumulables (« + »).
-- Tri : ampleur de `Marge_vehicule` décroissante, puis `Date_vente` décroissante ; > 5 :
+- Tri : **valeur absolue** de `Marge_vehicule` décroissante (−6 000 € avant +4 900 €), puis
+  `Date_vente` décroissante ; > 5 :
   top 5 + « +N autres anomalies ».
 - Vide → « Rien à signaler — aucune anomalie sur les ventes d'hier. » (CADRAGE_VO §10, §14 pt.10)
 
 ## 9. État du stock — `vo_bloc4_stock_synthese`, `vo_bloc4_stock_detail`, `vo_bdc_ouverts`
 
 - Sous-titre « Photo du jour · véhicules ST/CL/IM ». Compteurs : Stock ST `Stock_ST`, Stock CL
-  `Stock_CL`, Stock IM `Stock_IM` ; Portefeuille livraison `Portefeuille_livraison`, CL en
-  retard `CL_en_retard_nb`.
+  `Stock_CL`, Stock IM `Stock_IM` ; Portefeuille livraison `Portefeuille_livraison`.
+  **Aucune mention de « CL en retard »** (ni compteur, ni liste, ni « détail non disponible ») :
+  retiré complètement le 2026-10-06, un nouveau bloc plus fiable viendra plus tard.
 - **Véhicules à corriger** (détail : Sans prix, Sans destination, Sans photo, Jamais publié ;
   la dernière colonne de chaque tableau = **jours en stock** malgré son nom) : une ligne par
   immatriculation = immat (monospace) + modèle + « — » catégories (« sans photo, jamais
   publié »), jours à droite ; tri jours décroissants, 5 lignes max.
 - Ligne italique : « Sans prix (`Sans_prix_nb`) · sans destination (`Sans_destination_nb`) ·
   sans photo (`Sans_photo_nb`) / jamais publié (`Jamais_publie_nb`) ».
-- **Clients en attente de livraison** : le détail « CL en retard » n'existe plus au détail
-  stock ; utiliser `vo_bdc_ouverts` (BDC signés depuis plus de 15 jours, véhicule toujours en
-  cours de livraison) : lignes `Code_concession` = la concession, tri `Ancienneté_j`
-  décroissante, 5 max, immat (monospace) + `modele` + « Nj » ; total = `Nb BDC VO` (ligne où
-  `Concession` = la concession). Ne pas afficher `proprietaire` (non décidé). Aucun BDC →
-  omettre la sous-liste. (CADRAGE_VO §6, §11.1, §14 pts 7 et 11)
+- **Bons de commande ouverts les plus anciens (N au total)** — `vo_bdc_ouverts` (BDC signés
+  depuis plus de 15 jours, véhicule toujours en cours de livraison) : lignes `Code_concession`
+  = la concession, tri `Ancienneté_j` décroissante, 5 max, immat (monospace) + `modele` +
+  **nom du vendeur `proprietaire` (affiché, décidé le 2026-10-06)** + « Nj » ; N = `Nb BDC VO`
+  (ligne où `Concession` = la concession). Aucun BDC → omettre la sous-liste.
+  (CADRAGE_VO §11.1)
 
 ## 10. Rotation & couverture — `vo_bloc5_couverture`
 

@@ -70,7 +70,7 @@ Classeur `Bloc 2`. Chaîne : `Obj Com/Fact.` → `Extrait_ComFact` → `BLOC 2`.
 
 | Donnée | Onglet | Colonnes | Notes |
 |---|---|---|---|
-| Extrait brut | `Extrait_ComFact` | A `flux` (Commandes/Facturations), B `libelle` (concession brute, vide = total marque), C `marque`, D `j1`, E `s7`, F `s4_prec_total`, G `mtd`, H `mtd_n1`, I `obj_mois`, J `jo_ecoules`, K `jo_mois`, L `jo_restants`, M `date_reference`, N `Code_concession`, O `Code_Plaque` | Jours ouvrés identiques pour les 2 flux (calendrier lun-ven) : `$J$2/$K$2/$L$2` |
+| Extrait brut | `Extrait_ComFact` | A `flux` (Commandes/Facturations), B `libelle` (concession brute, vide = total marque), C `marque`, D `j1`, E `s7`, F `s4_prec_total`, G `mtd`, H `mtd_n1`, I `obj_mois`, J `jo_ecoules`, K `jo_mois`, L `jo_restants`, M `date_reference`, N `Code_concession`, O `Code_Plaque` | ⚠️ **Jours ouvrés différents par flux** : Commandes lundi-samedi (4/27/23 le 2026-10-06), Facturations lundi-vendredi (3/22/19). Les formules Commandes lisent `$J$2/$K$2/$L$2` (1re ligne = Commandes), celles de Facturations un `XLOOKUP` sur le flux |
 | Résultat final | `BLOC 2` | 25 colonnes A→Y : A `Plaque`, B `Concession`, C `Marque`, puis **D→N** `Cde – …` et **O→Y** `Fact – …` (J-1, 7 jours, Moy. hebdo 4 sem., Mois à date, Mois à date N-1, Objectif mois, Manque à date, Taux atteinte %, Projection fin de mois, Reste à faire / jour ouvré, Tendance) | Voir types de lignes ci-dessous |
 
 **4 types de lignes dans `BLOC 2`** (à distinguer à la lecture) :
@@ -160,6 +160,5 @@ personnelle (convention APV/VO).
    excès (voir limites du Bloc 4).
 7. **`IMPORTRANGE` à autoriser manuellement une première fois** dans l'UI Sheets, sinon les
    `RECHERCHEX` en aval échouent sans erreur visible.
-8. **Seuil générique « marge fortement négative » hors BMW (cellule `$Z$1`)** : pointait vers
-   un en-tête texte (comparaison toujours vraie). Le classement `À corriger` produit bien 59
-   lignes aujourd'hui, mais l'emplacement du vrai seuil reste à confirmer (`CADRAGE_VN.md` §7).
+8. **Seuil générique « marge fortement négative » hors BMW** : 0 € de marge véhicule, formule
+   conservée telle quelle (décidé le 2026-10-06, `CADRAGE_VN.md` §7).

@@ -590,28 +590,25 @@ fiablement le thème sombre).
 
 **Structure retenue** (ordre final) :
 1. Header + titleblock (concession, "chiffres de la veille").
-2. 4 tuiles KPI : Leads reçus J-1, Couverture stock, Stock âgé VN (+6 mois),
+2. 4 tuiles KPI : Leads reçus J-1, tendance Commandes, tendance Facturations,
    Anomalies ventes.
 3. Synthèse : un commentaire factuel unique pointant l'anomalie la plus
    significative du jour — voir règle de rédaction ci-dessous.
-4. **Anomalies ventes** (tableau, colonnes VIN/véhicule/marge/motif).
-5. **Leads VN** (reçus/non traités, J-1 et 7j).
-6. **Qualité du stock VN/VD** : compteurs (Stock VN/VD, âgé VN/VD +6 mois,
+4. **Leads VN** (reçus/non traités, J-1 et 7j).
+5. **Commandes & Facturations vs Objectifs** (Bloc 2).
+6. **Anomalies ventes** (tableau, colonnes VIN/véhicule/marge/motif).
+7. **État du stock VN/VD** : compteurs (Stock VN/VD, âgé VN/VD +6 mois,
    contremarqué +90j) + 3 mini-listes des véhicules les plus anciens (VN, VD,
    contremarqué), issues de l'onglet `BLOC 3 P2 Stock VN_VD`.
-7. **Rotation & couverture** : tableau concession vs Plaque (Stock, ventes
-   moy. mensuelle, couverture), agrégé à partir des lignes du Bloc 4 sur les
-   modèles propres à la concession.
-8. **Excès de stock** : podium top 3 modèles (Bloc 4).
-9. Footer.
+8. **Rotation & couverture** : concession seule (Stock, ventes moy. mensuelle,
+   couverture), agrégé à partir des lignes du Bloc 4. La comparaison Plaque est
+   réservée au futur mail Directeur de plaque.
+9. **Excès de stock** : podium top 3 modèles (Bloc 4).
+10. Footer.
 
-**Décision d'ordre des sections (2026-09-23)** : Anomalies ventes en premier
-juste après la Synthèse — c'est le contenu le plus actionnable (perte
-d'argent à corriger). Puis Leads (actions du jour : relances). Le stock passe
-en dernier : il évolue lentement, plus informatif qu'urgent. Décision
-explicite de Quentin, retenue après un test de réorganisation en 3 sections
-(fusion des blocs stock) présenté puis écarté au profit de la structure
-d'origine à 5 sections — préférée telle quelle.
+**Ordre des sections (décidé par Quentin le 2026-10-06)** : Leads, puis Commandes &
+Facturations, puis Anomalies ventes, puis le stock. Remplace l'ordre du 2026-09-23
+(Anomalies ventes en premier).
 
 **Décision de cadence (2026-09-23)** : le stock reste envoyé **quotidiennement**
 malgré son évolution lente, avec les listes top-3 statiques (les plus
@@ -718,14 +715,9 @@ dur pour toutes les concessions.
    n'ont pas de `Code_concession` — mis de côté par Quentin, mais à garder en
    tête si des écarts de volumétrie inattendus apparaissent plus tard.
 3. **Bloc 6, seuil générique "marge fortement négative"** pour les marques
-   autres que BMW — non calibré (calibration marque par marque tentée et
-   abandonnée le 2026-09-23, volume insuffisant ; seule BMW a un seuil
-   dédié, en %, MINI est exclu). **Aggravé le 2026-09-25** : la cellule
-   actuellement référencée par la formule (`$Z$1`) contient l'en-tête de
-   sa propre colonne, pas un nombre — le seuil générique n'est donc pas
-   réellement appliqué en pratique (comparaison nombre/texte toujours
-   vraie). Emplacement du vrai seuil (s'il a existé) non retrouvé — à
-   confirmer avec Quentin avant de corriger la référence.
+   autres que BMW : **0 € de marge véhicule**, formule du Sheet conservée
+   telle quelle (décidé par Quentin le 2026-10-06). BMW garde son seuil en %,
+   MINI est exclu.
 4. **Existe-t-il une spec équivalente à `Spec_Mail_IA_ChefVentesVN`** —
    toujours pas, contrairement au VO qui a une spec dédiée.
 

@@ -18,19 +18,21 @@ Header + titre (« Rapport quotidien · Véhicules Neufs », `nom_concession`, d
 données, icône météo §2) → 4 tuiles KPI §3 → Synthèse §4 → Leads VN §5 → Commandes &
 Facturations vs Objectifs §6 → Anomalies ventes §7 → État du stock §8 → Rotation &
 couverture §9 → Excès de stock top 3 §10 → Footer §11.
-Source : CADRAGE_VN §6 ; ordre = maquette.
+Source : ordre validé par Quentin le 2026-10-06 (= maquette).
 
-## 2. Icône météo — score de vigilance VN (BROUILLON, non calculé par le Sheet)
-Pas de barème VN validé ; appliquer le brouillon de la maquette (modèle VO §15) :
+## 2. Icône météo — score de vigilance VN (barème validé le 2026-10-06, calculé par Claude)
+- La couverture de stock ne compte pas dans le score. **Pas d'icône** (ni mot) si les
+  ventes moyennes mensuelles de la concession (somme des `Ventes moy` de `BLOC 4`, §9) sont
+  < 3 : un score sur un volume trop faible serait trompeur.
 - Anomalies ventes (nb de dossiers §7) ≥ 3 → +2, sinon 0.
 - Retard vs objectif à date, **pire des 2 flux** (ligne `TOTAL` concession, §6) :
   ≥ 0 % → 0 ; 0 à -5 % → +1 ; -5 à -10 % → +2 ; < -10 % → +3.
   Retard % = `Manque à date` ÷ (`Mois à date` − `Manque à date`).
 - Score → icône : 0-1 Soleil `&#9728;` ; 2-3 Nuage `&#9729;` ; 4-5 Pluie `&#127783;` ;
   6+ Orage `&#9928;`. Mot sous l'icône comme la maquette.
-- `title` : « Score de vigilance X/5 (brouillon) — anomalies ventes (N, +p pt, seuil 3),
-  retard commandes|facturations -x,x % vs objectif (+p pts). » Toujours « brouillon ».
-Source : maquette (tooltip), CADRAGE_VO §15, CADRAGE §9 pt 9.
+- `title` : « Score de vigilance X/5 — anomalies ventes (N, +p pt, seuil 3),
+  retard commandes|facturations -x,x % vs objectif (+p pts). »
+Source : maquette (tooltip), CADRAGE_VO §15.
 
 ## 3. Tuiles KPI (dans cet ordre)
 | Tuile | Valeur |
@@ -39,9 +41,11 @@ Source : maquette (tooltip), CADRAGE_VO §15, CADRAGE §9 pt 9.
 | Commande · tendance | `Cde – Tendance`, ligne `TOTAL` concession (`vn_bloc2_commandes_facturations`) |
 | Facturation · tendance | `Fact – Tendance`, même ligne |
 | Anomalies signalées | nb de dossiers §7, rouge `#B0413E` si > 0 |
-- Tendance Sheet → tuile : `↑ Hausse confirmée` → « ↑ Hausse » (vert `#2E7D5F`) ;
-  `↓ Baisse confirmée` → « ↓ Baisse » (rouge) ; `↗ Accélère`, `↘ Ralentit`, `→ Stable`,
-  `Nouveau` tels quels (navy) ; `· Volume trop faible` → « Volume faible ».
+- Tendance Sheet → tuile, **mot seul, sans flèche** (les flèches Unicode ↑ ↓ ↗ ↘ → ne
+  s'affichent pas dans tous les clients mail) : `↑ Hausse confirmée` → « Hausse » (vert
+  `#2E7D5F`) ; `↓ Baisse confirmée` → « Baisse » (rouge) ; `↗ Accélère` → « Accélère »,
+  `↘ Ralentit` → « Ralentit », `→ Stable` → « Stable », `Nouveau` (navy) ;
+  `· Volume trop faible` → « Volume faible ».
 - `title` de la tuile : niveau `Mois à date` vs `Mois à date N-1` (± %), rythme `7 jours`
   vs `Moy. hebdo 4 sem.` (%), puis « Tendance Sheet : <valeur brute> ».
 Source : CADRAGE_VN §2 (formule Tendance), §6 (tuiles KPI).
@@ -73,8 +77,11 @@ Source : CADRAGE_VN §1.
   an dernier (%), % de l'objectif du mois, marques les plus en retard / proches de la cible.
 - Tableau par marque (alphabétique) : Marque | Cde MTD | Cde Obj. | Cde % | Fact MTD |
   Fact Obj. | Fact %. % = `Taux atteinte %` arrondi à l'entier, « — » si objectif = 0.
-  Omettre une marque à 0 en MTD et en objectif sur les 2 flux. % < 50 % en rouge gras
-  (rendu maquette).
+  Omettre une marque à 0 en MTD et en objectif sur les 2 flux. **% en rouge gras si la
+  marque est en retard sur l'avancement du mois** : `Manque à date` < 0 pour ce flux
+  (équivaut à `Taux atteinte %` < part des jours ouvrés écoulés, dimanches exclus, selon le
+  calendrier du flux : Commandes lundi-samedi, Facturations lundi-vendredi). Sinon couleur
+  normale.
 - Note grise italique : « Reste à faire : x,x commandes/jour ouvré et y,y facturations/jour
   ouvré pour atteindre l'objectif du mois » (`Reste à faire / jour ouvré` de la ligne
   `TOTAL`, 1 décimale ; vide ou 0 = objectif atteint).
@@ -103,8 +110,9 @@ Source : CADRAGE_VN §2, §6 (intégration Bloc 2, précision du 25/09, note BMW
 - Logique du Sheet (pour comprendre, pas à recalculer) : perte couverte par le transfert de
   marge → non listé ; marge véhicule < 0 mais dossier > 0 → non listé ; VN à marge hors
   transfert < 0 → listé ; VD idem → listé avec la détention ; marge et dossier négatifs,
-  avec ou sans aide → listé (BMW : seuil -1,5 % de marge) ; à vérifier = Particuliers, sans
-  aide, hors BMW/MINI, marge ≤ -500€ ou entre 0 et 200€.
+  avec ou sans aide → listé (seuil hors BMW : 0 € de marge véhicule, décidé le 2026-10-06 ;
+  BMW : ≤ -1,5 % de marge) ; à vérifier = Particuliers, sans aide, hors BMW/MINI, marge positive entre 0
+  et 200 €.
 Source : CADRAGE_VN §5, §5.1, §6 (affichage) ; DATA_MAP_VN Bloc 6.
 
 ## 8. État du stock — `vn_bloc3_stock_synthese` + `vn_bloc3_stock_detail`
@@ -141,5 +149,5 @@ Source : CADRAGE_VN §4 (seuil P90 = 12), DATA_MAP_VN Bloc 4.
 
 ## 11. Footer
 « HESS Automobile · Rapport généré automatiquement, données BigQuery & Google Sheets »,
-puis `nom_concession` · données du JJ/MM/AAAA · score de vigilance en brouillon. Pas de
+puis `nom_concession` · données du JJ/MM/AAAA. Pas de
 mention « [ENVOI TEST] » ni « comparaison Plaque non incluse ».

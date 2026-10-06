@@ -550,8 +550,9 @@ par point :
    trier par montant/note décroissant en premier, date décroissante en cas
    d'égalité (même règle que Bloc 8, cf. §10 — **règle inversée le
    2026-09-25**, voir §10).
-7. **Qualité du stock (Bloc 4)** : détailler la liste des **CL en retard**
-   (pas seulement le total) — voir §5.
+7. ~~**Qualité du stock (Bloc 4)** : détailler la liste des **CL en retard**~~
+   **Retiré complètement le 2026-10-06** (ni compteur ni liste) ; un nouveau
+   bloc plus fiable viendra après retour du service Data.
 8. **Rotation & couverture (Bloc 5)** : ajouter les **moyennes Plaque** en
    comparaison des chiffres concession, calcul fait côté Sheet (pas par
    Claude) — voir extension Plaque au §7. Complété ensuite par une demande de

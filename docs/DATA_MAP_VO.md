@@ -118,9 +118,9 @@ ST dont `destination` vide ; `Sans_photo` = ST avec `nb_photos` = 0 ; `Jamais_pu
 `jours_publication` = -1 ; `Portefeuille_livraison` = CL de destination « Particulier » ;
 `CL_en_retard_nb` = CL « Particulier » dont `date_livraison_souhaitee` < `TODAY()`.
 
-**Le détail « CL en retard » n'existe plus dans `BLOC 4 Stock_P2` — retiré volontairement.** Il sera
-remplacé par un nouveau sheet rattaché au Bloc 2 (offres), à documenter à sa création. Seul le
-**nombre** (`CL_en_retard_nb`) reste disponible d'ici là.
+**« CL en retard » est retiré complètement du mail** (décidé le 2026-10-06) : le détail n'existe plus
+dans `BLOC 4 Stock_P2` et `CL_en_retard_nb` n'est plus affiché. Un nouveau bloc plus fiable sera
+ajouté plus tard, après retour du service Data.
 
 ### Blocs 5, 6, 7 — Couverture, Excès, Santé Plaque
 Classeur `Bloc 5/6/7`. Sources : `Vente VO 90j SF` et `Stock VO SF` (connectés) → `Extrait_Ventes_VO`,
@@ -130,7 +130,7 @@ Classeur `Bloc 5/6/7`. Sources : `Vente VO 90j SF` et `Stock VO SF` (connectés)
 |---|---|---|---|
 | Ventes 90 j (extrait) | `Extrait_Ventes_VO` | A `numero_vente`, B `concession`, C `canal_vente`, D `statut`, E `date_vente`, F `date_livraison`, G `date_achat`, H `duree_detention_jours`, I `marque`, J `famille`, K `modele`, L `energie`, M `kilometrage`, N `date_premiere_mise_en_circulation`, O `vin`, P `immatriculation`, Q `id_vehicule_selectionne`, R `date_confirmation_commande`, S `facture_totale`, T `prix_vehicule_ttc`, U `marge_vente`, V `marge_vehicule`, **W `Code_concession`**, **X `Code_Plaque`**, Y `Date de Vente` | 4 968 ventes (07/07→03/10), toutes `Validée`, canaux Particuliers (4 847) et Flottes / Sociétés (121), toutes rattachées |
 | Stock (extrait) | `Extrait_Stock_VO` | A→W identiques à l'extrait du Bloc 4 (jusqu'à `Date_Livraison`), **X `Code_concession`**, **Y `Code_Plaque`** | ⚠️ La colonne V `nb_photos` y est formatée en date (`30/01/1900` au lieu d'un nombre) — sans effet ici, aucun bloc ne l'utilise |
-| Couverture (1 ligne/concession) | `BLOC 5 Couverture_VO` | A `Code_concession`, B `Stock_ST`, C `Ventes_VOP_moy_mensuelle`, D `Couverture_mois`, E `Ventes_30j`, F `Ventes_31_60j`, G `Tendance_ventes_pct`, H `Delai_median_livraison_j`, **I `Code Plaque`** (avec espace), J `Stock_ST_Plaque`, K `Ventes_VOP_moy_mensuelle_Plaque`, L `Couverture_mois_Plaque`, M `Delai_median_livraison_j_Plaque`, N `Ventes_30j_Plaque`, O `Ventes_31_60j_Plaque`, P `Tendance_ventes_pct_Plaque` | **Recalculé : 0 écart sur 74 concessions.** ⚠️ `Tendance_ventes_pct` est un **ratio** (`0,49` = +49 %) = (E−F)/F. Délai médian = médiane (date de vente − date de confirmation BDC) sur 90 j. **J→P = comparaison Plaque, réservée au futur mail Directeur** |
+| Couverture (1 ligne/concession) | `BLOC 5 Couverture_VO` | A `Code_concession`, B `Stock_ST`, C `Ventes_VOP_moy_mensuelle`, D `Couverture_mois`, E `Ventes_30j`, F `Ventes_31_60j`, G `Tendance_ventes_pct`, H `Delai_median_livraison_j`, **I `Code Plaque`** (avec espace), J `Stock_ST_Plaque`, K `Ventes_VOP_moy_mensuelle_Plaque`, L `Couverture_mois_Plaque`, M `Delai_median_livraison_j_Plaque`, N `Ventes_30j_Plaque`, O `Ventes_31_60j_Plaque`, P `Tendance_ventes_pct_Plaque` | **Recalculé : 0 écart sur 74 concessions.** ⚠️ `Tendance_ventes_pct` est un **ratio** (`0,49` = +49 %) = (E−F)/F. Délai médian = médiane (date de vente − date de confirmation BDC) sur 90 j. **J→P = comparaison avec la Plaque, affichée dans le mail Service VO** (décidé le 2026-10-06) |
 | Excès (1 ligne/concession × famille × énergie) | `BLOC 6 Excès_Stock` | A `Code_concession`, B `Famille`, C `Energie`, D `Stock`, E `Ventes_moy 90j/3`, F `Exces`, G `Ancien_nb` | **Recalculé : 1 écart sur 2 274 lignes** (casse, voir §8). `Ancien_nb` = stock en vente depuis **90 jours ou plus**. `Exces = MAX(Stock − ROUND(Ventes_moy), 0)`. 1 601 lignes vides sur 3 875. Pas de rang : trier/filtrer à la lecture |
 | Santé Plaque (1 ligne/Plaque × famille × énergie) | `BLOC 7 Santé_Plaque` | A `Code_Plaque`, B `Famille`, C `Energie`, D `Stock`, E `Age_moyen`, F `Ventes_moy (90j/3)`, G `Exces`, H `Age_median`, I `Analyse_santé`, J `Couverture_brute`, K `Action_recommandée` | **Recalculé : 0 écart sur 1 352 lignes réelles** (sur 2 909). 75 % « NON SIGNIFICATIF ». **Réservé au futur mail Directeur** |
 
@@ -161,15 +161,15 @@ du **dimanche** — les mails partent bien le dimanche (confirmé 2026-10-05). N
 vivantes ce jour-là ; volume attendu (rejeu 90 j) : ~14 anomalies/jour pour tout le groupe en médiane
 (max 53).
 
-## 5. Niveau Plaque — réservé à un futur mail Directeur
+## 5. Niveau Plaque
 
-`BLOC 5` colonnes J→P (comparaison Plaque) et `BLOC 7 Santé_Plaque` : exclus du mail Service V1
+`BLOC 7 Santé_Plaque` : exclu du mail Service V1
 (décision du 2026-09-11). Pas d'onglet Plaque dédié séparé au-delà de ceux-là.
 
 ## 6. Données personnelles — jamais dans un mockup non anonymisé
 
 - `Extrait_BDC_Ouvert` colonne **C `proprietaire`** et `BLOC 2_2 BDC Ouvert` colonne **E `proprietaire`** :
-  nom du vendeur. **Présent dans le listing final** — décider avant de l'afficher dans le mail.
+  nom du vendeur, affiché dans le mail (décidé le 2026-10-06).
 - `Extrait_Achat_VO` colonne **C `repreneur`** : nom du repreneur. Absent du listing final `BLOC 3`.
 
 Les autres onglets finaux (Blocs 1, 2, 2_1, 3, 4, 5, 6, 7, 8) ne contiennent aucun nom de personne.

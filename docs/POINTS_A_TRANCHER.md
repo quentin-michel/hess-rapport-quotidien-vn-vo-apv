@@ -11,70 +11,52 @@ durable), puis cocher le point ici.
 
 ## VN — `rapport/regles/vn.md` (Quentin)
 
-- [ ] **Ordre des blocs.** CADRAGE_VN §6 : Synthèse → Anomalies ventes → Commandes/
-  Facturations → Leads. Maquette : Leads → Cde/Fact → Anomalies → Stock.
-  *Provisoire : ordre de la maquette.*
-- [ ] **Tuiles KPI.** §6 : Leads, Couverture, Stock âgé VN, Anomalies. Note du 24/09 et
-  maquette : Leads, tendance Commandes, tendance Facturations, Anomalies.
-  *Provisoire : maquette.*
-- [ ] **Barème météo VN.** Aucun barème validé (CADRAGE §9 : non calculé dans les
-  Sheets). *Provisoire : brouillon de la maquette* — +2 si ≥ 3 anomalies de vente ;
-  0/+1/+2/+3 selon le retard sur l'objectif à date (pire de commandes et facturations,
-  paliers 0 %, −5 %, −10 %), retard = `Manque à date` ÷ (`Mois à date` − `Manque à
-  date`). Ouvert : la couverture de stock compte-t-elle ? Masquer l'icône à faible volume
-  (comme le VO sous 3 ventes/mois) ?
-- [ ] **% en rouge dans le tableau Cde/Fact.** La maquette passe en rouge sous 50 %,
-  aucun seuil écrit. Plus logique : comparer à la part de jours ouvrés écoulés.
-  *Provisoire : pas de règle de couleur.*
-- [ ] **Fenêtre des anomalies.** Bloc 6 = 5 derniers jours, la maquette dit « sur J-1
-  strict ». *Provisoire : « N dossiers sur les 5 derniers jours ».*
-- [ ] **Tri des anomalies.** CADRAGE_VO §11 (appliqué au VN) : plus grosse perte
-  d'abord ; la maquette met +449 € avant −2 123 €. Pas de date de vente pour départager.
-  *Provisoire : pire marge d'abord (ordre du Sheet).*
-- [ ] **Comparaison Plaque dans le mail Service.** La maquette garde « Comparaison Plaque
-  non disponible pour cet envoi test ». *Provisoire : ni comparaison ni mention.*
-- [ ] **Couleur de la couverture.** Verte dans la maquette, aucune zone normale définie.
-  *Provisoire : pas de couleur.*
-- [ ] **Stock de la rotation.** La maquette prend Stock VN + Stock VD de P1, les ventes
-  viennent du Bloc 4 (qui ignore les modèles vendus sans stock restant) : numérateur et
-  dénominateur pas tout à fait sur le même périmètre.
-- [ ] **Lignes d'excès à modèle harmonisé vide** (modèles non mappés, chiffres faux).
-  *Provisoire : ne pas les présenter comme un modèle.* Masquer ou étiqueter ?
-- [ ] **Seuil « marge fortement négative » hors BMW** (bug `$Z$1`) : le nombre
-  d'anomalies peut être gonflé.
-- [ ] **Règle « à vérifier »** : le cadrage écrit « marge faible négative (≤ −500 €) »,
-  formulation étrange. *Provisoire : recopiée telle quelle.*
+- [x] **Ordre des blocs.** *Décidé 2026-10-06 : Leads → Cde/Fact → Anomalies ventes → stock
+  (ordre de la maquette).*
+- [x] **Tuiles KPI.** *Décidé 2026-10-06 : Leads, tendance Commandes, tendance Facturations,
+  Anomalies. Tendances en mot seul, sans flèche (les flèches Unicode ne passent pas dans
+  tous les clients mail).*
+- [x] **Barème météo VN.** *Décidé 2026-10-06 : barème de la maquette validé (« brouillon »
+  retiré) ; la couverture ne compte pas ; pas d'icône sous 3 ventes moyennes par mois.*
+- [x] **% en rouge dans le tableau Cde/Fact.** *Décidé 2026-10-06 : rouge si la marque est en
+  retard sur l'avancement du mois (`Manque à date` < 0), dimanches exclus.*
+- [x] **Fenêtre des anomalies.** *Décidé 2026-10-06 : 5 derniers jours (texte de la maquette
+  corrigé).*
+- [x] **Tri des anomalies.** *Décidé 2026-10-06 : pire marge d'abord (ordre du Sheet).*
+- [x] **Comparaison Plaque dans le mail Service.** *Décidé 2026-10-06 : ni comparaison ni
+  mention (réservée au mail Directeur).*
+- [x] **Couleur de la couverture.** *Décidé 2026-10-06 : aucune.*
+- [x] **Stock de la rotation.** *Décidé 2026-10-06 : calcul conservé tel quel.*
+- [x] **Lignes d'excès à modèle harmonisé vide.** *Décidé 2026-10-06 : mapping complété ;
+  les quelques véhicules restants à modèle vide sont jugés non significatifs. Ne pas les
+  présenter comme un modèle.*
+- [x] **Seuil « marge fortement négative » hors BMW.** *Décidé 2026-10-06 : 0 € de marge
+  véhicule, formule du Sheet conservée telle quelle.*
+- [x] **Règle « à vérifier ».** *Décidé 2026-10-06 : marge positive entre 0 et 200 €, sans
+  aide au châssis (la formulation « ≤ −500 € » est supprimée).*
 
 ## VO — `rapport/regles/vo.md` (Quentin)
 
-- [ ] **Comparaison Plaque dans Rotation & couverture.** CADRAGE_VO §14 pt.8 et la
-  maquette l'affichent dans le mail Service ; la carte des données vérifiée (main,
-  05/10) réserve ces colonnes au mail Directeur. *Provisoire : cadrage + maquette.*
-- [ ] **Liste « CL en retard ».** Maquette et §14 pt.7 l'affichent, mais le tableau
-  source a été retiré de `BLOC 4 Stock_P2`. *Provisoire : liste « Clients en attente de
-  livraison » tirée de `BLOC 2_2 BDC Ouvert` (BDC signés depuis plus de 15 jours, top 5
-  par ancienneté)* — mesure l'ancienneté depuis la signature, pas depuis la date de
-  livraison demandée. À valider.
-- [ ] **Nom du vendeur dans `BDC Ouvert`** : « à décider avant de l'afficher » selon le
-  cadrage. *Provisoire : non affiché.*
-- [ ] **Critère couverture du score météo** : « zone normale » jamais définie.
-  *Provisoire : 0 pt, « non évalué ».* Conséquence : max réel 5, l'Orage (6+) est
-  inatteignable.
-- [ ] **Bornes de tendance** à exactement −5 % et −10 % : de quel côté ?
-- [ ] **Commandes vs Plaque** : la maquette compare la concession à la Plaque, mais le
-  mail de concession ne reçoit pas la ligne total Plaque. *Provisoire : comparaison
-  seulement si la ligne est présente.*
-- [ ] **Tri des anomalies de vente « par montant »** : lu comme la valeur absolue de la
-  marge (−6 000 € avant +4 900 €). À confirmer.
-- [ ] **Tableau Anomalies achat** : la maquette ne montre que le cas « Rien à signaler ».
-  *Provisoire : colonnes et top 5 repris du bloc Anomalies ventes.*
-- [ ] **Deux « commandes » dans la même section** (offres et Bloc 9). *Provisoire : les
-  deux, sans les additionner ni les comparer.*
-- [ ] **Libellés des pastilles de tendance** : la maquette abrège (« ↑ Hausse »), le
-  Sheet dit « ↑ Hausse confirmée ». *Provisoire : libellé du Sheet ; couleur neutre pour
-  Stable / Nouveau / Volume trop faible.*
-- [ ] **Ligne total de `BLOC 2_1`** : le cadrage dit qu'il n'y en a pas, la carte vérifiée
-  dit qu'elle est gardée volontairement. Sans effet sur le mail de concession.
+- [x] **Comparaison Plaque dans Rotation & couverture.** *Décidé 2026-10-06 : gardée dans le
+  mail Service VO (cadrage + maquette).*
+- [x] **Liste « CL en retard ».** *Décidé 2026-10-06 : retirée complètement (ni compteur ni
+  liste). Un nouveau bloc plus fiable sera ajouté après retour du service Data.*
+- [x] **Nom du vendeur dans `BDC Ouvert`.** *Décidé 2026-10-06 : affiché.*
+- [x] **Critère couverture du score météo.** *Décidé 2026-10-06 : zone normale = 1,5 à 3 mois
+  (seuils du Bloc 7), +2 points hors zone ; l'Orage devient atteignable.*
+- [x] **Bornes de tendance** à exactement −5 % et −10 %. *Décidé 2026-10-06 : palier le plus
+  sévère (−5 % = +2, −10 % = +3).*
+- [x] **Commandes vs Plaque.** *Décidé 2026-10-06 : comparaison seulement si la ligne total
+  Plaque est présente.*
+- [x] **Tri des anomalies de vente « par montant ».** *Décidé 2026-10-06 : valeur absolue de
+  la marge.*
+- [x] **Tableau Anomalies achat.** *Décidé 2026-10-06 : colonnes et top 5 du bloc Anomalies
+  ventes, sans la note.*
+- [x] **Deux « commandes » dans la même section.** *Décidé 2026-10-06 : les deux, sans les
+  additionner ; libellés distincts (« offres acceptées » / « commandes »).*
+- [x] **Libellés des pastilles de tendance.** *Décidé 2026-10-06 : mot seul abrégé sans flèche,
+  comme au VN.*
+- [x] **Ligne total de `BLOC 2_1`.** *Décidé 2026-10-06 : gardée (niveau siège).*
 
 ## Directeur et Plaque — `rapport/regles/directeur.md`, `plaque.md`
 

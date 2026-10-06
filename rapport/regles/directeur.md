@@ -42,7 +42,7 @@ le détail complet. (CADRAGE §7)
   or `#A88A56` sur `#F1E7D3` pour un point de vigilance) ; chiffres positifs en `#2E7D5F`.
 - Ce qui est « significatif » = ce que le mail Service du même service ferait remonter dans
   sa synthèse (seuils dans vn.md / vo.md / apv.md). Repères : VN = commandes/facturations
-  vs objectif et l'an dernier, anomalies ventes, leads non traités ; VO = CL en retard,
+  vs objectif et l'an dernier, anomalies ventes, leads non traités ; VO =
   anomalies achat/vente, commandes/facturations vs objectif, couverture ; APV = voir §6.
 
 (CADRAGE §7)
