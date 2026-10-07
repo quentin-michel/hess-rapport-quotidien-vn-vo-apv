@@ -139,6 +139,12 @@ Aucun cas : « Rien à signaler » en italique. Hors score.
 - Intro Magasin : volume de contexte, ex. « 35 pièces vendues à perte sur 339 vendues, soit
   10,3 % » (BO, BQ ; nb à perte = nb de lignes Magasin de la liste).
 - Aucune ligne d'un canal : « Rien à signaler » pour ce canal.
+- **Toujours écrire que la liste Atelier ne porte que sur les ventes aux clients**
+  (décision du 2026-10-07) : titre de la sous-liste « Atelier — pièces vendues aux clients
+  (hors forfaits, hors intragroupe) », et la phrase d'intro le dit aussi (ex. « 3 pièces
+  vendues à perte à des clients hier »). Même précision partout où ces pièces sont citées
+  (synthèse, tuile, bloc des mails Directeur et Plaque) : jamais « pièces vendues à
+  perte » seul.
 
 ## 8. Météo Atelier — barème de points (CADRAGE_APV §12.6, §15)
 

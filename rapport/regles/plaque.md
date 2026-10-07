@@ -125,6 +125,6 @@ commerciaux en **montant** (hier, cumul du mois) et en **% du CA MO du mois**.
   contiennent (simple comptage par concession).
 
 **Texte** : signaux les plus forts, concentrations (« 43 % des encours +90 j sur deux
-concessions »), **signaux croisés** (ex. mêmes OR en pièces à perte et en remise élevée).
+concessions »), **signaux croisés** (ex. mêmes OR en pièces vendues à perte à des clients et en remise élevée ; toujours préciser « clients » pour ces pièces).
 
 (CADRAGE §8 ; CADRAGE_APV §8 pt 5, §12.3, §15 ; DATA_MAP_APV §2.1, §4)

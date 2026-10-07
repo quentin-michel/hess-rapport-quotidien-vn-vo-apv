@@ -68,7 +68,7 @@ le barème du service sur les faits du jour.
 ## 6. Bloc APV : compteurs de problèmes, pas de CA
 - Remonter des **compteurs/signaux de problème** : efficience basse, encours en jours de CA
   (surveillance/alerte/critique), OR en cession interne à efficience trop élevée, remises
-  élevées, pièces vendues à perte, forfaits à marge < 10 %, remises forcées.
+  élevées, pièces vendues à perte à des clients (Atelier : hors forfaits, hors intragroupe), forfaits à marge < 10 %, remises forcées.
 - **Jamais de CA ni d'objectif APV** (CA MO, CA PR interne/externe, % de réalisation).
 - **Exception (décidée le 2026-10-06) — malfaçons et gestes commerciaux** : coût de
   non-qualité, affiché **en montant** :
