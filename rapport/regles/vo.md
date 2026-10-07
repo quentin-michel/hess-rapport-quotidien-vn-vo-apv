@@ -94,8 +94,9 @@ Une seule section (fusion Bloc 2 + Bloc 9). (CADRAGE_VO §4, §11, §14 pt.11)
 ## 7. Anomalies achat & reprise — `vo_bloc3_anomalies_achat`
 
 - Toutes les lignes de la concession (déjà filtrées : note ≥ 4, 7 jours glissants).
-- Tableau au style « Anomalies ventes » : Véhicule (`Immatriculation` monospace +
-  `Numero_achat`), Date (`Date_achat`), Anomalie (`Type_anomalie`). **Ne pas afficher la note.**
+- Tableau au style « Anomalies ventes » : Véhicule (`Immatriculation` en
+  monospace, **sans** le numéro d'achat : l'immatriculation remplace tout numéro, décidé le
+  2026-10-06), Date (`Date_achat`), Anomalie (`Type_anomalie`). **Ne pas afficher la note.**
 - Tri `Note_criticite` décroissante, puis `Date_achat` décroissante ; > 5 lignes : top 5 +
   « +N autres anomalies ».
 - Vide → « Rien à signaler — aucune anomalie détectée sur les 7 derniers jours glissants. »

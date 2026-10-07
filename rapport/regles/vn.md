@@ -123,8 +123,8 @@ Source : CADRAGE_VN §5, §5.1, §6 (affichage) ; DATA_MAP_VN Bloc 6.
 - 3 mini-listes (`BLOC 3 P2 Stock VN_VD`, 3 tableaux côte à côte : `Code_concession`,
   `Numéro Stock`, `VIN`, `marque`, `modele`, puis jours dans `Stock âgé VN` / `Stock âgé VD`
   / `Contremarqué`) : « VN les plus anciens », « VD les plus anciens », « Contremarqués
-  depuis le plus longtemps ». **3 lignes chacune**, jours décroissants : marque (gras
-  monospace) + modèle, « Nj » à droite. Pas de seuil (les 3 plus anciens même sous 180/90 j) ;
+  depuis le plus longtemps ». **3 lignes chacune**, jours décroissants : `VIN` (gras
+  monospace navy, comme au tableau des anomalies) + marque + modèle, « Nj » à droite. Pas de seuil (les 3 plus anciens même sous 180/90 j) ;
   le P2 peut dépasser 5 lignes (ex æquo) : garder les 3 premiers. Liste vide → l'omettre.
 Source : CADRAGE_VN §3, §6.
 
